@@ -6,7 +6,7 @@ head_extra: |
   <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
 body_extra: |
   <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-  <script src="{{ '/assets/js/map.js' | relative_url }}"></script>
+  <script src="/demo-tracker/assets/js/map.js"></script>
 ---
 
 <div class="hero">
