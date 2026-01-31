@@ -89,7 +89,7 @@
       metaEl.textContent = `Last updated: ${fmtTs(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
 
       // Fit bounds to track on first load, then follow latest
-      const bbox = turfBbox(track);
+      const bbox = geojsonBbox(track);
       if (bbox) {
         map.fitBounds([[bbox[0], bbox[1]],[bbox[2], bbox[3]]], { padding: 40, duration: 800 });
       } else {
@@ -105,7 +105,7 @@
   }
 
   // Minimal bbox without dependencies
-  function turfBbox(geojson) {
+  function geojsonBbox(geojson) {
     try {
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       const feats = geojson.type === "FeatureCollection" ? geojson.features : [geojson];
