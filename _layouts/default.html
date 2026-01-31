@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ page.title }} · {{ site.title }}</title>
+    <meta name="description" content="{{ site.description }}">
+    <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+    {{ page.head_extra }}
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <div class="brand">
+          <div class="brand-title">{{ site.title }}</div>
+          <div class="brand-sub">{{ site.description }}</div>
+        </div>
+        <nav class="tabs">
+          <a class="tab {% if page.nav == 'map' %}active{% endif %}" href="{{ '/' | relative_url }}">Map</a>
+          <a class="tab {% if page.nav == 'blog' %}active{% endif %}" href="{{ '/blog/' | relative_url }}">Blog</a>
+          <a class="tab {% if page.nav == 'gear' %}active{% endif %}" href="{{ '/gear/' | relative_url }}">Gear</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      {{ content }}
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>Hosted on GitHub Pages · Demo template</span>
+      </div>
+    </footer>
+    {{ page.body_extra }}
+  </body>
+</html>
