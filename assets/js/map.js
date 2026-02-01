@@ -63,9 +63,17 @@
           type: "line",
           source: "track",
           paint: {
-            "line-width": 4,
-            "line-opacity": 0.9
-          }
+           "line-width": 4,
+           "line-opacity": 0.9,
+
+           // abwechselnd nach Feature-Index i (0/1/0/1/…)
+           "line-color": [
+             "case",
+             ["==", ["%", ["to-number", ["get", "i"]], 2], 0],
+             "#34D399", // grün
+             "#F59E0B"  // orange
+           ]
+         }
         });
       } else {
         map.getSource("track").setData(track);
