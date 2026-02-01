@@ -2,33 +2,36 @@
   const statusEl = document.getElementById("status");
   const metaEl = document.getElementById("meta");
 
+  // URLs (funktioniert auch unter /demo-tracker/ auf GitHub Pages)
   const trackUrl = new URL("./data/track.geojson", window.location.href).toString();
   const latestUrl = new URL("./data/latest.json", window.location.href).toString();
 
-  // ---------- Basemap sources ----------
-  const CARTO_DARK = {
-    type: "raster",
-    tiles: ["https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"],
-    tileSize: 256,
-    attribution: "© OpenStreetMap contributors © CARTO"
-  };
+  // --- Basemap Sources ---
+  const SAT_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+  const DARK_URL = "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 
-  const ESRI_SAT = {
-    type: "raster",
-    // NOTE: Esri tiles use {z}/{y}/{x}
-    tiles: ["https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
-    tileSize: 256,
-    attribution: "© Esri, Maxar, Earthstar Geographics"
-  };
-
-  // Initial style: start in "dark"
+  // --- Style: Satellite as DEFAULT ---
   const style = {
     version: 8,
     sources: {
-      base: CARTO_DARK
+      satellite: {
+        type: "raster",
+        tiles: [SAT_URL],
+        tileSize: 256,
+        attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and others"
+      },
+      dark: {
+        type: "raster",
+        tiles: [DARK_URL],
+        tileSize: 256,
+        attribution: "© OpenStreetMap contributors © CARTO"
+      }
     },
     layers: [
-      { id: "base", type: "raster", source: "base" }
+      // Satellite layer visible by default
+      { id: "base-satellite", type: "raster", source: "satellite", layout: { visibility: "visible" } },
+      // Dark layer hidden by default
+      { id: "base-dark", type: "raster", source: "dark", layout: { visibility: "none" } }
     ]
   };
 
@@ -36,14 +39,18 @@
     container: "map",
     style,
     center: [9.17, 48.78],
-    zoom: 11
+    zoom: 12
   });
 
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
   function fmtTs(ts) {
-    try { return new Date(ts).toLocaleString(); }
-    catch { return String(ts); }
+    try {
+      const d = new Date(ts);
+      return d.toLocaleString();
+    } catch {
+      return String(ts);
+    }
   }
 
   async function loadJson(url) {
@@ -52,28 +59,28 @@
     return await res.json();
   }
 
-  // ---------- Pulsing marker ----------
+  // --- Pulsierender Marker (grün ↔ orange) ---
   let marker;
   function createPulsingMarkerEl() {
     const el = document.createElement("div");
     el.style.width = "16px";
     el.style.height = "16px";
     el.style.borderRadius = "999px";
-    el.style.border = "2px solid rgba(232,238,245,.95)";
+    el.style.border = "2px solid rgba(255,255,255,.95)";
     el.style.boxShadow = "0 10px 26px rgba(0,0,0,.45)";
     el.style.background = "#2bff88";
+    el.style.position = "relative";
 
     const ring = document.createElement("div");
     ring.style.position = "absolute";
-    ring.style.left = "-10px";
-    ring.style.top = "-10px";
-    ring.style.width = "36px";
-    ring.style.height = "36px";
+    ring.style.left = "-11px";
+    ring.style.top = "-11px";
+    ring.style.width = "38px";
+    ring.style.height = "38px";
     ring.style.borderRadius = "999px";
     ring.style.border = "2px solid rgba(43,255,136,.55)";
     ring.style.boxShadow = "0 0 22px rgba(43,255,136,.40)";
     ring.style.animation = "pctPulse 1.6s ease-out infinite";
-    el.style.position = "relative";
     el.appendChild(ring);
 
     if (!document.getElementById("pctPulseStyle")) {
@@ -101,7 +108,7 @@
     return el;
   }
 
-  // ---------- BBox helper ----------
+  // --- BBox helper ---
   function geojsonBbox(geojson) {
     try {
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -130,142 +137,144 @@
     }
   }
 
-  // ---------- Basemap toggle (Satellite <-> Dark) ----------
-  let mode = "dark"; // "dark" | "sat"
-
-  function applyMode(newMode) {
-    mode = newMode;
-
-    // Switch raster tiles
-    map.getSource("base").setTiles(mode === "sat" ? ESRI_SAT.tiles : CARTO_DARK.tiles);
-
-    // (Optional) tweak raster appearance per mode
-    try {
-      if (mode === "sat") {
-        // Satellite: slightly darken to make neon tracks pop
-        map.setPaintProperty("base", "raster-saturation", 0.0);
-        map.setPaintProperty("base", "raster-contrast", 0.10);
-        map.setPaintProperty("base", "raster-brightness-min", 0.00);
-        map.setPaintProperty("base", "raster-brightness-max", 0.95);
-      } else {
-        // Dark: cleaner + a bit brighter
-        map.setPaintProperty("base", "raster-saturation", -0.2);
-        map.setPaintProperty("base", "raster-contrast", 0.15);
-        map.setPaintProperty("base", "raster-brightness-min", 0.05);
-        map.setPaintProperty("base", "raster-brightness-max", 0.95);
-      }
-    } catch {}
-
-    // Overlay logic:
-    // - Dark mode: your "brighten overlay" (white transparent)
-    // - Satellite mode: slight dark overlay (black transparent)
-    if (map.getLayer("mode-overlay")) map.removeLayer("mode-overlay");
-
-    map.addLayer({
-      id: "mode-overlay",
-      type: "background",
-      paint: {
-        "background-color": mode === "sat"
-          ? "rgba(0,0,0,0.10)"     // subtle darken on satellite
-          : "rgba(255,255,255,0.24)" // brighten on carto dark
-      }
-    }, "track-glow"); // insert below tracks when possible
-  }
-
-  function addToggleControl() {
-    const ctrl = document.createElement("div");
-    ctrl.className = "maplibregl-ctrl maplibregl-ctrl-group";
-    ctrl.style.display = "flex";
-    ctrl.style.flexDirection = "column";
-
+  // --- Basemap toggle (icon only) ---
+  let isDark = false;
+  function addBasemapToggle() {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.title = "Toggle basemap";
     btn.setAttribute("aria-label", "Toggle basemap");
-    btn.style.fontWeight = "700";
-    btn.style.padding = "8px 10px";
+    btn.title = "Toggle basemap";
+
+    // compact icon button
+    btn.style.width = "38px";
+    btn.style.height = "38px";
+    btn.style.borderRadius = "12px";
+    btn.style.border = "1px solid rgba(255,255,255,.18)";
+    btn.style.background = "rgba(15,18,20,.55)";
+    btn.style.backdropFilter = "blur(10px)";
     btn.style.cursor = "pointer";
-    btn.textContent = "Satellite";
+    btn.style.display = "grid";
+    btn.style.placeItems = "center";
+    btn.style.boxShadow = "0 12px 26px rgba(0,0,0,.35)";
+    btn.style.padding = "0";
 
-    btn.addEventListener("click", () => {
-      const next = (mode === "dark") ? "sat" : "dark";
-      applyMode(next);
-      btn.textContent = (mode === "dark") ? "Satellite" : "Dark";
-    });
+    const icon = document.createElement("div");
+    icon.style.fontSize = "18px";
+    icon.style.lineHeight = "1";
+    icon.textContent = "🛰️"; // satellite default
+    btn.appendChild(icon);
 
+    // Wrap into MapLibre control container
+    const ctrl = document.createElement("div");
+    ctrl.className = "maplibregl-ctrl maplibregl-ctrl-group";
+    ctrl.style.border = "0";
+    ctrl.style.background = "transparent";
+    ctrl.style.boxShadow = "none";
     ctrl.appendChild(btn);
 
-    // Custom control wrapper
-    const Custom = function () {};
-    Custom.prototype.onAdd = function () {
-      return ctrl;
-    };
-    Custom.prototype.onRemove = function () {
-      ctrl.parentNode && ctrl.parentNode.removeChild(ctrl);
-    };
+    // Place below navigation (top-right). MapLibre stacks controls.
+    map.addControl(
+      {
+        onAdd: function () { return ctrl; },
+        onRemove: function () { ctrl.parentNode && ctrl.parentNode.removeChild(ctrl); }
+      },
+      "top-right"
+    );
 
-    map.addControl(new Custom(), "top-right");
+    btn.addEventListener("click", () => {
+      isDark = !isDark;
+
+      map.setLayoutProperty("base-satellite", "visibility", isDark ? "none" : "visible");
+      map.setLayoutProperty("base-dark", "visibility", isDark ? "visible" : "none");
+
+      // icon changes: dark = lightbulb (hint “lights on”), sat = satellite
+      icon.textContent = isDark ? "💡" : "🛰️";
+
+      // Dark tiles: make slightly brighter + cleaner so tracks pop more
+      if (isDark) {
+        try {
+          map.setPaintProperty("base-dark", "raster-saturation", -0.15);
+          map.setPaintProperty("base-dark", "raster-contrast", 0.18);
+          map.setPaintProperty("base-dark", "raster-brightness-min", 0.06);
+          map.setPaintProperty("base-dark", "raster-brightness-max", 0.98);
+        } catch {}
+        // show overlay if present
+        if (map.getLayer("brighten-overlay")) {
+          map.setLayoutProperty("brighten-overlay", "visibility", "visible");
+        }
+      } else {
+        if (map.getLayer("brighten-overlay")) {
+          map.setLayoutProperty("brighten-overlay", "visibility", "none");
+        }
+      }
+    });
   }
 
-  // ---------- main refresh ----------
   async function refresh() {
     try {
       statusEl.textContent = "aktualisiere…";
-
       const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
 
+      // Create layers once
       if (!map.getSource("track")) {
         map.addSource("track", { type: "geojson", data: track });
 
-        // Alternating colors per activity (properties.i)
+        // brighten overlay for dark mode (hidden by default because sat is default)
+        map.addLayer({
+          id: "brighten-overlay",
+          type: "background",
+          layout: { visibility: "none" },
+          paint: { "background-color": "rgba(255,255,255,0.16)" }
+        });
+
+        // Alternate colors per activity (properties.i)
+        // High-contrast pair that works on both satellite & dark:
+        // Electric Cyan + Hot Pink
         const colorExpr = [
           "case",
-          ["==", ["%", ["to-number", ["coalesce", ["get", "i"], 0]], 2], 0],
-          "#46f3ff", // cyan
-          "#ff4bd8"  // magenta
+          ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#39e9ff",
+          "#ff3fe0"
         ];
 
-        // Glow layer
+        // 1) Glow underlay
         map.addLayer({
           id: "track-glow",
           type: "line",
           source: "track",
           paint: {
             "line-color": colorExpr,
-            "line-width": 12,
-            "line-opacity": 0.28,
-            "line-blur": 6
+            "line-width": 14,
+            "line-opacity": 0.30,
+            "line-blur": 7
           }
         });
 
-        // Main line
+        // 2) Main line
         map.addLayer({
           id: "track-main",
           type: "line",
           source: "track",
           paint: {
             "line-color": colorExpr,
-            "line-width": 5,
-            "line-opacity": 0.92
+            "line-width": 5.5,
+            "line-opacity": 0.95
           }
         });
 
-        // Highlight
+        // 3) White highlight spine
         map.addLayer({
           id: "track-highlight",
           type: "line",
           source: "track",
           paint: {
-            "line-color": "rgba(255,255,255,0.65)",
-            "line-width": 1.6,
-            "line-opacity": 0.55
+            "line-color": "rgba(255,255,255,0.75)",
+            "line-width": 1.8,
+            "line-opacity": 0.70
           }
         });
 
-        // Apply basemap mode & overlays after layers exist
-        applyMode(mode);
-        addToggleControl();
-
+        // Add toggle AFTER style+layers exist
+        addBasemapToggle();
       } else {
         map.getSource("track").setData(track);
       }
@@ -280,9 +289,9 @@
         marker.setLngLat(lngLat);
       }
 
-      metaEl.textContent =
-        `Last updated: ${fmtTs(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
+      metaEl.textContent = `Last updated: ${fmtTs(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
 
+      // Fit bounds
       const bbox = geojsonBbox(track);
       if (bbox) {
         map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, duration: 800 });
