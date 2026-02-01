@@ -2,25 +2,33 @@
   const statusEl = document.getElementById("status");
   const metaEl = document.getElementById("meta");
 
-  // URLs (funktioniert auch unter /demo-tracker/ auf GitHub Pages)
   const trackUrl = new URL("./data/track.geojson", window.location.href).toString();
   const latestUrl = new URL("./data/latest.json", window.location.href).toString();
 
-  // --- Basemap (Carto Dark) ---
+  // ---------- Basemap sources ----------
+  const CARTO_DARK = {
+    type: "raster",
+    tiles: ["https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"],
+    tileSize: 256,
+    attribution: "© OpenStreetMap contributors © CARTO"
+  };
+
+  const ESRI_SAT = {
+    type: "raster",
+    // NOTE: Esri tiles use {z}/{y}/{x}
+    tiles: ["https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+    tileSize: 256,
+    attribution: "© Esri, Maxar, Earthstar Geographics"
+  };
+
+  // Initial style: start in "dark"
   const style = {
     version: 8,
     sources: {
-      osm: {
-        type: "raster",
-        tiles: [
-          "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        ],
-        tileSize: 256,
-        attribution: "© OpenMapTiles © OpenStreetMap contributors"
-      }
+      base: CARTO_DARK
     },
     layers: [
-      { id: "osm", type: "raster", source: "osm" }
+      { id: "base", type: "raster", source: "base" }
     ]
   };
 
@@ -34,12 +42,8 @@
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
   function fmtTs(ts) {
-    try {
-      const d = new Date(ts);
-      return d.toLocaleString();
-    } catch {
-      return String(ts);
-    }
+    try { return new Date(ts).toLocaleString(); }
+    catch { return String(ts); }
   }
 
   async function loadJson(url) {
@@ -48,7 +52,7 @@
     return await res.json();
   }
 
-  // --- Pulsierender Marker (grün ↔ orange) ---
+  // ---------- Pulsing marker ----------
   let marker;
   function createPulsingMarkerEl() {
     const el = document.createElement("div");
@@ -57,9 +61,8 @@
     el.style.borderRadius = "999px";
     el.style.border = "2px solid rgba(232,238,245,.95)";
     el.style.boxShadow = "0 10px 26px rgba(0,0,0,.45)";
-    el.style.background = "#2bff88"; // Startfarbe
+    el.style.background = "#2bff88";
 
-    // Pulse-Ring via pseudo "inner div"
     const ring = document.createElement("div");
     ring.style.position = "absolute";
     ring.style.left = "-10px";
@@ -73,7 +76,6 @@
     el.style.position = "relative";
     el.appendChild(ring);
 
-    // Keyframes einmal global injecten
     if (!document.getElementById("pctPulseStyle")) {
       const s = document.createElement("style");
       s.id = "pctPulseStyle";
@@ -87,7 +89,6 @@
       document.head.appendChild(s);
     }
 
-    // Grün <-> Orange blinken
     let on = false;
     setInterval(() => {
       on = !on;
@@ -100,7 +101,7 @@
     return el;
   }
 
-  // --- BBox helper ---
+  // ---------- BBox helper ----------
   function geojsonBbox(geojson) {
     try {
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -129,47 +130,102 @@
     }
   }
 
+  // ---------- Basemap toggle (Satellite <-> Dark) ----------
+  let mode = "dark"; // "dark" | "sat"
+
+  function applyMode(newMode) {
+    mode = newMode;
+
+    // Switch raster tiles
+    map.getSource("base").setTiles(mode === "sat" ? ESRI_SAT.tiles : CARTO_DARK.tiles);
+
+    // (Optional) tweak raster appearance per mode
+    try {
+      if (mode === "sat") {
+        // Satellite: slightly darken to make neon tracks pop
+        map.setPaintProperty("base", "raster-saturation", 0.0);
+        map.setPaintProperty("base", "raster-contrast", 0.10);
+        map.setPaintProperty("base", "raster-brightness-min", 0.00);
+        map.setPaintProperty("base", "raster-brightness-max", 0.95);
+      } else {
+        // Dark: cleaner + a bit brighter
+        map.setPaintProperty("base", "raster-saturation", -0.2);
+        map.setPaintProperty("base", "raster-contrast", 0.15);
+        map.setPaintProperty("base", "raster-brightness-min", 0.05);
+        map.setPaintProperty("base", "raster-brightness-max", 0.95);
+      }
+    } catch {}
+
+    // Overlay logic:
+    // - Dark mode: your "brighten overlay" (white transparent)
+    // - Satellite mode: slight dark overlay (black transparent)
+    if (map.getLayer("mode-overlay")) map.removeLayer("mode-overlay");
+
+    map.addLayer({
+      id: "mode-overlay",
+      type: "background",
+      paint: {
+        "background-color": mode === "sat"
+          ? "rgba(0,0,0,0.10)"     // subtle darken on satellite
+          : "rgba(255,255,255,0.24)" // brighten on carto dark
+      }
+    }, "track-glow"); // insert below tracks when possible
+  }
+
+  function addToggleControl() {
+    const ctrl = document.createElement("div");
+    ctrl.className = "maplibregl-ctrl maplibregl-ctrl-group";
+    ctrl.style.display = "flex";
+    ctrl.style.flexDirection = "column";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Toggle basemap";
+    btn.setAttribute("aria-label", "Toggle basemap");
+    btn.style.fontWeight = "700";
+    btn.style.padding = "8px 10px";
+    btn.style.cursor = "pointer";
+    btn.textContent = "Satellite";
+
+    btn.addEventListener("click", () => {
+      const next = (mode === "dark") ? "sat" : "dark";
+      applyMode(next);
+      btn.textContent = (mode === "dark") ? "Satellite" : "Dark";
+    });
+
+    ctrl.appendChild(btn);
+
+    // Custom control wrapper
+    const Custom = function () {};
+    Custom.prototype.onAdd = function () {
+      return ctrl;
+    };
+    Custom.prototype.onRemove = function () {
+      ctrl.parentNode && ctrl.parentNode.removeChild(ctrl);
+    };
+
+    map.addControl(new Custom(), "top-right");
+  }
+
+  // ---------- main refresh ----------
   async function refresh() {
     try {
       statusEl.textContent = "aktualisiere…";
 
       const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
 
-      // Track Source/Layers einmalig anlegen
       if (!map.getSource("track")) {
         map.addSource("track", { type: "geojson", data: track });
 
-        // ✅ Basemap heller machen (Sweet spot: 0.16)
-        // NOTE: background-layer legt eine transparente weiße Fläche "oben drüber".
-        map.addLayer({
-          id: "brighten-overlay",
-          type: "background",
-          paint: {
-            "background-color": "rgba(255,255,255,0.24)"
-          }
-        });
-
-        // ✅ Raster etwas "cleaner": weniger Sättigung, mehr Kontrast
-        // (wirkt so, als wäre die Karte heller und klarer)
-        try {
-          map.setPaintProperty("osm", "raster-saturation", -0.2);
-          map.setPaintProperty("osm", "raster-contrast", 0.15);
-          map.setPaintProperty("osm", "raster-brightness-min", 0.05);
-          map.setPaintProperty("osm", "raster-brightness-max", 0.95);
-        } catch (e) {
-          // falls Browser/MapLibre-Version was nicht mag -> ignorieren
-        }
-
-        // --- Farben abwechselnd pro Aktivität (properties.i) ---
-        // Du setzt "i" in strava_sync.py. Jede Aktivität bekommt i=0..n.
-        // Farbpalette: Cyan + Magenta (knallt auf dark)
+        // Alternating colors per activity (properties.i)
         const colorExpr = [
           "case",
-          ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#46f3ff", // cyan
-          "#ff4bd8" // magenta
+          ["==", ["%", ["to-number", ["coalesce", ["get", "i"], 0]], 2], 0],
+          "#46f3ff", // cyan
+          "#ff4bd8"  // magenta
         ];
 
-        // 1) Glow "unter" der Linie (breit, weich)
+        // Glow layer
         map.addLayer({
           id: "track-glow",
           type: "line",
@@ -182,7 +238,7 @@
           }
         });
 
-        // 2) Hauptlinie (mittlere Breite)
+        // Main line
         map.addLayer({
           id: "track-main",
           type: "line",
@@ -194,7 +250,7 @@
           }
         });
 
-        // 3) Highlight (dünn, hell)
+        // Highlight
         map.addLayer({
           id: "track-highlight",
           type: "line",
@@ -205,6 +261,11 @@
             "line-opacity": 0.55
           }
         });
+
+        // Apply basemap mode & overlays after layers exist
+        applyMode(mode);
+        addToggleControl();
+
       } else {
         map.getSource("track").setData(track);
       }
@@ -222,7 +283,6 @@
       metaEl.textContent =
         `Last updated: ${fmtTs(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
 
-      // Fit Bounds
       const bbox = geojsonBbox(track);
       if (bbox) {
         map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, duration: 800 });
@@ -239,6 +299,6 @@
 
   map.on("load", () => {
     refresh();
-    setInterval(refresh, 60_000); // alle 60s
+    setInterval(refresh, 60_000);
   });
 })();
