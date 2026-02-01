@@ -52,21 +52,19 @@ def get_stream(access_token, activity_id):
 
 def main():
     access = refresh_access_token()
-    state = load_json(STATE_PATH, {"seen_ids": []})
-    seen = set(state.get("seen_ids", []))
-
-    track = load_json(TRACK_PATH, {"type":"FeatureCollection","features":[]})
 
     activities = get_recent_activities(access)
-    activities.sort(key=lambda a: a.get("start_date",""))
+    # Sort: älteste -> neueste (damit i stabil ist)
+    activities.sort(key=lambda a: a.get("start_date", ""))
 
-    added = 0
+    # Track jedes Mal neu bauen -> gelöschte Strava-Aktivitäten verschwinden automatisch
+    track = {"type": "FeatureCollection", "features": []}
+
     latest = None
+    kept_ids = []
 
-    for a in activities:
+    for idx, a in enumerate(activities):
         act_id = int(a["id"])
-        if act_id in seen:
-            continue
 
         streams = get_stream(access, act_id)
         latlng = streams.get("latlng", {}).get("data", [])
@@ -76,34 +74,33 @@ def main():
         coords = [[p[1], p[0]] for p in latlng]  # GeoJSON: [lon,lat]
 
         feature = {
-            "type":"Feature",
-            "properties":{
+            "type": "Feature",
+            "properties": {
+                "i": idx,  # <-- wichtig für abwechselnde Farben pro Aktivität
                 "strava_id": act_id,
-                "name": a.get("name",""),
-                "start_date": a.get("start_date",""),
+                "name": a.get("name", ""),
+                "start_date": a.get("start_date", ""),
                 "distance_m": a.get("distance", 0),
                 "moving_time_s": a.get("moving_time", 0),
-                "type": a.get("type",""),
+                "type": a.get("type", ""),
             },
-            "geometry":{"type":"LineString","coordinates": coords}
+            "geometry": {"type": "LineString", "coordinates": coords}
         }
-        track["features"].append(feature)
-        seen.add(act_id)
-        added += 1
 
+        track["features"].append(feature)
+        kept_ids.append(act_id)
+
+        # latest = letzte Koordinate der neuesten Aktivität mit GPS
         last = latlng[-1]
-        latest = {"lat": last[0], "lon": last[1], "ts": a.get("start_date","")}
+        latest = {"lat": last[0], "lon": last[1], "ts": a.get("start_date", "")}
 
     save_json(TRACK_PATH, track)
     if latest:
         save_json(LATEST_PATH, latest)
 
-    state["seen_ids"] = sorted(list(seen))
-    save_json(STATE_PATH, state)
+    # optional: STATE aktualisieren (nur noch "was aktuell existiert")
+    save_json(STATE_PATH, {"seen_ids": sorted(kept_ids)})
 
-    print(f"Added {added} new activities.")
+    print(f"Wrote {len(track['features'])} activities to {TRACK_PATH}.")
     if not latest:
         print("No GPS streams found (check Strava privacy/scope).")
-
-if __name__ == "__main__":
-    main()
