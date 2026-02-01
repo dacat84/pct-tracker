@@ -17,8 +17,14 @@ def post_form(url, data):
 
 def get_json(url, headers=None):
     req = urllib.request.Request(url, headers=headers or {})
-    with urllib.request.urlopen(req) as r:
-        return json.loads(r.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        print("HTTPError", e.code, "URL:", url)
+        print("Response:", body[:800])
+        raise
 
 def refresh_access_token():
     tok = post_form("https://www.strava.com/oauth/token", {
