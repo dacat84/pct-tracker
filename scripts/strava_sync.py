@@ -1,4 +1,5 @@
 import os, json, time, urllib.request, urllib.parse
+import urllib.error
 
 CLIENT_ID = os.environ["STRAVA_CLIENT_ID"]
 CLIENT_SECRET = os.environ["STRAVA_CLIENT_SECRET"]
