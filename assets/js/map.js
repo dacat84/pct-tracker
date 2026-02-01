@@ -82,17 +82,34 @@
       const lngLat = [latest.lon, latest.lat];
 
       if (!marker) {
-        const el = document.createElement("div");
-        el.style.width = "14px";
-        el.style.height = "14px";
-        el.style.borderRadius = "999px";
-        el.style.border = "2px solid rgba(232,238,245,.9)";
-        el.style.background = "rgba(126,231,135,.9)";
-        el.style.boxShadow = "0 8px 20px rgba(0,0,0,.35)";
-        marker = new maplibregl.Marker({ element: el }).setLngLat(lngLat).addTo(map);
-      } else {
-        marker.setLngLat(lngLat);
+  // inject CSS once
+  if (!document.getElementById("blink-marker-style")) {
+    const st = document.createElement("style");
+    st.id = "blink-marker-style";
+    st.textContent = `
+      @keyframes blinkGreenOrange {
+        0%, 49%   { background: rgba(52, 211, 153, .95); }  /* grün */
+        50%, 100% { background: rgba(245, 158, 11, .95); }  /* orange */
       }
+      .blink-marker {
+        width: 14px;
+        height: 14px;
+        border-radius: 999px;
+        border: 2px solid rgba(232,238,245,.9);
+        box-shadow: 0 8px 20px rgba(0,0,0,.35);
+        animation: blinkGreenOrange 1.2s infinite;
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  const el = document.createElement("div");
+  el.className = "blink-marker";
+  marker = new maplibregl.Marker({ element: el }).setLngLat(lngLat).addTo(map);
+} else {
+  marker.setLngLat(lngLat);
+}
+
 
       metaEl.textContent = `Last updated: ${fmtTs(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
 
