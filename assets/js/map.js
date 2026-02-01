@@ -145,7 +145,7 @@
           id: "brighten-overlay",
           type: "background",
           paint: {
-            "background-color": "rgba(255,255,255,0.16)"
+            "background-color": "rgba(255,255,255,0.24)"
           }
         });
 
