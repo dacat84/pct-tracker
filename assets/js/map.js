@@ -13,7 +13,7 @@
       osm: {
         type: "raster",
         tiles: [
-          "https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg"
+          "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         ],
         tileSize: 256,
         attribution: "© OpenMapTiles © OpenStreetMap contributors"
