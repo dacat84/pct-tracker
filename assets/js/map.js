@@ -12,13 +12,13 @@
     sources: {
       osm: {
         type: "raster",
-    tiles: [
-      "https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg"
-    ],
-    tileSize: 256,
-    attribution: "Map tiles by Stamen Design, under CC BY 3.0."
-  }
-},
+        tiles: [
+          "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        ],
+        tileSize: 256,
+        attribution: "© OpenMapTiles © OpenStreetMap contributors"
+      }
+    },
     layers: [
       { id: "osm", type: "raster", source: "osm" }
     ]
