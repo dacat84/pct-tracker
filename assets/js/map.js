@@ -12,7 +12,7 @@
       dark: {
         type: "raster",
         tiles: [
-          "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         ],
         tileSize: 256,
         attribution: "© OpenMapTiles © OpenStreetMap contributors"
