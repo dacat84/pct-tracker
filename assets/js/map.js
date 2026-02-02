@@ -6,11 +6,10 @@
   const latestUrl = new URL("./data/latest.json", window.location.href).toString();
 
   /* -------------------------------------------------------
-     BASEMAP DEFINITIONS (4 MODES)
+     BASEMAPS (4 MODES) — Satellite ist Standard
   ------------------------------------------------------- */
   const BASEMAPS = {
     satellite: {
-      id: "sat",
       icon: "🛰",
       source: {
         type: "raster",
@@ -22,19 +21,15 @@
       }
     },
     dark: {
-      id: "dark",
       icon: "🌙",
       source: {
         type: "raster",
-        tiles: [
-          "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        ],
+        tiles: ["https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"],
         tileSize: 256,
         attribution: "© CARTO © OpenStreetMap"
       }
     },
     osm: {
-      id: "osm",
       icon: "🗺",
       source: {
         type: "raster",
@@ -44,7 +39,6 @@
       }
     },
     topo: {
-      id: "topo",
       icon: "🏔",
       source: {
         type: "raster",
@@ -55,30 +49,15 @@
     }
   };
 
-  // Toggle-Reihenfolge
   const ORDER = ["satellite", "dark", "osm", "topo"];
-  let basemapIndex = 0; // 0 = satellite default
-
-  // 3D/Terrain Toggle State
-  let terrainEnabled = false;
-
-  // Live-Progress Animation Toggle State
-  let liveEnabled = true; // standard AN (kannst du auch false setzen)
-
-  // requestAnimationFrame handle
-  let rafId = null;
-  let animT = 0;
+  let basemapIndex = 0; // 0 = satellite
 
   function buildStyle(key) {
     const bm = BASEMAPS[key];
     return {
       version: 8,
-      sources: {
-        basemap: bm.source
-      },
-      layers: [
-        { id: "basemap", type: "raster", source: "basemap" }
-      ]
+      sources: { basemap: bm.source },
+      layers: [{ id: "basemap", type: "raster", source: "basemap" }]
     };
   }
 
@@ -86,18 +65,13 @@
     container: "map",
     style: buildStyle("satellite"),
     center: [9.17, 48.78],
-    zoom: 11,
-    pitch: 0,
-    bearing: 0
+    zoom: 11
   });
 
   map.addControl(new maplibregl.NavigationControl(), "top-right");
 
   /* -------------------------------------------------------
-     BUTTONS (ICON ONLY)
-     1) Basemap toggle (4 modes)
-     2) 3D terrain toggle
-     3) Live-progress toggle
+     ONE BUTTON: cycle basemaps (icon only)
   ------------------------------------------------------- */
   const mapEl = document.getElementById("map");
 
@@ -122,30 +96,16 @@
       align-items:center;
       justify-content:center;
       user-select:none;
+      z-index:2;
     `;
     mapEl.appendChild(b);
     return b;
   }
 
-  // Basemap toggle button
   const btnBasemap = makeBtn({
-    right: 52,
+    right: 12,
     icon: BASEMAPS.satellite.icon,
     title: "Basemap wechseln"
-  });
-
-  // 3D toggle button
-  const btn3D = makeBtn({
-    right: 92,
-    icon: "⛰️",
-    title: "3D Terrain an/aus"
-  });
-
-  // Live toggle button
-  const btnLive = makeBtn({
-    right: 132,
-    icon: "⚡",
-    title: "Live-Progress an/aus"
   });
 
   btnBasemap.onclick = () => {
@@ -153,39 +113,24 @@
     const key = ORDER[basemapIndex];
     btnBasemap.innerHTML = BASEMAPS[key].icon;
 
+    // IMPORTANT: setStyle wipes all sources/layers -> we re-inject on style.load
     map.setStyle(buildStyle(key));
-    map.once("styledata", () => {
-      // Style neu -> alles wieder rein
-      injectTerrainIfNeeded();
-      injectTrackLayersIfNeeded();
-      applyBasemapTweaks(key);
-      // Live-Animation neu setzen (falls aktiv)
-      if (liveEnabled) startLiveAnim();
-    });
-  };
-
-  btn3D.onclick = () => {
-    terrainEnabled = !terrainEnabled;
-    // kleine visuelle Rückmeldung
-    btn3D.style.background = terrainEnabled ? "#1b2a4a" : "#0f172a";
-    injectTerrainIfNeeded(true);
-  };
-
-  btnLive.onclick = () => {
-    liveEnabled = !liveEnabled;
-    btnLive.style.background = liveEnabled ? "#1b2a4a" : "#0f172a";
-    if (liveEnabled) startLiveAnim();
-    else stopLiveAnim();
   };
 
   /* -------------------------------------------------------
-     VISUAL TWEAKS PER BASEMAP
+     Cache latest fetched data so we can reapply it after setStyle()
+  ------------------------------------------------------- */
+  let lastTrack = null;        // full FeatureCollection
+  let lastLatestFeature = null; // newest activity feature
+  let lastLatestJson = null;   // latest.json for marker
+
+  /* -------------------------------------------------------
+     Basemap tweaks (to make them readable)
   ------------------------------------------------------- */
   function applyBasemapTweaks(key) {
     try {
-      // erst evtl. alte overlays entfernen (wenn Style neu gebaut wurde, sind sie eh weg)
       if (key === "dark") {
-        // Dark leicht heller machen
+        // brighten dark tiles a bit
         map.addLayer({
           id: "brighten-overlay",
           type: "background",
@@ -199,109 +144,50 @@
       }
 
       if (key === "topo") {
-        // Topo “heller”, ohne Overlay
+        // Topo war dir zu dunkel -> heller/kontrastiger, OHNE overlay
         map.setPaintProperty("basemap", "raster-saturation", 0.12);
-        map.setPaintProperty("basemap", "raster-contrast", 0.22);
-        map.setPaintProperty("basemap", "raster-brightness-min", 0.18);
+        map.setPaintProperty("basemap", "raster-contrast", 0.24);
+        map.setPaintProperty("basemap", "raster-brightness-min", 0.22);
         map.setPaintProperty("basemap", "raster-brightness-max", 1.0);
       }
 
       if (key === "satellite") {
-        // Sat minimal entsättigen (Tracks knallen mehr)
         map.setPaintProperty("basemap", "raster-saturation", -0.1);
         map.setPaintProperty("basemap", "raster-contrast", 0.12);
       }
 
       if (key === "osm") {
-        // OSM clean (optional)
-        map.setPaintProperty("basemap", "raster-contrast", 0.05);
+        map.setPaintProperty("basemap", "raster-contrast", 0.06);
       }
     } catch {}
   }
 
-  /* -------------------------------------------------------
-     TERRAIN / 3D
-     Uses MapLibre demo terrain tiles. If you want stable provider, tell me.
-  ------------------------------------------------------- */
-  function injectTerrainIfNeeded(forceUpdate = false) {
-    if (!terrainEnabled) {
-      // Terrain AUS
-      try { map.setTerrain(null); } catch {}
-      try { if (map.getLayer("sky")) map.removeLayer("sky"); } catch {}
-      // pitch zurück
-      map.easeTo({ pitch: 0, duration: 700 });
-      return;
-    }
-
-    // Terrain AN
-    try {
-      // Source nur anlegen, wenn fehlt oder wir bewusst neu initialisieren wollen
-      if (forceUpdate || !map.getSource("dem")) {
-        if (map.getSource("dem")) {
-          // bei style reload: source kann existieren / nicht existieren
-          // MapLibre erlaubt removeSource nur wenn nicht genutzt
-          // wir versuchen nicht zu löschen -> einfach neu setzen wenn geht
-        }
-
-        map.addSource("dem", {
-          type: "raster-dem",
-          url: "https://demotiles.maplibre.org/terrain-tiles/tiles.json",
-          tileSize: 256,
-          maxzoom: 14
-        });
-      }
-
-      map.setTerrain({ source: "dem", exaggeration: 1.35 });
-
-      // Sky Layer (nice bei 3D)
-      if (!map.getLayer("sky")) {
-        map.addLayer({
-          id: "sky",
-          type: "sky",
-          paint: {
-            "sky-type": "atmosphere",
-            "sky-atmosphere-sun": [0.0, 0.0],
-            "sky-atmosphere-sun-intensity": 8
-          }
-        });
-      }
-
-      // 3D-Pitch setzen
-      map.easeTo({ pitch: 60, duration: 900 });
-    } catch (e) {
-      console.warn("Terrain konnte nicht aktiviert werden:", e);
-    }
+  function currentBasemapKey() {
+    return ORDER[basemapIndex];
   }
 
   /* -------------------------------------------------------
-     DATA LOAD HELPERS
+     Track layers (all tracks) + live highlight (only newest)
   ------------------------------------------------------- */
-  async function loadJson(url) {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    return await res.json();
-  }
-
-  function fmtTs(ts) {
-    try { return new Date(ts).toLocaleString(); }
-    catch { return String(ts); }
-  }
-
-  /* -------------------------------------------------------
-     TRACK LAYERS + LIVE PROGRESS
-     NOTE: For line-progress animation we need lineMetrics:true in source.
-  ------------------------------------------------------- */
-  function injectTrackLayersIfNeeded() {
-    // Track source
+  function ensureTrackLayers() {
+    // Source for ALL tracks
     if (!map.getSource("track")) {
       map.addSource("track", {
         type: "geojson",
-        data: { type: "FeatureCollection", features: [] },
-        lineMetrics: true // ✅ needed for line-progress / line-gradient
+        data: { type: "FeatureCollection", features: [] }
       });
     }
 
-    // Color: alternating per activity "i"
+    // Source for ONLY newest track (needs lineMetrics for line-progress)
+    if (!map.getSource("latestTrack")) {
+      map.addSource("latestTrack", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+        lineMetrics: true
+      });
+    }
+
+    // Alternating colors by properties.i
     const colorExpr = [
       "case",
       ["==", ["%", ["to-number", ["get", "i"]], 2], 0],
@@ -309,7 +195,7 @@
       "#ff4bd8"   // magenta
     ];
 
-    // Glow underlay
+    // ALL tracks: glow underlay
     if (!map.getLayer("track-glow")) {
       map.addLayer({
         id: "track-glow",
@@ -318,13 +204,13 @@
         paint: {
           "line-color": colorExpr,
           "line-width": 12,
-          "line-opacity": 0.32,
+          "line-opacity": 0.30,
           "line-blur": 7
         }
       });
     }
 
-    // Main line
+    // ALL tracks: main line
     if (!map.getLayer("track-main")) {
       map.addLayer({
         id: "track-main",
@@ -338,16 +224,15 @@
       });
     }
 
-    // Live progress highlight layer (animated via line-gradient)
-    if (!map.getLayer("track-live")) {
+    // Newest track: animated live progress highlight
+    if (!map.getLayer("latest-live")) {
       map.addLayer({
-        id: "track-live",
+        id: "latest-live",
         type: "line",
-        source: "track",
+        source: "latestTrack",
         paint: {
-          "line-width": 7,
-          "line-opacity": 0.95,
-          // placeholder; will be overwritten in animation loop
+          "line-width": 8,
+          "line-opacity": 0.98,
           "line-gradient": [
             "interpolate",
             ["linear"],
@@ -360,34 +245,37 @@
     }
   }
 
+  /* -------------------------------------------------------
+     Live animation (only newest track)
+  ------------------------------------------------------- */
+  let rafId = null;
+  let animT = 0;
+
   function setLiveGradient(t) {
-    // t in [0..1) : moving head
-    const head = t;
-    const tail = Math.max(0, head - 0.10); // length of bright segment
+    const head = t;                 // moving bright point
+    const tail = Math.max(0, head - 0.10);
     const fade = Math.max(0, head - 0.18);
 
-    // Neon white -> cyan-ish head
     const grad = [
       "interpolate",
       ["linear"],
       ["line-progress"],
       0, "rgba(255,255,255,0)",
       fade, "rgba(255,255,255,0)",
-      tail, "rgba(255,255,255,0.12)",
-      head, "rgba(255,255,255,0.95)",
+      tail, "rgba(255,255,255,0.15)",
+      head, "rgba(255,255,255,0.98)",
       Math.min(1, head + 0.01), "rgba(255,255,255,0)",
       1, "rgba(255,255,255,0)"
     ];
 
     try {
-      map.setPaintProperty("track-live", "line-gradient", grad);
+      map.setPaintProperty("latest-live", "line-gradient", grad);
     } catch {}
   }
 
-  function startLiveAnim() {
-    stopLiveAnim();
+  function startAnim() {
+    if (rafId) return;
     const loop = () => {
-      // speed
       animT = (animT + 0.004) % 1;
       setLiveGradient(animT);
       rafId = requestAnimationFrame(loop);
@@ -395,17 +283,16 @@
     rafId = requestAnimationFrame(loop);
   }
 
-  function stopLiveAnim() {
+  function stopAnim() {
     if (rafId) cancelAnimationFrame(rafId);
     rafId = null;
-    // Live layer "ausblenden"
-    try { map.setPaintProperty("track-live", "line-opacity", 0); } catch {}
   }
 
   /* -------------------------------------------------------
-     MARKER (blinks green <-> orange)
+     Marker (blink green <-> orange)
   ------------------------------------------------------- */
   let marker;
+
   function createBlinkMarkerEl() {
     const el = document.createElement("div");
     el.style.width = "16px";
@@ -454,23 +341,53 @@
   }
 
   /* -------------------------------------------------------
-     REFRESH
+     Helpers
   ------------------------------------------------------- */
-  async function refresh() {
+  async function loadJson(url) {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  }
+
+  function fmtTs(ts) {
+    try { return new Date(ts).toLocaleString(); }
+    catch { return String(ts); }
+  }
+
+  function pickNewestFeature(track) {
+    const feats = (track && track.features) ? track.features : [];
+    if (!feats.length) return null;
+
+    // pick max start_date (string ISO)
+    let newest = feats[0];
+    for (const f of feats) {
+      const a = (f.properties && f.properties.start_date) ? f.properties.start_date : "";
+      const b = (newest.properties && newest.properties.start_date) ? newest.properties.start_date : "";
+      if (a > b) newest = f;
+    }
+    return newest;
+  }
+
+  function setSourcesDataFromCache() {
+    // After setStyle: sources are new/empty -> reapply cached data
     try {
-      statusEl.textContent = "aktualisiere…";
+      if (map.getSource("track") && lastTrack) {
+        map.getSource("track").setData(lastTrack);
+      }
+      if (map.getSource("latestTrack")) {
+        const fc = {
+          type: "FeatureCollection",
+          features: lastLatestFeature ? [lastLatestFeature] : []
+        };
+        map.getSource("latestTrack").setData(fc);
+      }
+    } catch {}
+  }
 
-      const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
-
-      // ensure layers exist
-      injectTrackLayersIfNeeded();
-
-      // update data
-      const src = map.getSource("track");
-      if (src) src.setData(track);
-
-      // marker latest
-      const lngLat = [latest.lon, latest.lat];
+  function ensureMarkerFromCache() {
+    try {
+      if (!lastLatestJson) return;
+      const lngLat = [lastLatestJson.lon, lastLatestJson.lat];
       if (!marker) {
         marker = new maplibregl.Marker({ element: createBlinkMarkerEl() })
           .setLngLat(lngLat)
@@ -478,19 +395,44 @@
       } else {
         marker.setLngLat(lngLat);
       }
+    } catch {}
+  }
 
-      metaEl.textContent = `Last updated: ${fmtTs(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
+  /* -------------------------------------------------------
+     Core refresh: fetch data & update caches & sources
+  ------------------------------------------------------- */
+  async function refresh() {
+    try {
+      statusEl.textContent = "aktualisiere…";
+
+      const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
+
+      lastTrack = track;
+      lastLatestJson = latest;
+      lastLatestFeature = pickNewestFeature(track);
+
+      // If style just changed, layers might not exist yet -> ensure
+      ensureTrackLayers();
+
+      // Update sources
+      if (map.getSource("track")) map.getSource("track").setData(track);
+
+      const latestFc = {
+        type: "FeatureCollection",
+        features: lastLatestFeature ? [lastLatestFeature] : []
+      };
+      if (map.getSource("latestTrack")) map.getSource("latestTrack").setData(latestFc);
+
+      // Marker
+      ensureMarkerFromCache();
+
+      metaEl.textContent =
+        `Last updated: ${fmtTs(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
 
       statusEl.textContent = "online";
 
-      // start anim if enabled
-      if (liveEnabled) {
-        // make sure live visible
-        try { map.setPaintProperty("track-live", "line-opacity", 0.95); } catch {}
-        if (!rafId) startLiveAnim();
-      } else {
-        stopLiveAnim();
-      }
+      // Start animation (always on)
+      startAnim();
     } catch (e) {
       statusEl.textContent = "Fehler";
       metaEl.textContent = "Daten fehlen? (data/track.geojson, data/latest.json)";
@@ -498,14 +440,29 @@
     }
   }
 
+  /* -------------------------------------------------------
+     KEY FIX: after any style change, re-inject everything + reapply cached data
+  ------------------------------------------------------- */
+  map.on("style.load", () => {
+    // re-add layers/sources
+    ensureTrackLayers();
+
+    // apply tweaks based on current basemap
+    applyBasemapTweaks(currentBasemapKey());
+
+    // reapply cached track data so lines don't disappear
+    setSourcesDataFromCache();
+
+    // ensure marker stays
+    ensureMarkerFromCache();
+
+    // keep animation running
+    startAnim();
+  });
+
   map.on("load", () => {
-    // initial setup
-    injectTrackLayersIfNeeded();
     applyBasemapTweaks("satellite");
-
-    // 3D starts OFF by default (toggle it on)
-    injectTerrainIfNeeded();
-
+    ensureTrackLayers();
     refresh();
     setInterval(refresh, 60_000);
   });
