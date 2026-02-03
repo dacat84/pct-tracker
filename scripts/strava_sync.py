@@ -92,6 +92,7 @@ def main():
                 "start_date": a.get("start_date", ""),
                 "distance_m": a.get("distance", 0),
                 "moving_time_s": a.get("moving_time", 0),
+                "elev_gain_m": a.get("total_elevation_gain", 0),
                 "type": a.get("type", ""),
                 # Patch: Höhenmeter in ein eigenes Feld schreiben (wird im Popup genutzt)
                 "elevation_gain_m": elev_gain,
