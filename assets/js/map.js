@@ -2,13 +2,10 @@
   const statusEl = document.getElementById("status");
   const metaEl = document.getElementById("meta");
 
-  // URLs (funktioniert auch unter /demo-tracker/ auf GitHub Pages)
   const trackUrl = new URL("./data/track.geojson", window.location.href).toString();
   const latestUrl = new URL("./data/latest.json", window.location.href).toString();
 
   // --- Basemap (Satellite Default) ---
-  // Hinweis: Du nutzt bereits Esri/World Imagery (so wie im Screenshot).
-  // Wenn du eine andere Satellite-Quelle nutzt, tausche NUR diese URL.
   const style = {
     version: 8,
     sources: {
@@ -21,9 +18,7 @@
         attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
       }
     },
-    layers: [
-      { id: "basemap", type: "raster", source: "basemap" }
-    ]
+    layers: [{ id: "basemap", type: "raster", source: "basemap" }]
   };
 
   const map = new maplibregl.Map({
@@ -55,12 +50,10 @@
     if (typeof m !== "number") return "—";
     return (m / 1000).toFixed(m >= 10000 ? 0 : 1) + " km";
   }
-
   function formatMeters(m) {
     if (typeof m !== "number") return "—";
     return Math.round(m) + " hm";
   }
-
   function formatDuration(sec) {
     if (typeof sec !== "number") return "—";
     sec = Math.max(0, Math.round(sec));
@@ -69,6 +62,14 @@
     const s = sec % 60;
     if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
     return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
+  function getElevGain(p) {
+    // kompatibel mit mehreren Feldnamen
+    const a = (p && typeof p.elev_gain_m === "number") ? p.elev_gain_m : null;
+    const b = (p && typeof p.total_elevation_gain_m === "number") ? p.total_elevation_gain_m : null;
+    const c = (p && typeof p.total_elevation_gain === "number") ? p.total_elevation_gain : null; // falls du direkt Strava Feldnamen speicherst
+    return (a ?? b ?? c ?? null);
   }
 
   function sumStats(track) {
@@ -81,34 +82,21 @@
       if (typeof p.distance_m === "number") dist += p.distance_m;
       if (typeof p.moving_time_s === "number") time += p.moving_time_s;
 
-      // je nach Script: elev_gain_m oder total_elevation_gain_m
-      const e = (typeof p.elev_gain_m === "number")
-        ? p.elev_gain_m
-        : (typeof p.total_elevation_gain_m === "number" ? p.total_elevation_gain_m : null);
-
-      if (typeof e === "number") {
-        elev += e;
+      const eg = getElevGain(p);
+      if (typeof eg === "number") {
+        elev += eg;
         elevHasData = true;
       }
     }
 
-    return {
-      totalDistM: dist,
-      totalTimeS: time,
-      totalElevM: elevHasData ? elev : null
-    };
+    return { totalDistM: dist, totalTimeS: time, totalElevM: elevHasData ? elev : null };
   }
 
-  // Findet das UL in der "Features"-Card und schreibt Stats rein
   function findFeaturesListEl() {
-    // 1) explizite ID (falls du irgendwann eine setzt)
     const byId = document.getElementById("features-list");
     if (byId) return byId;
 
-    // 2) typisches Layout: Card enthält Überschrift "Features" + ul
     const uls = Array.from(document.querySelectorAll("ul"));
-    // Nimm das UL, das am ehesten in der Features-Card liegt: eins der ersten unterhalb der Map.
-    // Fallback: erstes UL im unteren Bereich.
     for (const ul of uls) {
       const txt = (ul.parentElement?.textContent || "").toLowerCase();
       if (txt.includes("features") && ul.querySelectorAll("li").length >= 1) return ul;
@@ -122,8 +110,6 @@
 
     const stats = sumStats(track);
 
-    // Wir schreiben die Stats als erste 3 LI in die Liste (und entfernen alte Stats, falls vorhanden)
-    // Markierung über data-role.
     ul.querySelectorAll('li[data-role="mini-stats"]').forEach(li => li.remove());
 
     const li1 = document.createElement("li");
@@ -138,22 +124,57 @@
     li3.setAttribute("data-role", "mini-stats");
     li3.textContent = `Höhenmeter: ${stats.totalElevM == null ? "—" : formatMeters(stats.totalElevM)}`;
 
-    // oben einfügen
     ul.insertBefore(li3, ul.firstChild);
     ul.insertBefore(li2, ul.firstChild);
     ul.insertBefore(li1, ul.firstChild);
   }
 
-  // --- Marker (wie bisher) ---
+  // --- Pulsierender Marker (grün ↔ orange) WIE FRÜHER ---
   let marker;
-  function createMarkerEl() {
+  function createPulsingMarkerEl() {
     const el = document.createElement("div");
-    el.style.width = "14px";
-    el.style.height = "14px";
+    el.style.width = "16px";
+    el.style.height = "16px";
     el.style.borderRadius = "999px";
     el.style.border = "2px solid rgba(232,238,245,.95)";
     el.style.boxShadow = "0 10px 26px rgba(0,0,0,.45)";
     el.style.background = "#2bff88";
+    el.style.position = "relative";
+
+    const ring = document.createElement("div");
+    ring.style.position = "absolute";
+    ring.style.left = "-10px";
+    ring.style.top = "-10px";
+    ring.style.width = "36px";
+    ring.style.height = "36px";
+    ring.style.borderRadius = "999px";
+    ring.style.border = "2px solid rgba(43,255,136,.55)";
+    ring.style.boxShadow = "0 0 22px rgba(43,255,136,.40)";
+    ring.style.animation = "pctPulse 1.6s ease-out infinite";
+    el.appendChild(ring);
+
+    if (!document.getElementById("pctPulseStyle")) {
+      const s = document.createElement("style");
+      s.id = "pctPulseStyle";
+      s.textContent = `
+        @keyframes pctPulse {
+          0%   { transform: scale(0.55); opacity: 0.85; }
+          70%  { transform: scale(1.15); opacity: 0.20; }
+          100% { transform: scale(1.25); opacity: 0.00; }
+        }
+      `;
+      document.head.appendChild(s);
+    }
+
+    let on = false;
+    setInterval(() => {
+      on = !on;
+      const c = on ? "#ff7a18" : "#2bff88";
+      el.style.background = c;
+      ring.style.borderColor = on ? "rgba(255,122,24,.55)" : "rgba(43,255,136,.55)";
+      ring.style.boxShadow = on ? "0 0 22px rgba(255,122,24,.40)" : "0 0 22px rgba(43,255,136,.40)";
+    }, 700);
+
     return el;
   }
 
@@ -184,7 +205,7 @@
     }
   }
 
-  // --- Hover state ---
+  // --- Hover state + Popup ---
   let hoveredId = null;
   let popup = null;
 
@@ -227,11 +248,8 @@
     const date = p.start_date ? fmtTs(p.start_date) : "—";
     const dist = (typeof p.distance_m === "number") ? formatKm(p.distance_m) : "—";
     const time = (typeof p.moving_time_s === "number") ? formatDuration(p.moving_time_s) : "—";
-
-    const elevVal = (typeof p.elev_gain_m === "number")
-      ? p.elev_gain_m
-      : (typeof p.total_elevation_gain_m === "number" ? p.total_elevation_gain_m : null);
-    const elev = (typeof elevVal === "number") ? formatMeters(elevVal) : "—";
+    const eg = getElevGain(p);
+    const elev = (typeof eg === "number") ? formatMeters(eg) : "—";
 
     return `
       <div class="pct-title">${name}${typ ? ` · ${typ}` : ""}</div>
@@ -248,28 +266,28 @@
 
       const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
 
-      // Mini-Stats in Features-Box schreiben
+      // Debug: zeigt dir in der Console, ob Höhenfelder da sind
+      try {
+        const p0 = track?.features?.[0]?.properties || {};
+        console.log("DEBUG elevation keys on first feature:", Object.keys(p0).filter(k => k.toLowerCase().includes("elev")));
+      } catch {}
+
       upsertMiniStats(track);
 
-      // Track Source/Layers einmalig anlegen
       if (!map.getSource("track")) {
-        // generateId ist wichtig für Hover-Highlight (feature-state braucht IDs)
         map.addSource("track", { type: "geojson", data: track, generateId: true });
 
-        // Farbpalette: knallt auch auf Satellite
         const colorExpr = [
           "case",
-          ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#46f3ff", // cyan
-          "#ff4bd8" // magenta
+          ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#46f3ff",
+          "#ff4bd8"
         ];
 
-        // Hover-Expressions
         const hoverWGlow = ["case", ["boolean", ["feature-state", "hover"], false], 18, 12];
         const hoverOGlow = ["case", ["boolean", ["feature-state", "hover"], false], 0.45, 0.30];
         const hoverWMain = ["case", ["boolean", ["feature-state", "hover"], false], 7, 5];
         const hoverOMain = ["case", ["boolean", ["feature-state", "hover"], false], 1.00, 0.92];
 
-        // 1) Glow
         map.addLayer({
           id: "track-glow",
           type: "line",
@@ -282,7 +300,6 @@
           }
         });
 
-        // 2) Hauptlinie (Hover = heller/dicker)
         map.addLayer({
           id: "track-main",
           type: "line",
@@ -294,7 +311,6 @@
           }
         });
 
-        // 3) Highlight
         map.addLayer({
           id: "track-highlight",
           type: "line",
@@ -306,12 +322,10 @@
           }
         });
 
-        // ----- Hover Handling -----
         map.on("mousemove", "track-main", (e) => {
           if (!e.features || !e.features.length) return;
           const f = e.features[0];
           const id = f.id;
-
           map.getCanvas().style.cursor = "pointer";
 
           if (hoveredId !== null && hoveredId !== id) {
@@ -329,7 +343,6 @@
           hoveredId = null;
         });
 
-        // ----- Click Popup -----
         ensurePopupStyleOnce();
         map.on("click", "track-main", (e) => {
           if (!e.features || !e.features.length) return;
@@ -337,7 +350,6 @@
           const p = f.properties || {};
 
           removePopup();
-
           popup = new maplibregl.Popup({
             closeButton: true,
             closeOnClick: true,
@@ -352,10 +364,10 @@
         map.getSource("track").setData(track);
       }
 
-      // Marker / latest
       const lngLat = [latest.lon, latest.lat];
+
       if (!marker) {
-        marker = new maplibregl.Marker({ element: createMarkerEl() })
+        marker = new maplibregl.Marker({ element: createPulsingMarkerEl() })
           .setLngLat(lngLat)
           .addTo(map);
       } else {
@@ -365,7 +377,6 @@
       metaEl.textContent =
         `Last updated: ${fmtTs(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
 
-      // Fit bounds
       const bbox = geojsonBbox(track);
       if (bbox) {
         map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, duration: 800 });
