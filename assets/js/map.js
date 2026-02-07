@@ -1,7 +1,11 @@
 (async function () {
   const statusEl = document.getElementById("status");
-  const metaEl = document.getElementById("meta");
   const statusExtraEl = document.getElementById("status-extra");
+
+  // NEW status fields (from map.md block)
+  const lastUpdatedEl = document.getElementById("lastUpdated");
+  const latlonEl = document.getElementById("latlon");
+  const latestSummaryEl = document.getElementById("latestSummary");
 
   const statsListEl = document.getElementById("statsList");
   const insightsListEl = document.getElementById("insightsList");
@@ -29,7 +33,6 @@
     try { return new Date(ts).toLocaleString(); } catch { return String(ts); }
   }
 
-  // 1 Day 10 h 29 min
   function fmtDuration(totalSeconds) {
     if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return "—";
     const sec = Math.floor(totalSeconds);
@@ -189,7 +192,6 @@
         font-weight: 700;
       }
 
-      /* INSIGHTS */
       .pct-sections{ display: grid; gap: 10px; }
       .pct-section{
         background: rgba(255,255,255,.04);
@@ -277,6 +279,17 @@
         display: grid;
         place-items: center;
         font-size: 18px;
+      }
+
+      /* NEW: Status card look like the other sections */
+      .pct-status-card .pct-status-grid{
+        margin-top: 10px;
+        background: rgba(255,255,255,.04);
+        border: 1px solid rgba(255,255,255,.10);
+        border-radius: 16px;
+        padding: 10px 12px;
+        display: grid;
+        gap: 6px;
       }
     `;
     document.head.appendChild(s);
@@ -750,32 +763,33 @@
       setStatsUI(s);
       setInsightsUI(s);
 
+      // status fields (top card)
       statusEl.textContent = "online";
+      if (lastUpdatedEl) lastUpdatedEl.textContent = fmtDate(latest.ts);
+      if (latlonEl) latlonEl.textContent = `${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
 
-      // status extra line (latest activity summary)
       const latestFeat = findLatestFeature(track);
-      let lastActLine = "";
-      if (latestFeat?.properties) {
-        const p = latestFeat.properties;
-        const type = activityTypeLabel(p);
-
-        const distM = Number(p.distance_m);
-        const km = Number.isFinite(distM) ? toKm(distM) : null;
-        const mi = Number.isFinite(distM) ? toMi(distM) : null;
-
-        const tSec = Number(p.moving_time_s);
-        const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
-
-        const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
-        lastActLine = `<br>${type}: ${distStr} · ${time}`;
+      if (latestSummaryEl) {
+        if (latestFeat?.properties) {
+          const p = latestFeat.properties;
+          const type = activityTypeLabel(p);
+          const distM = Number(p.distance_m);
+          const km = Number.isFinite(distM) ? toKm(distM) : null;
+          const mi = Number.isFinite(distM) ? toMi(distM) : null;
+          const tSec = Number(p.moving_time_s);
+          const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
+          const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
+          latestSummaryEl.textContent = `${type}: ${distStr} · ${time}`;
+        } else {
+          latestSummaryEl.textContent = "—";
+        }
       }
 
-      metaEl.innerHTML =
-        `Last updated: ${fmtDate(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}${lastActLine}`;
-
-      statusExtraEl.textContent = latestFeat
-        ? "Tap a track to see details. Hover highlights on desktop."
-        : "Waiting for activities…";
+      if (statusExtraEl) {
+        statusExtraEl.textContent = latestFeat
+          ? "Tap a track to see details. Hover highlights on desktop."
+          : "Waiting for activities…";
+      }
 
       if (!didFitOnce) {
         const bbox = geojsonBbox(track);
@@ -785,19 +799,14 @@
       }
 
       if (latestFeat?.geometry?.type === "LineString") startLiveAnim(latestFeat.geometry.coordinates);
-      else {
-        if (map.getSource("latest-progress")) {
-          map.getSource("latest-progress").setData({
-            type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] }
-          });
-        }
-        stopLiveAnim();
-      }
+      else stopLiveAnim();
 
     } catch (e) {
       statusEl.textContent = "error";
-      metaEl.textContent = "Missing data/track.geojson or data/latest.json";
-      if (statusExtraEl) statusExtraEl.textContent = "";
+      if (lastUpdatedEl) lastUpdatedEl.textContent = "—";
+      if (latlonEl) latlonEl.textContent = "—";
+      if (latestSummaryEl) latestSummaryEl.textContent = "—";
+      if (statusExtraEl) statusExtraEl.textContent = "Missing data/track.geojson or data/latest.json";
     }
   }
 
