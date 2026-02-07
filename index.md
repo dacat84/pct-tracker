@@ -13,7 +13,6 @@ body_extra: |
   <div class="card pct-status-card">
     <div class="card-title" style="margin:0;">Status</div>
 
-    <!-- compact status grid (no "online") -->
     <div class="pct-status-grid">
       <div class="pct-row"><span>Last updated</span><b id="lastUpdated">—</b></div>
       <div class="pct-row"><span>Lat/Lon</span><b id="latlon">—</b></div>
@@ -29,11 +28,13 @@ body_extra: |
 <div class="grid">
   <div class="card">
     <div class="card-title">Statistics</div>
-    <ul id="statsList" class="list"></ul>
+    <!-- IMPORTANT: div instead of ul -->
+    <div id="statsBox"></div>
   </div>
 
   <div class="card">
     <div class="card-title">Insights</div>
-    <ul id="insightsList" class="list"></ul>
+    <!-- IMPORTANT: div instead of ul -->
+    <div id="insightsBox"></div>
   </div>
 </div>
