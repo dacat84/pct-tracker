@@ -119,14 +119,10 @@
     const s = document.createElement("style");
     s.id = "pctUICSS";
     s.textContent = `
-      /* ---------- STATISTICS (clean / apple-ish) ---------- */
       #statsList, #insightsList { list-style: none; padding-left: 0; margin: 0; }
       #statsList li, #insightsList li { margin: 0; }
 
-      .pct-stats-wrap{
-        display: grid;
-        gap: 10px;
-      }
+      .pct-stats-wrap{ display: grid; gap: 10px; }
 
       .pct-stat-hero{
         background: rgba(255,255,255,.06);
@@ -193,11 +189,8 @@
         font-weight: 700;
       }
 
-      /* ---------- INSIGHTS (sections, less wall of text) ---------- */
-      .pct-sections{
-        display: grid;
-        gap: 10px;
-      }
+      /* INSIGHTS */
+      .pct-sections{ display: grid; gap: 10px; }
       .pct-section{
         background: rgba(255,255,255,.04);
         border: 1px solid rgba(255,255,255,.10);
@@ -210,14 +203,8 @@
         letter-spacing: .2px;
         color: rgba(245,248,255,.90);
         margin-bottom: 8px;
-        display:flex;
-        align-items:center;
-        gap:8px;
       }
-      .pct-rows{
-        display: grid;
-        gap: 6px;
-      }
+      .pct-rows{ display: grid; gap: 6px; }
       .pct-row{
         display: grid;
         grid-template-columns: 1fr auto;
@@ -230,7 +217,22 @@
         font-weight: 800;
       }
 
-      /* ---------- Popup ---------- */
+      /* progress bar */
+      .pct-progressbar{
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.10);
+        border: 1px solid rgba(255,255,255,.12);
+        overflow: hidden;
+        margin-top: 8px;
+      }
+      .pct-progressfill{
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, rgba(70,243,255,.95), rgba(255,75,216,.95));
+      }
+
+      /* Popup */
       .maplibregl-popup-content{
         background: rgba(15,18,24,.88) !important;
         color: rgba(245,248,255,.92) !important;
@@ -262,7 +264,7 @@
       .pct-popup-grid .k{ color: rgba(245,248,255,.70); }
       .pct-popup-grid .v{ color: rgba(245,248,255,.92); font-weight: 800; }
 
-      /* ---------- Toggle button ---------- */
+      /* Toggle button */
       .pct-toggle-btn{
         width: 36px; height: 36px;
         border-radius: 10px;
@@ -280,7 +282,7 @@
     document.head.appendChild(s);
   }
 
-  // ---------- basemap style (2 raster layers; toggle via visibility) ----------
+  // ---------- basemap style ----------
   const style = {
     version: 8,
     sources: {
@@ -331,8 +333,6 @@
 
       const setIcon = () => {
         const satVis = map.getLayoutProperty("sat-layer", "visibility") !== "none";
-        // SAT visible => show 🗺️ (means switch to map)
-        // OSM visible => show 🛰️ (means switch to satellite)
         btn.textContent = satVis ? "🗺️" : "🛰️";
       };
 
@@ -528,8 +528,6 @@
 
     const avgDistPerActMi = feats.length ? (totalMi / feats.length) : null;
     const avgDistPerActKm = feats.length ? (totalKm / feats.length) : null;
-    const avgElevPerActM = feats.length && elevCount ? (elevM / feats.length) : null;
-    const avgElevPerActFt = feats.length && elevCount ? (toFt(elevM) / feats.length) : null;
 
     return {
       featsCount: feats.length,
@@ -538,7 +536,6 @@
       firstTs, lastTs, activeDays, restDays,
       pctCompleted, remainingMi, remainingKm,
       avgDistPerActMi, avgDistPerActKm,
-      avgElevPerActM, avgElevPerActFt,
       avgMph, avgKmh
     };
   }
@@ -565,25 +562,25 @@
 
         <div class="pct-chip-grid">
           <div class="pct-chip">
-            <div class="label">⛰️ Total Elevation</div>
+            <div class="label">Total Elevation</div>
             <div class="value">${elevMain}</div>
             <div class="sub">${elevSub}</div>
           </div>
 
           <div class="pct-chip">
-            <div class="label">⏱️ Total Time</div>
+            <div class="label">Total Time</div>
             <div class="value">${fmtDuration(s.timeS)}</div>
             <div class="sub">${s.featsCount ? `${s.featsCount} activities` : ""}</div>
           </div>
 
           <div class="pct-chip">
-            <div class="label">📏 Avg Distance / Activity</div>
+            <div class="label">Avg Distance / Activity</div>
             <div class="value">${avgDistMain}</div>
             <div class="sub">${avgDistSub}</div>
           </div>
 
           <div class="pct-chip">
-            <div class="label">🏃 Avg Speed</div>
+            <div class="label">Avg Speed</div>
             <div class="value">${avgSpeedMain}</div>
             <div class="sub">${avgSpeedSub}</div>
           </div>
@@ -593,46 +590,33 @@
   }
 
   function setInsightsUI(s) {
-    const pctLine = `${fmtNumber(s.totalKm, 1)} km / ${fmtNumber(s.totalMi, 1)} mi of ${fmtInt(PCT_TOTAL_KM)} km / ${fmtInt(PCT_TOTAL_MI)} mi (${fmtNumber(s.pctCompleted, 1)}%)`;
+    const pctLine =
+      `${fmtNumber(s.totalKm, 1)} km / ${fmtNumber(s.totalMi, 1)} mi of ` +
+      `${fmtInt(PCT_TOTAL_KM)} km / ${fmtInt(PCT_TOTAL_MI)} mi (${fmtNumber(s.pctCompleted, 1)}%)`;
+
     const remainingLine = `${fmtNumber(s.remainingKm, 1)} km / ${fmtNumber(s.remainingMi, 1)} mi`;
-
-    const avgDistLine = s.featsCount
-      ? `${fmtNumber(s.avgDistPerActKm, 1)} km / ${fmtNumber(s.avgDistPerActMi, 1)} mi`
-      : "—";
-
-    const avgElevLine = s.elevCount
-      ? `${fmtInt(s.avgElevPerActM)} m / ${fmtInt(s.avgElevPerActFt)} ft`
-      : "—";
-
-    const avgSpeedLine = s.avgKmh
-      ? `${fmtNumber(s.avgKmh, 1)} km/h / ${fmtNumber(s.avgMph, 1)} mi/h`
-      : "—";
 
     const firstLine = s.firstTs ? new Date(s.firstTs).toLocaleDateString() : "—";
     const lastLine = s.lastTs ? new Date(s.lastTs).toLocaleDateString() : "—";
     const daysLine = `${s.activeDays || 0} active days${s.restDays != null ? ` · ${s.restDays} rest days` : ""}`;
 
+    const pctWidth = Math.max(0, Math.min(100, Number.isFinite(s.pctCompleted) ? s.pctCompleted : 0));
+
     insightsListEl.innerHTML = `
       <div class="pct-sections">
         <div class="pct-section">
-          <div class="pct-section-title">🧭 Progress</div>
+          <div class="pct-section-title">Progress</div>
           <div class="pct-rows">
             <div class="pct-row"><span>PCT completed</span><b>${pctLine}</b></div>
-            <div class="pct-row"><span>Remaining</span><b>${remainingLine}</b></div>
+            <div class="pct-progressbar" aria-label="PCT progress">
+              <div class="pct-progressfill" style="width:${pctWidth}%;"></div>
+            </div>
+            <div class="pct-row" style="margin-top:6px;"><span>Remaining</span><b>${remainingLine}</b></div>
           </div>
         </div>
 
         <div class="pct-section">
-          <div class="pct-section-title">📊 Performance</div>
-          <div class="pct-rows">
-            <div class="pct-row"><span>Avg distance / activity</span><b>${avgDistLine}</b></div>
-            <div class="pct-row"><span>Avg elevation / activity</span><b>${avgElevLine}</b></div>
-            <div class="pct-row"><span>Avg speed</span><b>${avgSpeedLine}</b></div>
-          </div>
-        </div>
-
-        <div class="pct-section">
-          <div class="pct-section-title">📅 Timeline</div>
+          <div class="pct-section-title">Timeline</div>
           <div class="pct-rows">
             <div class="pct-row"><span>First activity</span><b>${firstLine}</b></div>
             <div class="pct-row"><span>Last activity</span><b>${lastLine}</b></div>
@@ -783,7 +767,6 @@
         const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
 
         const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
-        // line break before Hike (cleaner)
         lastActLine = `<br>${type}: ${distStr} · ${time}`;
       }
 
