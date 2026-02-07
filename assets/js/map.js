@@ -1,4 +1,10 @@
 (async function () {
+  // --- REMOVE STATUS BOX ABOVE MAP (hero/status card) ---
+  // This removes the whole top "Status" card so it can't break layout or show stale text.
+  const heroEl = document.querySelector(".hero");
+  if (heroEl) heroEl.remove();
+
+  // We keep these IDs optional so nothing crashes if they still exist in HTML.
   const statusEl = document.getElementById("status");
   const metaEl = document.getElementById("meta");
   const statusExtraEl = document.getElementById("status-extra");
@@ -19,7 +25,10 @@
 
   function fmtNumber(n, digits = 1) {
     if (!Number.isFinite(n)) return "—";
-    return n.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
+    return n.toLocaleString(undefined, {
+      maximumFractionDigits: digits,
+      minimumFractionDigits: digits
+    });
   }
   function fmtInt(n) {
     if (!Number.isFinite(n)) return "—";
@@ -283,6 +292,7 @@
   }
 
   // ---------- basemap style ----------
+  // SAT (default) + TOPO (hiking oriented)
   const style = {
     version: 8,
     sources: {
@@ -294,20 +304,20 @@
         tileSize: 256,
         attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
       },
-      osm: {
+      topo: {
         type: "raster",
         tiles: [
-          "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
+          "https://b.tile.opentopomap.org/{z}/{x}/{y}.png",
+          "https://c.tile.opentopomap.org/{z}/{x}/{y}.png"
         ],
         tileSize: 256,
-        attribution: "© OpenStreetMap contributors"
+        attribution: "© OpenTopoMap (CC-BY-SA) / © OpenStreetMap contributors"
       }
     },
     layers: [
       { id: "sat-layer", type: "raster", source: "sat", layout: { visibility: "visible" } },
-      { id: "osm-layer", type: "raster", source: "osm", layout: { visibility: "none" } }
+      { id: "topo-layer", type: "raster", source: "topo", layout: { visibility: "none" } }
     ]
   };
 
@@ -328,18 +338,19 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "pct-toggle-btn";
-      btn.title = "Toggle basemap (Satellite / OSM)";
+      btn.title = "Toggle basemap (Satellite / Topo)";
       btn.setAttribute("aria-label", "Toggle basemap");
 
       const setIcon = () => {
         const satVis = map.getLayoutProperty("sat-layer", "visibility") !== "none";
+        // Icon shows what you will switch TO when tapped:
         btn.textContent = satVis ? "🗺️" : "🛰️";
       };
 
       btn.addEventListener("click", () => {
         const satVis = map.getLayoutProperty("sat-layer", "visibility") !== "none";
         map.setLayoutProperty("sat-layer", "visibility", satVis ? "none" : "visible");
-        map.setLayoutProperty("osm-layer", "visibility", satVis ? "visible" : "none");
+        map.setLayoutProperty("topo-layer", "visibility", satVis ? "visible" : "none");
         setIcon();
       });
 
@@ -424,13 +435,9 @@
     const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
 
     const elevM = pickElevationMeters(props);
-    const elevStr = elevM == null
-      ? "—"
-      : `${fmtInt(elevM)} m / ${fmtInt(toFt(elevM))} ft`;
+    const elevStr = elevM == null ? "—" : `${fmtInt(elevM)} m / ${fmtInt(toFt(elevM))} ft`;
 
-    const distStr = (km == null || mi == null)
-      ? "—"
-      : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
+    const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
 
     return `
       <div class="pct-popup">
@@ -445,39 +452,70 @@
     `;
   }
 
-  // latest "live progress" line
-  let liveAnim = { raf: null, t0: 0, coords: null, durationMs: 2200 };
+  // ---------- latest "live progress" line (SLOWER + LONGER PAUSE) ----------
+  const LIVE_DRAW_MS = 7500;   // was 2200 -> slower draw
+  const LIVE_PAUSE_MS = 3500;  // was ~600 -> longer wait between loops
+
+  let liveAnim = { raf: null, t0: 0, coords: null, timer: null };
+
   function stopLiveAnim() {
     if (liveAnim.raf) cancelAnimationFrame(liveAnim.raf);
+    if (liveAnim.timer) clearTimeout(liveAnim.timer);
     liveAnim.raf = null;
+    liveAnim.timer = null;
     liveAnim.coords = null;
   }
+
+  function clearLiveLine() {
+    if (map.getSource("latest-progress")) {
+      map.getSource("latest-progress").setData({
+        type: "Feature",
+        properties: {},
+        geometry: { type: "LineString", coordinates: [] }
+      });
+    }
+  }
+
   function startLiveAnim(coords) {
     stopLiveAnim();
     if (!coords || coords.length < 2) return;
 
     liveAnim.coords = coords;
-    liveAnim.t0 = performance.now();
 
-    const step = (now) => {
-      if (!map.getSource("latest-progress")) return;
-      const elapsed = now - liveAnim.t0;
-      const p = Math.min(1, elapsed / liveAnim.durationMs);
-      const n = Math.max(2, Math.floor(p * coords.length));
-      map.getSource("latest-progress").setData({
-        type: "Feature",
-        properties: {},
-        geometry: { type: "LineString", coordinates: coords.slice(0, n) }
-      });
+    const runOnce = () => {
+      liveAnim.t0 = performance.now();
 
-      if (p < 1) {
-        liveAnim.raf = requestAnimationFrame(step);
-      } else {
-        liveAnim.t0 = performance.now() + 600;
-        liveAnim.raf = requestAnimationFrame(step);
-      }
+      const step = (now) => {
+        if (!map.getSource("latest-progress")) return;
+
+        const elapsed = now - liveAnim.t0;
+        const p = Math.min(1, elapsed / LIVE_DRAW_MS);
+
+        // draw progressively; ensure at least 2 points
+        const n = Math.max(2, Math.floor(p * coords.length));
+
+        map.getSource("latest-progress").setData({
+          type: "Feature",
+          properties: {},
+          geometry: { type: "LineString", coordinates: coords.slice(0, n) }
+        });
+
+        if (p < 1) {
+          liveAnim.raf = requestAnimationFrame(step);
+        } else {
+          // pause, then restart
+          liveAnim.raf = null;
+          liveAnim.timer = setTimeout(() => {
+            clearLiveLine();
+            runOnce();
+          }, LIVE_PAUSE_MS);
+        }
+      };
+
+      liveAnim.raf = requestAnimationFrame(step);
     };
-    liveAnim.raf = requestAnimationFrame(step);
+
+    runOnce();
   }
 
   function computeStats(track) {
@@ -643,7 +681,10 @@
 
   async function refresh() {
     try {
-      statusEl.textContent = "updating…";
+      // If status elements still exist, keep them silent (you asked to remove UI).
+      if (statusEl) statusEl.textContent = "";
+      if (metaEl) metaEl.textContent = "";
+      if (statusExtraEl) statusExtraEl.textContent = "";
 
       const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
 
@@ -714,6 +755,7 @@
           const id = (f.properties && f.properties.strava_id) ? f.properties.strava_id : null;
           if (id !== hoveredId) setHover(id);
         });
+
         map.on("mouseleave", "track-main", () => {
           map.getCanvas().style.cursor = "";
           setHover(null);
@@ -750,33 +792,6 @@
       setStatsUI(s);
       setInsightsUI(s);
 
-      statusEl.textContent = "online";
-
-      // status extra line (latest activity summary)
-      const latestFeat = findLatestFeature(track);
-      let lastActLine = "";
-      if (latestFeat?.properties) {
-        const p = latestFeat.properties;
-        const type = activityTypeLabel(p);
-
-        const distM = Number(p.distance_m);
-        const km = Number.isFinite(distM) ? toKm(distM) : null;
-        const mi = Number.isFinite(distM) ? toMi(distM) : null;
-
-        const tSec = Number(p.moving_time_s);
-        const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
-
-        const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
-        lastActLine = `<br>${type}: ${distStr} · ${time}`;
-      }
-
-      metaEl.innerHTML =
-        `Last updated: ${fmtDate(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}${lastActLine}`;
-
-      statusExtraEl.textContent = latestFeat
-        ? "Tap a track to see details. Hover highlights on desktop."
-        : "Waiting for activities…";
-
       if (!didFitOnce) {
         const bbox = geojsonBbox(track);
         if (bbox) map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, duration: 800 });
@@ -784,19 +799,24 @@
         didFitOnce = true;
       }
 
+      // latest progress animation
+      const latestFeat = findLatestFeature(track);
       if (latestFeat?.geometry?.type === "LineString") startLiveAnim(latestFeat.geometry.coordinates);
       else {
-        if (map.getSource("latest-progress")) {
-          map.getSource("latest-progress").setData({
-            type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] }
-          });
-        }
+        clearLiveLine();
         stopLiveAnim();
       }
 
     } catch (e) {
-      statusEl.textContent = "error";
-      metaEl.textContent = "Missing data/track.geojson or data/latest.json";
+      // keep silent (no status box)
+      stopLiveAnim();
+      clearLiveLine();
+
+      if (statsListEl) statsListEl.innerHTML = "";
+      if (insightsListEl) insightsListEl.innerHTML = "";
+
+      if (statusEl) statusEl.textContent = "";
+      if (metaEl) metaEl.textContent = "";
       if (statusExtraEl) statusExtraEl.textContent = "";
     }
   }
