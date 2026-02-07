@@ -1,15 +1,11 @@
 (async function () {
-  // --- Status elements ---
-  const lastUpdatedEl = document.getElementById("lastUpdated");
-  const latlonEl = document.getElementById("latlon");
-  const latestSummaryEl = document.getElementById("latestSummary");
+  const statusEl = document.getElementById("status");
+  const metaEl = document.getElementById("meta");
   const statusExtraEl = document.getElementById("status-extra");
 
-  // --- Statistics / Insights containers (DIVS) ---
-  const statsBoxEl = document.getElementById("statsBox");
-  const insightsBoxEl = document.getElementById("insightsBox");
+  const statsListEl = document.getElementById("statsList");
+  const insightsListEl = document.getElementById("insightsList");
 
-  // URLs (works in /demo-tracker/ on GitHub Pages)
   const trackUrl = new URL("./data/track.geojson", window.location.href).toString();
   const latestUrl = new URL("./data/latest.json", window.location.href).toString();
 
@@ -23,10 +19,7 @@
 
   function fmtNumber(n, digits = 1) {
     if (!Number.isFinite(n)) return "—";
-    return n.toLocaleString(undefined, {
-      maximumFractionDigits: digits,
-      minimumFractionDigits: digits
-    });
+    return n.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
   }
   function fmtInt(n) {
     if (!Number.isFinite(n)) return "—";
@@ -36,6 +29,7 @@
     try { return new Date(ts).toLocaleString(); } catch { return String(ts); }
   }
 
+  // 1 Day 10 h 29 min
   function fmtDuration(totalSeconds) {
     if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return "—";
     const sec = Math.floor(totalSeconds);
@@ -77,7 +71,7 @@
 
   async function loadJson(url) {
     const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    if (!res.ok) throw new Error("HTTP " + res.status);
     return await res.json();
   }
 
@@ -105,12 +99,29 @@
     } catch { return null; }
   }
 
+  function ensurePulseKeyframes() {
+    if (document.getElementById("pctPulseStyle")) return;
+    const s = document.createElement("style");
+    s.id = "pctPulseStyle";
+    s.textContent = `
+      @keyframes pctPulse {
+        0%   { transform: scale(0.55); opacity: 0.85; }
+        70%  { transform: scale(1.15); opacity: 0.20; }
+        100% { transform: scale(1.25); opacity: 0.00; }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
   // ---------- UI CSS ----------
   function injectUICSSOnce() {
     if (document.getElementById("pctUICSS")) return;
     const s = document.createElement("style");
     s.id = "pctUICSS";
     s.textContent = `
+      #statsList, #insightsList { list-style: none; padding-left: 0; margin: 0; }
+      #statsList li, #insightsList li { margin: 0; }
+
       .pct-stats-wrap{ display: grid; gap: 10px; }
 
       .pct-stat-hero{
@@ -161,6 +172,9 @@
         font-size: 12px;
         color: rgba(245,248,255,.62);
         margin-bottom: 6px;
+        display:flex;
+        align-items:center;
+        gap:8px;
       }
       .pct-chip .value{
         font-size: 16px;
@@ -175,6 +189,7 @@
         font-weight: 700;
       }
 
+      /* INSIGHTS */
       .pct-sections{ display: grid; gap: 10px; }
       .pct-section{
         background: rgba(255,255,255,.04);
@@ -202,6 +217,7 @@
         font-weight: 800;
       }
 
+      /* progress bar */
       .pct-progressbar{
         height: 8px;
         border-radius: 999px;
@@ -214,17 +230,6 @@
         height: 100%;
         width: 0%;
         background: linear-gradient(90deg, rgba(70,243,255,.95), rgba(255,75,216,.95));
-      }
-
-      /* Status card compact + flat */
-      .pct-status-card .pct-status-grid{
-        margin-top: 10px;
-        background: rgba(255,255,255,.04);
-        border: 1px solid rgba(255,255,255,.10);
-        border-radius: 16px;
-        padding: 10px 12px;
-        display: grid;
-        gap: 6px;
       }
 
       /* Popup */
@@ -277,7 +282,7 @@
     document.head.appendChild(s);
   }
 
-  // ---------- basemap style (Satellite default + Topo toggle) ----------
+  // ---------- basemap style ----------
   const style = {
     version: 8,
     sources: {
@@ -289,20 +294,20 @@
         tileSize: 256,
         attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
       },
-      topo: {
+      osm: {
         type: "raster",
         tiles: [
-          "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
-          "https://b.tile.opentopomap.org/{z}/{x}/{y}.png",
-          "https://c.tile.opentopomap.org/{z}/{x}/{y}.png"
+          "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
         ],
         tileSize: 256,
-        attribution: "© OpenTopoMap (CC-BY-SA) · © OpenStreetMap contributors"
+        attribution: "© OpenStreetMap contributors"
       }
     },
     layers: [
       { id: "sat-layer", type: "raster", source: "sat", layout: { visibility: "visible" } },
-      { id: "topo-layer", type: "raster", source: "topo", layout: { visibility: "none" } }
+      { id: "osm-layer", type: "raster", source: "osm", layout: { visibility: "none" } }
     ]
   };
 
@@ -315,7 +320,7 @@
 
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
-  // ---------- basemap toggle (ICON ALWAYS UPDATES) ----------
+  // ---------- basemap toggle control ----------
   class BasemapToggle {
     onAdd(map) {
       this._map = map;
@@ -323,22 +328,20 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "pct-toggle-btn";
-      btn.title = "Toggle basemap (Satellite / Topo)";
+      btn.title = "Toggle basemap (Satellite / OSM)";
       btn.setAttribute("aria-label", "Toggle basemap");
 
       const setIcon = () => {
         const satVis = map.getLayoutProperty("sat-layer", "visibility") !== "none";
-        btn.textContent = satVis ? "🛰️" : "🗻";
+        btn.textContent = satVis ? "🗺️" : "🛰️";
       };
 
       btn.addEventListener("click", () => {
         const satVis = map.getLayoutProperty("sat-layer", "visibility") !== "none";
         map.setLayoutProperty("sat-layer", "visibility", satVis ? "none" : "visible");
-        map.setLayoutProperty("topo-layer", "visibility", satVis ? "visible" : "none");
+        map.setLayoutProperty("osm-layer", "visibility", satVis ? "visible" : "none");
         setIcon();
       });
-
-      map.on("styledata", setIcon);
 
       const wrap = document.createElement("div");
       wrap.className = "maplibregl-ctrl maplibregl-ctrl-group";
@@ -346,9 +349,10 @@
       wrap.style.overflow = "hidden";
       wrap.appendChild(btn);
 
+      map.on("idle", setIcon);
       this._container = wrap;
       setIcon();
-      return wrap;
+      return this._container;
     }
     onRemove() {
       this._container?.parentNode?.removeChild(this._container);
@@ -358,20 +362,6 @@
 
   // ---------- marker (blinking) ----------
   let marker;
-  function ensurePulseKeyframes() {
-    if (document.getElementById("pctPulseStyle")) return;
-    const s = document.createElement("style");
-    s.id = "pctPulseStyle";
-    s.textContent = `
-      @keyframes pctPulse {
-        0%   { transform: scale(0.55); opacity: 0.85; }
-        70%  { transform: scale(1.15); opacity: 0.20; }
-        100% { transform: scale(1.25); opacity: 0.00; }
-      }
-    `;
-    document.head.appendChild(s);
-  }
-
   function createBlinkMarkerEl() {
     ensurePulseKeyframes();
     const el = document.createElement("div");
@@ -407,8 +397,21 @@
     return el;
   }
 
-  // ---------- popup ----------
+  // ---------- layers / interactivity ----------
+  let didFitOnce = false;
   let popup;
+  let hoveredId = null;
+
+  function setHover(id) {
+    hoveredId = id;
+    if (!map.getLayer("track-hover")) return;
+    if (id == null) {
+      map.setFilter("track-hover", ["==", ["get", "strava_id"], -1]);
+      return;
+    }
+    map.setFilter("track-hover", ["==", ["to-number", ["get", "strava_id"]], Number(id)]);
+  }
+
   function buildPopupHTML(props) {
     const type = activityTypeLabel(props);
     const start = props.start_date ? fmtDate(props.start_date) : "—";
@@ -421,8 +424,13 @@
     const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
 
     const elevM = pickElevationMeters(props);
-    const elevStr = elevM == null ? "—" : `${fmtInt(elevM)} m / ${fmtInt(toFt(elevM))} ft`;
-    const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
+    const elevStr = elevM == null
+      ? "—"
+      : `${fmtInt(elevM)} m / ${fmtInt(toFt(elevM))} ft`;
+
+    const distStr = (km == null || mi == null)
+      ? "—"
+      : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
 
     return `
       <div class="pct-popup">
@@ -523,7 +531,7 @@
 
     return {
       featsCount: feats.length,
-      timeS, elevM, elevCount,
+      distM, timeS, elevM, elevCount,
       totalKm, totalMi,
       firstTs, lastTs, activeDays, restDays,
       pctCompleted, remainingMi, remainingKm,
@@ -542,7 +550,7 @@
     const avgSpeedMain = s.avgKmh ? `${fmtNumber(s.avgKmh, 1)} km/h` : "—";
     const avgSpeedSub = s.avgMph ? `${fmtNumber(s.avgMph, 1)} mi/h` : "";
 
-    statsBoxEl.innerHTML = `
+    statsListEl.innerHTML = `
       <div class="pct-stats-wrap">
         <div class="pct-stat-hero">
           <div class="label">Total Distance</div>
@@ -594,7 +602,7 @@
 
     const pctWidth = Math.max(0, Math.min(100, Number.isFinite(s.pctCompleted) ? s.pctCompleted : 0));
 
-    insightsBoxEl.innerHTML = `
+    insightsListEl.innerHTML = `
       <div class="pct-sections">
         <div class="pct-section">
           <div class="pct-section-title">Progress</div>
@@ -633,15 +641,12 @@
     return best;
   }
 
-  // ---------- main ----------
-  let didFitOnce = false;
-
   async function refresh() {
     try {
-      // Fetch data
+      statusEl.textContent = "updating…";
+
       const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
 
-      // Ensure layers once
       if (!map.getSource("track")) {
         injectUICSSOnce();
         map.addControl(new BasemapToggle(), "top-right");
@@ -675,6 +680,14 @@
           paint: { "line-color": "rgba(255,255,255,0.65)", "line-width": 1.6, "line-opacity": 0.55 }
         });
 
+        map.addLayer({
+          id: "track-hover",
+          type: "line",
+          source: "track",
+          paint: { "line-color": "rgba(255,255,255,0.92)", "line-width": 7, "line-opacity": 0.75, "line-blur": 0.6 },
+          filter: ["==", ["get", "strava_id"], -1]
+        });
+
         map.addSource("latest-progress", {
           type: "geojson",
           data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] } }
@@ -694,20 +707,36 @@
           paint: { "line-color": "rgba(255,255,255,0.95)", "line-width": 3, "line-opacity": 0.85 }
         });
 
+        map.on("mousemove", "track-main", (e) => {
+          map.getCanvas().style.cursor = "pointer";
+          const f = e.features && e.features[0];
+          if (!f) return;
+          const id = (f.properties && f.properties.strava_id) ? f.properties.strava_id : null;
+          if (id !== hoveredId) setHover(id);
+        });
+        map.on("mouseleave", "track-main", () => {
+          map.getCanvas().style.cursor = "";
+          setHover(null);
+        });
+
         map.on("click", "track-main", (e) => {
           const f = e.features && e.features[0];
           if (!f) return;
+
+          const p = f.properties || {};
+          const html = buildPopupHTML(p);
+
           popup?.remove();
           popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: "320px" })
             .setLngLat(e.lngLat)
-            .setHTML(buildPopupHTML(f.properties || {}))
+            .setHTML(html)
             .addTo(map);
         });
       } else {
         map.getSource("track").setData(track);
       }
 
-      // Marker
+      // marker
       const lngLat = [latest.lon, latest.lat];
       if (!marker) {
         marker = new maplibregl.Marker({ element: createBlinkMarkerEl() })
@@ -717,43 +746,37 @@
         marker.setLngLat(lngLat);
       }
 
-      // Status
-      if (lastUpdatedEl) lastUpdatedEl.textContent = fmtDate(latest.ts);
-      if (latlonEl) latlonEl.textContent = `${Number(latest.lat).toFixed(5)}, ${Number(latest.lon).toFixed(5)}`;
-
-      const latestFeat = findLatestFeature(track);
-      if (latestSummaryEl) {
-        if (latestFeat?.properties) {
-          const p = latestFeat.properties;
-          const type = activityTypeLabel(p);
-
-          const distM = Number(p.distance_m);
-          const km = Number.isFinite(distM) ? toKm(distM) : null;
-          const mi = Number.isFinite(distM) ? toMi(distM) : null;
-
-          const tSec = Number(p.moving_time_s);
-          const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
-
-          const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
-          latestSummaryEl.textContent = `${type}: ${distStr} · ${time}`;
-        } else {
-          latestSummaryEl.textContent = "—";
-        }
-      }
-
-      // Stats + Insights
       const s = computeStats(track);
-      if (statsBoxEl) setStatsUI(s);
-      if (insightsBoxEl) setInsightsUI(s);
+      setStatsUI(s);
+      setInsightsUI(s);
 
-      // Help text
-      if (statusExtraEl) {
-        statusExtraEl.textContent = latestFeat
-          ? "Tap a track to see details."
-          : "Waiting for activities…";
+      statusEl.textContent = "online";
+
+      // status extra line (latest activity summary)
+      const latestFeat = findLatestFeature(track);
+      let lastActLine = "";
+      if (latestFeat?.properties) {
+        const p = latestFeat.properties;
+        const type = activityTypeLabel(p);
+
+        const distM = Number(p.distance_m);
+        const km = Number.isFinite(distM) ? toKm(distM) : null;
+        const mi = Number.isFinite(distM) ? toMi(distM) : null;
+
+        const tSec = Number(p.moving_time_s);
+        const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
+
+        const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
+        lastActLine = `<br>${type}: ${distStr} · ${time}`;
       }
 
-      // Fit once
+      metaEl.innerHTML =
+        `Last updated: ${fmtDate(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}${lastActLine}`;
+
+      statusExtraEl.textContent = latestFeat
+        ? "Tap a track to see details. Hover highlights on desktop."
+        : "Waiting for activities…";
+
       if (!didFitOnce) {
         const bbox = geojsonBbox(track);
         if (bbox) map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, duration: 800 });
@@ -761,18 +784,20 @@
         didFitOnce = true;
       }
 
-      // Live progress on latest only
       if (latestFeat?.geometry?.type === "LineString") startLiveAnim(latestFeat.geometry.coordinates);
-      else stopLiveAnim();
+      else {
+        if (map.getSource("latest-progress")) {
+          map.getSource("latest-progress").setData({
+            type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] }
+          });
+        }
+        stopLiveAnim();
+      }
 
-    } catch (err) {
-      // Show actual error so we can diagnose
-      if (statusExtraEl) statusExtraEl.textContent = `Error: ${err?.message || err}`;
-      if (lastUpdatedEl) lastUpdatedEl.textContent = "—";
-      if (latlonEl) latlonEl.textContent = "—";
-      if (latestSummaryEl) latestSummaryEl.textContent = "—";
-      if (statsBoxEl) statsBoxEl.innerHTML = "";
-      if (insightsBoxEl) insightsBoxEl.innerHTML = "";
+    } catch (e) {
+      statusEl.textContent = "error";
+      metaEl.textContent = "Missing data/track.geojson or data/latest.json";
+      if (statusExtraEl) statusExtraEl.textContent = "";
     }
   }
 
