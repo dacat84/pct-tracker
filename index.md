@@ -12,9 +12,9 @@ body_extra: |
 <div class="hero">
   <div class="card">
     <div class="card-title">Status</div>
-    <div id="status" class="status">lädt…</div>
+    <div id="status" class="status">loading…</div>
     <div id="meta" class="muted"></div>
-    <div class="muted small">Tipp: Ersetze später <code>data/track.geojson</code> & <code>data/latest.json</code> durch deine echten Daten.</div>
+    <div id="status-extra" class="muted small"></div>
   </div>
 </div>
 
@@ -22,21 +22,12 @@ body_extra: |
 
 <div class="grid">
   <div class="card">
-    <div class="card-title">Features</div>
-    <ul class="list">
-      <li>Track (GeoJSON) als Linie</li>
-      <li>Letzter Punkt als Marker</li>
-      <li>„Last updated“ aus latest.json</li>
-      <li>Mobile-first Layout + Tabs</li>
-    </ul>
+    <div class="card-title">Statistics</div>
+    <ul id="statsList" class="list"></ul>
   </div>
+
   <div class="card">
-    <div class="card-title">Nächste Schritte</div>
-    <ol class="list">
-      <li>Repo erstellen</li>
-      <li>Dateien hochladen</li>
-      <li>GitHub Pages aktivieren</li>
-      <li>Custom Domain optional</li>
-    </ol>
+    <div class="card-title">Insights</div>
+    <ul id="insightsList" class="list"></ul>
   </div>
 </div>
