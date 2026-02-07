@@ -31,7 +31,6 @@
   function fmtDate(ts) {
     try { return new Date(ts).toLocaleString(); } catch { return String(ts); }
   }
-
   function fmtDuration(totalSeconds) {
     if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return "—";
     const sec = Math.floor(totalSeconds);
@@ -276,7 +275,7 @@
         font-size: 18px;
       }
 
-      /* Status card: compact + badge */
+      /* Status card: compact + badge + pulse */
       .pct-status-card .pct-status-head{
         display:flex;
         align-items:center;
@@ -291,16 +290,24 @@
         border: 1px solid rgba(255,255,255,.16);
         background: rgba(255,255,255,.06);
         color: rgba(245,248,255,.90);
+        user-select: none;
       }
       .pct-badge.ok{
         border-color: rgba(43,255,136,.30);
         background: rgba(43,255,136,.12);
         color: rgba(210,255,228,.95);
+        animation: pctBadgePulse 2.2s ease-in-out infinite;
       }
       .pct-badge.err{
         border-color: rgba(255,122,24,.35);
         background: rgba(255,122,24,.12);
         color: rgba(255,235,220,.95);
+      }
+      @keyframes pctBadgePulse{
+        0%   { box-shadow: 0 0 0 0 rgba(43,255,136,.00); }
+        35%  { box-shadow: 0 0 0 6px rgba(43,255,136,.10); }
+        70%  { box-shadow: 0 0 0 10px rgba(43,255,136,.04); }
+        100% { box-shadow: 0 0 0 0 rgba(43,255,136,.00); }
       }
 
       .pct-status-card .pct-status-grid{
@@ -310,19 +317,31 @@
         border-radius: 16px;
         padding: 10px 12px;
         display: grid;
-        gap: 6px;
+        gap: 8px;
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       .pct-status-card .pct-row{ grid-template-columns: 1fr auto; }
-      .pct-status-card .pct-row-full{ grid-column: 1 / -1; }
       @media (max-width: 680px){
         .pct-status-card .pct-status-grid{ grid-template-columns: 1fr; }
+      }
+
+      .pct-row-updated .pct-updated-stack{
+        text-align: right;
+        display: grid;
+        gap: 2px;
+      }
+      .pct-updated-sub{
+        font-size: 12px;
+        color: rgba(245,248,255,.70);
+        font-weight: 700;
       }
     `;
     document.head.appendChild(s);
   }
 
   // ---------- basemap style ----------
+  // Satellite = default
+  // Toggle switches to Topo (OpenTopoMap) + Hillshade + 3D terrain (DEM)
   const style = {
     version: 8,
     sources: {
@@ -332,20 +351,41 @@
         tileSize: 256,
         attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
       },
-      osm: {
+      topo: {
         type: "raster",
         tiles: [
-          "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
+          "https://b.tile.opentopomap.org/{z}/{x}/{y}.png",
+          "https://c.tile.opentopomap.org/{z}/{x}/{y}.png"
         ],
         tileSize: 256,
-        attribution: "© OpenStreetMap contributors"
+        attribution: "© OpenTopoMap (CC-BY-SA) · © OpenStreetMap contributors"
+      },
+      dem: {
+        type: "raster-dem",
+        tiles: ["https://demotiles.maplibre.org/terrain-rgb/{z}/{x}/{y}.png"],
+        tileSize: 256,
+        encoding: "mapbox",
+        attribution: "Terrain: MapLibre demo tiles"
       }
     },
     layers: [
       { id: "sat-layer", type: "raster", source: "sat", layout: { visibility: "visible" } },
-      { id: "osm-layer", type: "raster", source: "osm", layout: { visibility: "none" } }
+      { id: "topo-layer", type: "raster", source: "topo", layout: { visibility: "none" } },
+
+      // Hillshade overlay (only when topo is visible)
+      {
+        id: "hillshade",
+        type: "hillshade",
+        source: "dem",
+        layout: { visibility: "none" },
+        paint: {
+          "hillshade-exaggeration": 0.65,
+          "hillshade-shadow-color": "rgba(0,0,0,0.35)",
+          "hillshade-highlight-color": "rgba(255,255,255,0.22)",
+          "hillshade-accent-color": "rgba(255,255,255,0.10)"
+        }
+      }
     ]
   };
 
@@ -366,18 +406,39 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "pct-toggle-btn";
-      btn.title = "Toggle basemap (Satellite / OSM)";
+      btn.title = "Toggle basemap (Satellite / Topo)";
       btn.setAttribute("aria-label", "Toggle basemap");
 
       const setIcon = () => {
         const satVis = map.getLayoutProperty("sat-layer", "visibility") !== "none";
-        btn.textContent = satVis ? "🗺️" : "🛰️";
+        // When SAT is visible -> show topo icon (button indicates what you switch to)
+        btn.textContent = satVis ? "⛰️" : "🛰️";
+      };
+
+      const enableTerrain = (on) => {
+        try {
+          map.setTerrain(on ? { source: "dem", exaggeration: 1.35 } : null);
+        } catch (_) {}
       };
 
       btn.addEventListener("click", () => {
         const satVis = map.getLayoutProperty("sat-layer", "visibility") !== "none";
+
+        // Switch basemap visibility
         map.setLayoutProperty("sat-layer", "visibility", satVis ? "none" : "visible");
-        map.setLayoutProperty("osm-layer", "visibility", satVis ? "visible" : "none");
+        map.setLayoutProperty("topo-layer", "visibility", satVis ? "visible" : "none");
+
+        // Hillshade + 3D terrain only on topo
+        map.setLayoutProperty("hillshade", "visibility", satVis ? "visible" : "none");
+        enableTerrain(satVis);
+
+        // A nice default pitch when topo is enabled (still user can adjust)
+        if (satVis) {
+          try { map.easeTo({ pitch: 55, duration: 650 }); } catch (_) {}
+        } else {
+          try { map.easeTo({ pitch: 0, duration: 650 }); } catch (_) {}
+        }
+
         setIcon();
       });
 
@@ -768,6 +829,9 @@
             .setHTML(html)
             .addTo(map);
         });
+
+        // Default: satellite (terrain OFF)
+        try { map.setTerrain(null); } catch (_) {}
       } else {
         map.getSource("track").setData(track);
       }
