@@ -5,17 +5,41 @@
   const trackUrl = new URL("./data/track.geojson", window.location.href).toString();
   const latestUrl = new URL("./data/latest.json", window.location.href).toString();
 
-  // --- Basemap (Satellite Default) ---
+  // ---------- Base maps (raster) ----------
+  const BASEMAPS = {
+    satellite: {
+      id: "satellite",
+      icon: "🛰️",
+      label: "Sat",
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+      ],
+      attribution:
+        "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
+    },
+    osm: {
+      id: "osm",
+      icon: "🗺️",
+      label: "OSM",
+      tiles: [
+        "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      ],
+      attribution: "© OpenStreetMap contributors"
+    }
+  };
+
+  let currentBasemapKey = "satellite"; // ✅ Standard
+
   const style = {
     version: 8,
     sources: {
       basemap: {
         type: "raster",
-        tiles: [
-          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-        ],
+        tiles: BASEMAPS[currentBasemapKey].tiles,
         tileSize: 256,
-        attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
+        attribution: BASEMAPS[currentBasemapKey].attribution
       }
     },
     layers: [{ id: "basemap", type: "raster", source: "basemap" }]
@@ -30,10 +54,10 @@
 
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
+  // ---------- Utils ----------
   function fmtTs(ts) {
     try {
-      const d = new Date(ts);
-      return d.toLocaleString();
+      return new Date(ts).toLocaleString();
     } catch {
       return String(ts);
     }
@@ -45,7 +69,6 @@
     return await res.json();
   }
 
-  // ---------- UI Helpers ----------
   function formatKm(m) {
     if (typeof m !== "number") return "—";
     return (m / 1000).toFixed(m >= 10000 ? 0 : 1) + " km";
@@ -65,71 +88,130 @@
   }
 
   function getElevGain(p) {
-    // kompatibel mit mehreren Feldnamen
-    const a = (p && typeof p.elev_gain_m === "number") ? p.elev_gain_m : null;
-    const b = (p && typeof p.total_elevation_gain_m === "number") ? p.total_elevation_gain_m : null;
-    const c = (p && typeof p.total_elevation_gain === "number") ? p.total_elevation_gain : null; // falls du direkt Strava Feldnamen speicherst
-    return (a ?? b ?? c ?? null);
+    const a = p && typeof p.elev_gain_m === "number" ? p.elev_gain_m : null;
+    const b = p && typeof p.total_elevation_gain_m === "number" ? p.total_elevation_gain_m : null;
+    const c = p && typeof p.total_elevation_gain === "number" ? p.total_elevation_gain : null;
+    return a ?? b ?? c ?? null;
   }
 
-  function sumStats(track) {
-    const feats = (track && track.type === "FeatureCollection" && Array.isArray(track.features)) ? track.features : [];
-    let dist = 0, time = 0, elev = 0;
-    let elevHasData = false;
-
-    for (const f of feats) {
-      const p = (f && f.properties) || {};
-      if (typeof p.distance_m === "number") dist += p.distance_m;
-      if (typeof p.moving_time_s === "number") time += p.moving_time_s;
-
-      const eg = getElevGain(p);
-      if (typeof eg === "number") {
-        elev += eg;
-        elevHasData = true;
+  // Minimal bbox
+  function geojsonBbox(geojson) {
+    try {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      const feats = geojson.type === "FeatureCollection" ? geojson.features : [geojson];
+      for (const f of feats) {
+        const g = f.type === "Feature" ? f.geometry : f;
+        const coords =
+          g.type === "LineString" ? g.coordinates :
+          g.type === "MultiLineString" ? g.coordinates.flat() :
+          g.type === "Point" ? [g.coordinates] :
+          [];
+        for (const [x, y] of coords) {
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
       }
+      if (minX === Infinity) return null;
+      return [minX, minY, maxX, maxY];
+    } catch {
+      return null;
     }
-
-    return { totalDistM: dist, totalTimeS: time, totalElevM: elevHasData ? elev : null };
   }
 
+  // ---------- Mini stats in Features-Box ----------
   function findFeaturesListEl() {
     const byId = document.getElementById("features-list");
     if (byId) return byId;
-
     const uls = Array.from(document.querySelectorAll("ul"));
-    for (const ul of uls) {
-      const txt = (ul.parentElement?.textContent || "").toLowerCase();
-      if (txt.includes("features") && ul.querySelectorAll("li").length >= 1) return ul;
-    }
     return uls.length ? uls[0] : null;
+  }
+
+  function sumStats(track) {
+    const feats = track?.features || [];
+    let dist = 0, time = 0, elev = 0, elevHas = false;
+    for (const f of feats) {
+      const p = f?.properties || {};
+      if (typeof p.distance_m === "number") dist += p.distance_m;
+      if (typeof p.moving_time_s === "number") time += p.moving_time_s;
+      const eg = getElevGain(p);
+      if (typeof eg === "number") {
+        elev += eg;
+        elevHas = true;
+      }
+    }
+    return { dist, time, elev: elevHas ? elev : null };
   }
 
   function upsertMiniStats(track) {
     const ul = findFeaturesListEl();
     if (!ul) return;
-
-    const stats = sumStats(track);
-
     ul.querySelectorAll('li[data-role="mini-stats"]').forEach(li => li.remove());
 
+    const st = sumStats(track);
+
     const li1 = document.createElement("li");
-    li1.setAttribute("data-role", "mini-stats");
-    li1.textContent = `Gesamt: ${formatKm(stats.totalDistM)}`;
+    li1.dataset.role = "mini-stats";
+    li1.textContent = `Gesamt: ${formatKm(st.dist)}`;
 
     const li2 = document.createElement("li");
-    li2.setAttribute("data-role", "mini-stats");
-    li2.textContent = `Zeit: ${formatDuration(stats.totalTimeS)}`;
+    li2.dataset.role = "mini-stats";
+    li2.textContent = `Zeit: ${formatDuration(st.time)}`;
 
     const li3 = document.createElement("li");
-    li3.setAttribute("data-role", "mini-stats");
-    li3.textContent = `Höhenmeter: ${stats.totalElevM == null ? "—" : formatMeters(stats.totalElevM)}`;
+    li3.dataset.role = "mini-stats";
+    li3.textContent = `Höhenmeter: ${st.elev == null ? "—" : formatMeters(st.elev)}`;
 
     ul.insertBefore(li3, ul.firstChild);
     ul.insertBefore(li2, ul.firstChild);
     ul.insertBefore(li1, ul.firstChild);
   }
 
-  // --- Pulsierender Marker (grün ↔ orange) WIE FRÜHER ---
+  // ---------- Popup styling ----------
+  function ensurePopupStyleOnce() {
+    if (document.getElementById("pctPopupStyle")) return;
+    const s = document.createElement("style");
+    s.id = "pctPopupStyle";
+    s.textContent = `
+      .pct-popup .maplibregl-popup-content{
+        background: rgba(16,18,22,.92);
+        color: rgba(245,247,250,.96);
+        border: 1px solid rgba(255,255,255,.10);
+        border-radius: 14px;
+        box-shadow: 0 16px 40px rgba(0,0,0,.45);
+        padding: 10px 12px;
+        font: 14px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        min-width: 220px;
+      }
+      .pct-popup .maplibregl-popup-tip{ border-top-color: rgba(16,18,22,.92) !important; }
+      .pct-popup .pct-title{ font-weight:700; margin-bottom:4px; }
+      .pct-popup .pct-row{ display:flex; justify-content:space-between; gap:12px; }
+      .pct-popup .pct-k{ opacity:.75; }
+      .pct-popup .pct-v{ font-weight:600; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  function buildPopupHtml(p) {
+    const name = p.name || "Aktivität";
+    const typ = p.type || "";
+    const date = p.start_date ? fmtTs(p.start_date) : "—";
+    const dist = typeof p.distance_m === "number" ? formatKm(p.distance_m) : "—";
+    const time = typeof p.moving_time_s === "number" ? formatDuration(p.moving_time_s) : "—";
+    const eg = getElevGain(p);
+    const elev = typeof eg === "number" ? formatMeters(eg) : "—";
+
+    return `
+      <div class="pct-title">${name}${typ ? ` · ${typ}` : ""}</div>
+      <div class="pct-row"><div class="pct-k">Datum</div><div class="pct-v">${date}</div></div>
+      <div class="pct-row"><div class="pct-k">Distanz</div><div class="pct-v">${dist}</div></div>
+      <div class="pct-row"><div class="pct-k">Zeit</div><div class="pct-v">${time}</div></div>
+      <div class="pct-row"><div class="pct-k">Höhenmeter</div><div class="pct-v">${elev}</div></div>
+    `;
+  }
+
+  // ---------- Blinking marker ----------
   let marker;
   function createPulsingMarkerEl() {
     const el = document.createElement("div");
@@ -178,34 +260,71 @@
     return el;
   }
 
-  // --- BBox helper ---
-  function geojsonBbox(geojson) {
-    try {
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      const feats = geojson.type === "FeatureCollection" ? geojson.features : [geojson];
-      for (const f of feats) {
-        const g = f.type === "Feature" ? f.geometry : f;
-        const coords =
-          g.type === "LineString" ? g.coordinates :
-          g.type === "MultiLineString" ? g.coordinates.flat() :
-          g.type === "Point" ? [g.coordinates] :
-          [];
-        for (const c of coords) {
-          const [x, y] = c;
-          if (x < minX) minX = x;
-          if (y < minY) minY = y;
-          if (x > maxX) maxX = x;
-          if (y > maxY) maxY = y;
-        }
+  // ---------- Basemap toggle button (keine Tracks verlieren!) ----------
+  function ensureBasemapToggle() {
+    if (document.getElementById("pctBasemapToggle")) return;
+
+    const btn = document.createElement("button");
+    btn.id = "pctBasemapToggle";
+    btn.type = "button";
+    btn.title = "Basemap wechseln";
+    btn.textContent = BASEMAPS[currentBasemapKey].icon;
+    btn.style.position = "absolute";
+    btn.style.right = "12px";
+    btn.style.top = "12px";
+    btn.style.zIndex = 10;
+    btn.style.width = "44px";
+    btn.style.height = "44px";
+    btn.style.borderRadius = "12px";
+    btn.style.border = "1px solid rgba(255,255,255,.12)";
+    btn.style.background = "rgba(16,18,22,.70)";
+    btn.style.backdropFilter = "blur(10px)";
+    btn.style.color = "rgba(245,247,250,.95)";
+    btn.style.fontSize = "20px";
+    btn.style.display = "grid";
+    btn.style.placeItems = "center";
+    btn.style.boxShadow = "0 10px 26px rgba(0,0,0,.35)";
+    btn.style.cursor = "pointer";
+
+    const mapEl = document.getElementById("map");
+    mapEl.style.position = "relative";
+    mapEl.appendChild(btn);
+
+    btn.addEventListener("click", () => {
+      currentBasemapKey = (currentBasemapKey === "satellite") ? "osm" : "satellite";
+      btn.textContent = BASEMAPS[currentBasemapKey].icon;
+      switchBasemap(currentBasemapKey);
+    });
+  }
+
+  function switchBasemap(key) {
+    // ✅ KEIN setStyle(), KEIN map neu bauen!
+    // Wir tauschen nur die Raster-Tiles der bestehenden basemap-source.
+    const src = map.getSource("basemap");
+    if (!src) return;
+
+    // MapLibre erlaubt update via setTiles bei raster sources
+    if (typeof src.setTiles === "function") {
+      src.setTiles(BASEMAPS[key].tiles);
+    } else {
+      // Fallback: Source neu anlegen, Layer bleibt gleich (tracks bleiben weil wir die track-source NICHT anfassen)
+      try {
+        if (map.getLayer("basemap")) map.removeLayer("basemap");
+        if (map.getSource("basemap")) map.removeSource("basemap");
+        map.addSource("basemap", {
+          type: "raster",
+          tiles: BASEMAPS[key].tiles,
+          tileSize: 256,
+          attribution: BASEMAPS[key].attribution
+        });
+        map.addLayer({ id: "basemap", type: "raster", source: "basemap" }, "track-glow");
+      } catch (e) {
+        console.warn("Basemap switch fallback failed:", e);
       }
-      if (minX === Infinity) return null;
-      return [minX, minY, maxX, maxY];
-    } catch {
-      return null;
     }
   }
 
-  // --- Hover state + Popup ---
+  // ---------- Track layers + hover + popup ----------
   let hoveredId = null;
   let popup = null;
 
@@ -216,61 +335,10 @@
     }
   }
 
-  function ensurePopupStyleOnce() {
-    if (document.getElementById("pctPopupStyle")) return;
-    const s = document.createElement("style");
-    s.id = "pctPopupStyle";
-    s.textContent = `
-      .pct-popup .maplibregl-popup-content{
-        background: rgba(16,18,22,.92);
-        color: rgba(245,247,250,.96);
-        border: 1px solid rgba(255,255,255,.10);
-        border-radius: 14px;
-        box-shadow: 0 16px 40px rgba(0,0,0,.45);
-        padding: 10px 12px;
-        font: 14px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-        min-width: 220px;
-      }
-      .pct-popup .maplibregl-popup-tip{
-        border-top-color: rgba(16,18,22,.92) !important;
-      }
-      .pct-popup .pct-title{ font-weight: 700; margin-bottom: 4px; }
-      .pct-popup .pct-row{ display:flex; justify-content:space-between; gap:12px; }
-      .pct-popup .pct-k{ opacity:.75; }
-      .pct-popup .pct-v{ font-weight:600; }
-    `;
-    document.head.appendChild(s);
-  }
-
-  function buildPopupHtml(p) {
-    const name = p.name || "Aktivität";
-    const typ = p.type || "";
-    const date = p.start_date ? fmtTs(p.start_date) : "—";
-    const dist = (typeof p.distance_m === "number") ? formatKm(p.distance_m) : "—";
-    const time = (typeof p.moving_time_s === "number") ? formatDuration(p.moving_time_s) : "—";
-    const eg = getElevGain(p);
-    const elev = (typeof eg === "number") ? formatMeters(eg) : "—";
-
-    return `
-      <div class="pct-title">${name}${typ ? ` · ${typ}` : ""}</div>
-      <div class="pct-row"><div class="pct-k">Datum</div><div class="pct-v">${date}</div></div>
-      <div class="pct-row"><div class="pct-k">Distanz</div><div class="pct-v">${dist}</div></div>
-      <div class="pct-row"><div class="pct-k">Zeit</div><div class="pct-v">${time}</div></div>
-      <div class="pct-row"><div class="pct-k">Höhenmeter</div><div class="pct-v">${elev}</div></div>
-    `;
-  }
-
   async function refresh() {
     try {
       statusEl.textContent = "aktualisiere…";
-
       const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
-
-      // Debug: zeigt dir in der Console, ob Höhenfelder da sind
-      try {
-        const p0 = track?.features?.[0]?.properties || {};
-        console.log("DEBUG elevation keys on first feature:", Object.keys(p0).filter(k => k.toLowerCase().includes("elev")));
-      } catch {}
 
       upsertMiniStats(track);
 
@@ -283,10 +351,10 @@
           "#ff4bd8"
         ];
 
-        const hoverWGlow = ["case", ["boolean", ["feature-state", "hover"], false], 18, 12];
-        const hoverOGlow = ["case", ["boolean", ["feature-state", "hover"], false], 0.45, 0.30];
-        const hoverWMain = ["case", ["boolean", ["feature-state", "hover"], false], 7, 5];
-        const hoverOMain = ["case", ["boolean", ["feature-state", "hover"], false], 1.00, 0.92];
+        const wGlow = ["case", ["boolean", ["feature-state", "hover"], false], 18, 12];
+        const oGlow = ["case", ["boolean", ["feature-state", "hover"], false], 0.45, 0.30];
+        const wMain = ["case", ["boolean", ["feature-state", "hover"], false], 7, 5];
+        const oMain = ["case", ["boolean", ["feature-state", "hover"], false], 1.0, 0.92];
 
         map.addLayer({
           id: "track-glow",
@@ -294,8 +362,8 @@
           source: "track",
           paint: {
             "line-color": colorExpr,
-            "line-width": hoverWGlow,
-            "line-opacity": hoverOGlow,
+            "line-width": wGlow,
+            "line-opacity": oGlow,
             "line-blur": 6
           }
         });
@@ -306,8 +374,8 @@
           source: "track",
           paint: {
             "line-color": colorExpr,
-            "line-width": hoverWMain,
-            "line-opacity": hoverOMain
+            "line-width": wMain,
+            "line-opacity": oMain
           }
         });
 
@@ -323,7 +391,7 @@
         });
 
         map.on("mousemove", "track-main", (e) => {
-          if (!e.features || !e.features.length) return;
+          if (!e.features?.length) return;
           const f = e.features[0];
           const id = f.id;
           map.getCanvas().style.cursor = "pointer";
@@ -337,18 +405,14 @@
 
         map.on("mouseleave", "track-main", () => {
           map.getCanvas().style.cursor = "";
-          if (hoveredId !== null) {
-            map.setFeatureState({ source: "track", id: hoveredId }, { hover: false });
-          }
+          if (hoveredId !== null) map.setFeatureState({ source: "track", id: hoveredId }, { hover: false });
           hoveredId = null;
         });
 
         ensurePopupStyleOnce();
         map.on("click", "track-main", (e) => {
-          if (!e.features || !e.features.length) return;
-          const f = e.features[0];
-          const p = f.properties || {};
-
+          if (!e.features?.length) return;
+          const p = e.features[0].properties || {};
           removePopup();
           popup = new maplibregl.Popup({
             closeButton: true,
@@ -360,22 +424,20 @@
             .setHTML(buildPopupHtml(p))
             .addTo(map);
         });
+
+        ensureBasemapToggle(); // ✅ erst wenn map da ist
       } else {
         map.getSource("track").setData(track);
       }
 
       const lngLat = [latest.lon, latest.lat];
-
       if (!marker) {
-        marker = new maplibregl.Marker({ element: createPulsingMarkerEl() })
-          .setLngLat(lngLat)
-          .addTo(map);
+        marker = new maplibregl.Marker({ element: createPulsingMarkerEl() }).setLngLat(lngLat).addTo(map);
       } else {
         marker.setLngLat(lngLat);
       }
 
-      metaEl.textContent =
-        `Last updated: ${fmtTs(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
+      metaEl.textContent = `Last updated: ${fmtTs(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
 
       const bbox = geojsonBbox(track);
       if (bbox) {
@@ -388,6 +450,7 @@
     } catch (e) {
       statusEl.textContent = "Fehler (Daten fehlen?)";
       metaEl.textContent = "Lege data/track.geojson und data/latest.json an.";
+      console.error(e);
     }
   }
 
