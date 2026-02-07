@@ -10,7 +10,6 @@
     satellite: {
       id: "satellite",
       icon: "🛰️",
-      label: "Sat",
       tiles: [
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
       ],
@@ -20,7 +19,6 @@
     osm: {
       id: "osm",
       icon: "🗺️",
-      label: "OSM",
       tiles: [
         "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
         "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -52,23 +50,18 @@
     zoom: 11
   });
 
+  // ---------- Controls ----------
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
   // ---------- Utils ----------
   function fmtTs(ts) {
-    try {
-      return new Date(ts).toLocaleString();
-    } catch {
-      return String(ts);
-    }
+    try { return new Date(ts).toLocaleString(); } catch { return String(ts); }
   }
-
   async function loadJson(url) {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     return await res.json();
   }
-
   function formatKm(m) {
     if (typeof m !== "number") return "—";
     return (m / 1000).toFixed(m >= 10000 ? 0 : 1) + " km";
@@ -86,7 +79,6 @@
     if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
     return `${m}:${String(s).padStart(2, "0")}`;
   }
-
   function getElevGain(p) {
     const a = p && typeof p.elev_gain_m === "number" ? p.elev_gain_m : null;
     const b = p && typeof p.total_elevation_gain_m === "number" ? p.total_elevation_gain_m : null;
@@ -94,7 +86,6 @@
     return a ?? b ?? c ?? null;
   }
 
-  // Minimal bbox
   function geojsonBbox(geojson) {
     try {
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -115,12 +106,10 @@
       }
       if (minX === Infinity) return null;
       return [minX, minY, maxX, maxY];
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }
 
-  // ---------- Mini stats in Features-Box ----------
+  // ---------- Mini stats in Features box ----------
   function findFeaturesListEl() {
     const byId = document.getElementById("features-list");
     if (byId) return byId;
@@ -136,10 +125,7 @@
       if (typeof p.distance_m === "number") dist += p.distance_m;
       if (typeof p.moving_time_s === "number") time += p.moving_time_s;
       const eg = getElevGain(p);
-      if (typeof eg === "number") {
-        elev += eg;
-        elevHas = true;
-      }
+      if (typeof eg === "number") { elev += eg; elevHas = true; }
     }
     return { dist, time, elev: elevHas ? elev : null };
   }
@@ -260,67 +246,78 @@
     return el;
   }
 
-  // ---------- Basemap toggle button (keine Tracks verlieren!) ----------
-  function ensureBasemapToggle() {
-    if (document.getElementById("pctBasemapToggle")) return;
-
-    const btn = document.createElement("button");
-    btn.id = "pctBasemapToggle";
-    btn.type = "button";
-    btn.title = "Basemap wechseln";
-    btn.textContent = BASEMAPS[currentBasemapKey].icon;
-    btn.style.position = "absolute";
-    btn.style.right = "12px";
-    btn.style.top = "12px";
-    btn.style.zIndex = 10;
-    btn.style.width = "44px";
-    btn.style.height = "44px";
-    btn.style.borderRadius = "12px";
-    btn.style.border = "1px solid rgba(255,255,255,.12)";
-    btn.style.background = "rgba(16,18,22,.70)";
-    btn.style.backdropFilter = "blur(10px)";
-    btn.style.color = "rgba(245,247,250,.95)";
-    btn.style.fontSize = "20px";
-    btn.style.display = "grid";
-    btn.style.placeItems = "center";
-    btn.style.boxShadow = "0 10px 26px rgba(0,0,0,.35)";
-    btn.style.cursor = "pointer";
-
-    const mapEl = document.getElementById("map");
-    mapEl.style.position = "relative";
-    mapEl.appendChild(btn);
-
-    btn.addEventListener("click", () => {
-      currentBasemapKey = (currentBasemapKey === "satellite") ? "osm" : "satellite";
-      btn.textContent = BASEMAPS[currentBasemapKey].icon;
-      switchBasemap(currentBasemapKey);
-    });
-  }
-
+  // ---------- Basemap switching without losing tracks ----------
   function switchBasemap(key) {
-    // ✅ KEIN setStyle(), KEIN map neu bauen!
-    // Wir tauschen nur die Raster-Tiles der bestehenden basemap-source.
     const src = map.getSource("basemap");
     if (!src) return;
 
-    // MapLibre erlaubt update via setTiles bei raster sources
+    // Best case: update tiles in place
     if (typeof src.setTiles === "function") {
       src.setTiles(BASEMAPS[key].tiles);
-    } else {
-      // Fallback: Source neu anlegen, Layer bleibt gleich (tracks bleiben weil wir die track-source NICHT anfassen)
-      try {
-        if (map.getLayer("basemap")) map.removeLayer("basemap");
-        if (map.getSource("basemap")) map.removeSource("basemap");
-        map.addSource("basemap", {
-          type: "raster",
-          tiles: BASEMAPS[key].tiles,
-          tileSize: 256,
-          attribution: BASEMAPS[key].attribution
-        });
-        map.addLayer({ id: "basemap", type: "raster", source: "basemap" }, "track-glow");
-      } catch (e) {
-        console.warn("Basemap switch fallback failed:", e);
-      }
+      return;
+    }
+
+    // Fallback: re-create basemap source/layer only
+    try {
+      if (map.getLayer("basemap")) map.removeLayer("basemap");
+      if (map.getSource("basemap")) map.removeSource("basemap");
+      map.addSource("basemap", {
+        type: "raster",
+        tiles: BASEMAPS[key].tiles,
+        tileSize: 256,
+        attribution: BASEMAPS[key].attribution
+      });
+
+      // Insert below tracks (if present) so tracks stay on top
+      const beforeId = map.getLayer("track-glow") ? "track-glow" : undefined;
+      map.addLayer({ id: "basemap", type: "raster", source: "basemap" }, beforeId);
+    } catch (e) {
+      console.warn("Basemap switch fallback failed:", e);
+    }
+  }
+
+  // ---------- Toggle as MapLibre Control (under zoom) ----------
+  class BasemapToggleControl {
+    onAdd(mapInstance) {
+      this._map = mapInstance;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.id = "pctBasemapToggle";
+      btn.title = "Basemap wechseln";
+      btn.textContent = BASEMAPS[currentBasemapKey].icon;
+
+      btn.style.width = "40px";
+      btn.style.height = "40px";
+      btn.style.borderRadius = "10px";
+      btn.style.border = "1px solid rgba(0,0,0,.18)";
+      btn.style.background = "rgba(255,255,255,.92)";
+      btn.style.backdropFilter = "blur(8px)";
+      btn.style.color = "#111";
+      btn.style.fontSize = "18px";
+      btn.style.display = "grid";
+      btn.style.placeItems = "center";
+      btn.style.cursor = "pointer";
+      btn.style.boxShadow = "0 10px 22px rgba(0,0,0,.18)";
+
+      // Make it look like other controls (stackable)
+      const container = document.createElement("div");
+      container.className = "maplibregl-ctrl maplibregl-ctrl-group";
+      container.style.marginTop = "8px"; // ✅ unter Zoom
+
+      container.appendChild(btn);
+
+      btn.addEventListener("click", () => {
+        currentBasemapKey = (currentBasemapKey === "satellite") ? "osm" : "satellite";
+        btn.textContent = BASEMAPS[currentBasemapKey].icon;
+        switchBasemap(currentBasemapKey);
+      });
+
+      this._container = container;
+      return container;
+    }
+    onRemove() {
+      this._container?.parentNode?.removeChild(this._container);
+      this._map = undefined;
     }
   }
 
@@ -329,10 +326,7 @@
   let popup = null;
 
   function removePopup() {
-    if (popup) {
-      popup.remove();
-      popup = null;
-    }
+    if (popup) { popup.remove(); popup = null; }
   }
 
   async function refresh() {
@@ -425,7 +419,8 @@
             .addTo(map);
         });
 
-        ensureBasemapToggle(); // ✅ erst wenn map da ist
+        // ✅ Toggle unter Zoom
+        map.addControl(new BasemapToggleControl(), "top-right");
       } else {
         map.getSource("track").setData(track);
       }
