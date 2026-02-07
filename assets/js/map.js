@@ -113,47 +113,87 @@
     document.head.appendChild(s);
   }
 
-  // ---------- UI CSS (stats + insights + toggle) ----------
+  // ---------- UI CSS ----------
   function injectUICSSOnce() {
     if (document.getElementById("pctUICSS")) return;
     const s = document.createElement("style");
     s.id = "pctUICSS";
     s.textContent = `
-      /* KPI cards inside list container */
-      .pct-kpi-grid{
+      /* ---------- STATISTICS (clean / apple-ish) ---------- */
+      #statsList, #insightsList { list-style: none; padding-left: 0; margin: 0; }
+      #statsList li, #insightsList li { margin: 0; }
+
+      .pct-stats-wrap{
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 10px;
-        padding: 2px 0;
       }
-      @media (max-width: 680px){
-        .pct-kpi-grid{ grid-template-columns: 1fr; }
-      }
-      .pct-kpi{
+
+      .pct-stat-hero{
         background: rgba(255,255,255,.06);
         border: 1px solid rgba(255,255,255,.10);
-        border-radius: 14px;
-        padding: 12px 12px;
+        border-radius: 16px;
+        padding: 14px 14px;
       }
-      .pct-kpi .label{
+      .pct-stat-hero .label{
         font-size: 12px;
         letter-spacing: .2px;
         color: rgba(245,248,255,.65);
         margin-bottom: 6px;
       }
-      .pct-kpi .value{
-        font-size: 18px;
-        font-weight: 800;
-        line-height: 1.1;
-        color: rgba(245,248,255,.92);
+      .pct-stat-hero .big{
+        display:flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 10px;
       }
-      .pct-kpi .sub{
+      .pct-stat-hero .big .primary{
+        font-size: 26px;
+        font-weight: 900;
+        color: rgba(245,248,255,.95);
+        line-height: 1.05;
+      }
+      .pct-stat-hero .big .secondary{
+        font-size: 14px;
+        color: rgba(245,248,255,.72);
+        font-weight: 700;
+      }
+
+      .pct-chip-grid{
+        display:grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      @media (max-width: 680px){
+        .pct-chip-grid{ grid-template-columns: 1fr; }
+      }
+      .pct-chip{
+        background: rgba(255,255,255,.04);
+        border: 1px solid rgba(255,255,255,.10);
+        border-radius: 16px;
+        padding: 12px 12px;
+      }
+      .pct-chip .label{
+        font-size: 12px;
+        color: rgba(245,248,255,.62);
+        margin-bottom: 6px;
+        display:flex;
+        align-items:center;
+        gap:8px;
+      }
+      .pct-chip .value{
+        font-size: 16px;
+        font-weight: 900;
+        color: rgba(245,248,255,.92);
+        line-height: 1.1;
+      }
+      .pct-chip .sub{
         margin-top: 4px;
         font-size: 13px;
         color: rgba(245,248,255,.70);
+        font-weight: 700;
       }
 
-      /* Insights sections */
+      /* ---------- INSIGHTS (sections, less wall of text) ---------- */
       .pct-sections{
         display: grid;
         gap: 10px;
@@ -161,14 +201,14 @@
       .pct-section{
         background: rgba(255,255,255,.04);
         border: 1px solid rgba(255,255,255,.10);
-        border-radius: 14px;
+        border-radius: 16px;
         padding: 10px 12px;
       }
       .pct-section-title{
-        font-weight: 800;
+        font-weight: 900;
         font-size: 13px;
         letter-spacing: .2px;
-        color: rgba(245,248,255,.88);
+        color: rgba(245,248,255,.90);
         margin-bottom: 8px;
         display:flex;
         align-items:center;
@@ -183,14 +223,14 @@
         grid-template-columns: 1fr auto;
         gap: 10px;
         font-size: 13px;
-        color: rgba(245,248,255,.78);
+        color: rgba(245,248,255,.76);
       }
       .pct-row b{
         color: rgba(245,248,255,.92);
-        font-weight: 700;
+        font-weight: 800;
       }
 
-      /* Popup styling */
+      /* ---------- Popup ---------- */
       .maplibregl-popup-content{
         background: rgba(15,18,24,.88) !important;
         color: rgba(245,248,255,.92) !important;
@@ -207,7 +247,7 @@
         padding: 6px 10px !important;
       }
       .pct-popup-title{
-        font-weight: 800;
+        font-weight: 900;
         font-size: 16px;
         margin-bottom: 8px;
         letter-spacing: .2px;
@@ -220,13 +260,9 @@
         line-height: 1.25;
       }
       .pct-popup-grid .k{ color: rgba(245,248,255,.70); }
-      .pct-popup-grid .v{ color: rgba(245,248,255,.92); font-weight: 700; }
+      .pct-popup-grid .v{ color: rgba(245,248,255,.92); font-weight: 800; }
 
-      /* Make list containers empty look nice */
-      #statsList, #insightsList{ list-style: none; padding-left: 0; margin: 0; }
-      #statsList li, #insightsList li{ margin: 0; }
-
-      /* Toggle button look: icon-only, readable */
+      /* ---------- Toggle button ---------- */
       .pct-toggle-btn{
         width: 36px; height: 36px;
         border-radius: 10px;
@@ -282,7 +318,7 @@
 
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
-  // ---------- basemap toggle control (icon changes!) ----------
+  // ---------- basemap toggle control ----------
   class BasemapToggle {
     onAdd(map) {
       this._map = map;
@@ -293,11 +329,10 @@
       btn.title = "Toggle basemap (Satellite / OSM)";
       btn.setAttribute("aria-label", "Toggle basemap");
 
-      // satellite is default -> show satellite icon initially
       const setIcon = () => {
         const satVis = map.getLayoutProperty("sat-layer", "visibility") !== "none";
-        // If SAT is visible -> button offers switching to OSM (show "map" icon)
-        // If OSM is visible -> button offers switching to SAT (show "satellite" icon)
+        // SAT visible => show 🗺️ (means switch to map)
+        // OSM visible => show 🛰️ (means switch to satellite)
         btn.textContent = satVis ? "🗺️" : "🛰️";
       };
 
@@ -308,18 +343,14 @@
         setIcon();
       });
 
-      // container below nav control
       const wrap = document.createElement("div");
       wrap.className = "maplibregl-ctrl maplibregl-ctrl-group";
       wrap.style.marginTop = "6px";
       wrap.style.overflow = "hidden";
       wrap.appendChild(btn);
 
-      // keep icon correct even after style reloads
       map.on("idle", setIcon);
-
       this._container = wrap;
-      this._btn = btn;
       setIcon();
       return this._container;
     }
@@ -495,9 +526,6 @@
     const remainingMi = Math.max(0, PCT_TOTAL_MI - totalMi);
     const remainingKm = remainingMi * 1.609344;
 
-    const avgPerActiveDayMi = (activeDays > 0) ? (totalMi / activeDays) : null;
-    const avgPerActiveDayKm = (activeDays > 0) ? (totalKm / activeDays) : null;
-
     const avgDistPerActMi = feats.length ? (totalMi / feats.length) : null;
     const avgDistPerActKm = feats.length ? (totalKm / feats.length) : null;
     const avgElevPerActM = feats.length && elevCount ? (elevM / feats.length) : null;
@@ -509,7 +537,6 @@
       totalKm, totalMi,
       firstTs, lastTs, activeDays, restDays,
       pctCompleted, remainingMi, remainingKm,
-      avgPerActiveDayMi, avgPerActiveDayKm,
       avgDistPerActMi, avgDistPerActKm,
       avgElevPerActM, avgElevPerActFt,
       avgMph, avgKmh
@@ -517,25 +544,49 @@
   }
 
   function setStatsUI(s) {
-    // Replace the <ul> with a KPI grid (keeping container element)
+    const elevMain = s.elevCount ? `${fmtInt(s.elevM)} m` : "—";
+    const elevSub = s.elevCount ? `${fmtInt(toFt(s.elevM))} ft` : "";
+
+    const avgDistMain = s.featsCount ? `${fmtNumber(s.avgDistPerActKm, 1)} km` : "—";
+    const avgDistSub = s.featsCount ? `${fmtNumber(s.avgDistPerActMi, 1)} mi` : "";
+
+    const avgSpeedMain = s.avgKmh ? `${fmtNumber(s.avgKmh, 1)} km/h` : "—";
+    const avgSpeedSub = s.avgMph ? `${fmtNumber(s.avgMph, 1)} mi/h` : "";
+
     statsListEl.innerHTML = `
-      <div class="pct-kpi-grid">
-        <div class="pct-kpi">
+      <div class="pct-stats-wrap">
+        <div class="pct-stat-hero">
           <div class="label">Total Distance</div>
-          <div class="value">${fmtNumber(s.totalKm, 1)} km</div>
-          <div class="sub">${fmtNumber(s.totalMi, 1)} mi</div>
+          <div class="big">
+            <div class="primary">${fmtNumber(s.totalKm, 1)} km</div>
+            <div class="secondary">${fmtNumber(s.totalMi, 1)} mi</div>
+          </div>
         </div>
 
-        <div class="pct-kpi">
-          <div class="label">Total Elevation</div>
-          <div class="value">${s.elevCount ? `${fmtInt(s.elevM)} m` : "—"}</div>
-          <div class="sub">${s.elevCount ? `${fmtInt(toFt(s.elevM))} ft` : ""}</div>
-        </div>
+        <div class="pct-chip-grid">
+          <div class="pct-chip">
+            <div class="label">⛰️ Total Elevation</div>
+            <div class="value">${elevMain}</div>
+            <div class="sub">${elevSub}</div>
+          </div>
 
-        <div class="pct-kpi">
-          <div class="label">Total Time</div>
-          <div class="value">${fmtDuration(s.timeS)}</div>
-          <div class="sub">${s.featsCount ? `${s.featsCount} activities` : ""}</div>
+          <div class="pct-chip">
+            <div class="label">⏱️ Total Time</div>
+            <div class="value">${fmtDuration(s.timeS)}</div>
+            <div class="sub">${s.featsCount ? `${s.featsCount} activities` : ""}</div>
+          </div>
+
+          <div class="pct-chip">
+            <div class="label">📏 Avg Distance / Activity</div>
+            <div class="value">${avgDistMain}</div>
+            <div class="sub">${avgDistSub}</div>
+          </div>
+
+          <div class="pct-chip">
+            <div class="label">🏃 Avg Speed</div>
+            <div class="value">${avgSpeedMain}</div>
+            <div class="sub">${avgSpeedSub}</div>
+          </div>
         </div>
       </div>
     `;
@@ -544,9 +595,6 @@
   function setInsightsUI(s) {
     const pctLine = `${fmtNumber(s.totalKm, 1)} km / ${fmtNumber(s.totalMi, 1)} mi of ${fmtInt(PCT_TOTAL_KM)} km / ${fmtInt(PCT_TOTAL_MI)} mi (${fmtNumber(s.pctCompleted, 1)}%)`;
     const remainingLine = `${fmtNumber(s.remainingKm, 1)} km / ${fmtNumber(s.remainingMi, 1)} mi`;
-    const avgDayLine = s.activeDays
-      ? `${fmtNumber(s.avgPerActiveDayKm, 1)} km / ${fmtNumber(s.avgPerActiveDayMi, 1)} mi`
-      : "—";
 
     const avgDistLine = s.featsCount
       ? `${fmtNumber(s.avgDistPerActKm, 1)} km / ${fmtNumber(s.avgDistPerActMi, 1)} mi`
@@ -571,15 +619,14 @@
           <div class="pct-rows">
             <div class="pct-row"><span>PCT completed</span><b>${pctLine}</b></div>
             <div class="pct-row"><span>Remaining</span><b>${remainingLine}</b></div>
-            <div class="pct-row"><span>Average per active day</span><b>${avgDayLine}</b></div>
           </div>
         </div>
 
         <div class="pct-section">
           <div class="pct-section-title">📊 Performance</div>
           <div class="pct-rows">
-            <div class="pct-row"><span>Avg distance per activity</span><b>${avgDistLine}</b></div>
-            <div class="pct-row"><span>Avg elevation per activity</span><b>${avgElevLine}</b></div>
+            <div class="pct-row"><span>Avg distance / activity</span><b>${avgDistLine}</b></div>
+            <div class="pct-row"><span>Avg elevation / activity</span><b>${avgElevLine}</b></div>
             <div class="pct-row"><span>Avg speed</span><b>${avgSpeedLine}</b></div>
           </div>
         </div>
@@ -616,7 +663,6 @@
 
       const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
 
-      // Create sources/layers once
       if (!map.getSource("track")) {
         injectUICSSOnce();
         map.addControl(new BasemapToggle(), "top-right");
@@ -696,7 +742,7 @@
           const p = f.properties || {};
           const html = buildPopupHTML(p);
 
-          if (popup) popup.remove();
+          popup?.remove();
           popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: "320px" })
             .setLngLat(e.lngLat)
             .setHTML(html)
@@ -706,7 +752,7 @@
         map.getSource("track").setData(track);
       }
 
-      // marker & latest coords
+      // marker
       const lngLat = [latest.lon, latest.lat];
       if (!marker) {
         marker = new maplibregl.Marker({ element: createBlinkMarkerEl() })
@@ -722,6 +768,7 @@
 
       statusEl.textContent = "online";
 
+      // status extra line (latest activity summary)
       const latestFeat = findLatestFeature(track);
       let lastActLine = "";
       if (latestFeat?.properties) {
@@ -736,6 +783,7 @@
         const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
 
         const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
+        // line break before Hike (cleaner)
         lastActLine = `<br>${type}: ${distStr} · ${time}`;
       }
 
