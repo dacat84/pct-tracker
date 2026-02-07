@@ -1,17 +1,31 @@
 (async function () {
   const statusEl = document.getElementById("status");
   const metaEl = document.getElementById("meta");
+  const statusExtraEl = document.getElementById("status-extra");
+  const statsListEl = document.getElementById("statsList");
+  const insightsListEl = document.getElementById("insightsList");
 
-  // URLs (funktioniert unter GitHub Pages /demo-tracker/ etc.)
   const trackUrl = new URL("./data/track.geojson", window.location.href).toString();
   const latestUrl = new URL("./data/latest.json", window.location.href).toString();
 
-  // ---------- Helpers ----------
-  const M_TO_KM = 1 / 1000;
-  const M_TO_MI = 1 / 1609.344;
-  const M_TO_FT = 3.280839895;
+  // ---------- helpers ----------
+  const KM_PER_M = 0.001;
+  const MI_PER_M = 0.000621371;
+  const FT_PER_M = 3.28084;
 
-  function fmtTs(ts) {
+  const PCT_TOTAL_MI = 2650;
+  const PCT_TOTAL_KM = PCT_TOTAL_MI * 1.609344;
+
+  function fmtNumber(n, digits = 1) {
+    if (!Number.isFinite(n)) return "—";
+    return n.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
+  }
+  function fmtInt(n) {
+    if (!Number.isFinite(n)) return "—";
+    return Math.round(n).toLocaleString();
+  }
+
+  function fmtDate(ts) {
     try {
       const d = new Date(ts);
       return d.toLocaleString();
@@ -20,99 +34,46 @@
     }
   }
 
-  function fmtNum(n, digits = 1) {
-    if (!isFinite(n)) return "—";
-    return n.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
-  }
+  // 1 Day 10 h 29 min
+  function fmtDuration(totalSeconds) {
+    if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return "—";
+    const sec = Math.floor(totalSeconds);
+    const days = Math.floor(sec / 86400);
+    const hrs = Math.floor((sec % 86400) / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
 
-  function fmtInt(n) {
-    if (!isFinite(n)) return "—";
-    return Math.round(n).toLocaleString();
-  }
-
-  function fmtDuration(seconds) {
-    if (!isFinite(seconds) || seconds < 0) return "—";
-    const s = Math.round(seconds);
-
-    const days = Math.floor(s / 86400);
-    const rem1 = s % 86400;
-    const hours = Math.floor(rem1 / 3600);
-    const rem2 = rem1 % 3600;
-    const mins = Math.floor(rem2 / 60);
-
-    // Example: "1 Day 10 h 29 min" or "6 h 59 min"
     const parts = [];
     if (days > 0) parts.push(`${days} Day${days === 1 ? "" : "s"}`);
-    if (hours > 0 || days > 0) parts.push(`${hours} h`);
+    if (hrs > 0) parts.push(`${hrs} h`);
     parts.push(`${mins} min`);
     return parts.join(" ");
   }
 
-  function fmtDistanceBoth(meters) {
-    const km = meters * M_TO_KM;
-    const mi = meters * M_TO_MI;
-    return `${fmtNum(km, 1)} km / ${fmtNum(mi, 1)} mi`;
-  }
-
-  function fmtElevationBoth(meters) {
-    if (!isFinite(meters)) return "—";
-    const ft = meters * M_TO_FT;
-    return `${fmtInt(meters)} m / ${fmtInt(ft)} ft`;
-  }
+  function toKm(m) { return m * KM_PER_M; }
+  function toMi(m) { return m * MI_PER_M; }
+  function toFt(m) { return m * FT_PER_M; }
 
   function pickElevationMeters(props) {
-    // support different property names (depends on your strava_sync.py)
-    const keys = [
-      "elevation_m",
-      "elev_m",
-      "elev_gain_m",
-      "elevation_gain_m",
-      "total_elevation_gain_m",
-      "total_elevation_gain",
-      "elevation",
-      "elev"
+    // support multiple possible keys
+    const candidates = [
+      props.elevation_m,
+      props.elev_m,
+      props.elev_gain_m,
+      props.total_elevation_gain,
+      props.total_elevation_gain_m,
+      props.elevation_gain_m
     ];
-    for (const k of keys) {
-      const v = props?.[k];
-      if (typeof v === "number" && isFinite(v)) return v;
+    for (const v of candidates) {
+      const n = Number(v);
+      if (Number.isFinite(n) && n >= 0) return n;
     }
-    return NaN;
+    return null;
   }
 
-  function pickDistanceMeters(props) {
-    const v = props?.distance_m;
-    if (typeof v === "number" && isFinite(v)) return v;
-    // fallback keys
-    const keys = ["distance", "distanceMeters", "distance_meters"];
-    for (const k of keys) {
-      const x = props?.[k];
-      if (typeof x === "number" && isFinite(x)) return x;
-    }
-    return NaN;
-  }
-
-  function pickMovingTimeSeconds(props) {
-    const v = props?.moving_time_s;
-    if (typeof v === "number" && isFinite(v)) return v;
-    const keys = ["moving_time", "elapsed_time", "time_s", "timeSeconds"];
-    for (const k of keys) {
-      const x = props?.[k];
-      if (typeof x === "number" && isFinite(x)) return x;
-    }
-    return NaN;
-  }
-
-  function pickType(props) {
-    const t = props?.type || props?.activity_type || "";
-    return String(t || "Activity");
-  }
-
-  function isoDay(ts) {
-    // "2026-02-02T07:00:00Z" -> "2026-02-02"
-    if (!ts) return "";
-    const s = String(ts);
-    const idx = s.indexOf("T");
-    return idx > 0 ? s.slice(0, idx) : s.slice(0, 10);
+  function activityTypeLabel(props) {
+    // Prefer Strava "type" (Run/Hike/Walk/Ride)
+    const t = (props.type || "").toString().trim();
+    return t || "Activity";
   }
 
   async function loadJson(url) {
@@ -121,360 +82,10 @@
     return await res.json();
   }
 
-  // ---------- DOM targets (robust selection) ----------
-  function findCardByHeadingText(texts) {
-    const cards = Array.from(document.querySelectorAll("section, .card, .panel, .box, .glass, div"));
-    const wanted = texts.map(t => t.toLowerCase());
-    for (const el of cards) {
-      const h = el.querySelector("h1,h2,h3,h4");
-      if (!h) continue;
-      const ht = (h.textContent || "").trim().toLowerCase();
-      if (wanted.includes(ht)) return el;
-    }
-    return null;
-  }
-
-  function ensureList(card) {
-    if (!card) return null;
-    let ul = card.querySelector("ul");
-    if (!ul) {
-      ul = document.createElement("ul");
-      card.appendChild(ul);
-    }
-    return ul;
-  }
-
-  function setHeading(card, newTitle) {
-    if (!card) return;
-    const h = card.querySelector("h1,h2,h3,h4");
-    if (h) h.textContent = newTitle;
-  }
-
-  const featuresCard = findCardByHeadingText(["Features", "Statistics"]);
-  const stepsCard = findCardByHeadingText(["Nächste Schritte", "Next Steps", "Insights"]);
-
-  // ---------- Marker (blink green/orange) ----------
-  let marker;
-  function createBlinkMarkerEl() {
-    const el = document.createElement("div");
-    el.style.width = "16px";
-    el.style.height = "16px";
-    el.style.borderRadius = "999px";
-    el.style.border = "2px solid rgba(232,238,245,.95)";
-    el.style.boxShadow = "0 10px 26px rgba(0,0,0,.45)";
-    el.style.background = "#2bff88";
-
-    const ring = document.createElement("div");
-    ring.style.position = "absolute";
-    ring.style.left = "-12px";
-    ring.style.top = "-12px";
-    ring.style.width = "40px";
-    ring.style.height = "40px";
-    ring.style.borderRadius = "999px";
-    ring.style.border = "2px solid rgba(43,255,136,.55)";
-    ring.style.boxShadow = "0 0 22px rgba(43,255,136,.40)";
-    ring.style.animation = "pctPulse 1.6s ease-out infinite";
-    el.style.position = "relative";
-    el.appendChild(ring);
-
-    if (!document.getElementById("pctPulseStyle")) {
-      const s = document.createElement("style");
-      s.id = "pctPulseStyle";
-      s.textContent = `
-        @keyframes pctPulse {
-          0%   { transform: scale(0.55); opacity: 0.85; }
-          70%  { transform: scale(1.15); opacity: 0.20; }
-          100% { transform: scale(1.25); opacity: 0.00; }
-        }
-        /* Popup polish (MapLibre default uses .maplibregl-popup...) */
-        .maplibregl-popup-content{
-          background: rgba(20,22,26,0.92) !important;
-          color: rgba(240,245,255,0.92) !important;
-          border: 1px solid rgba(255,255,255,0.10);
-          box-shadow: 0 18px 50px rgba(0,0,0,0.45);
-          border-radius: 14px !important;
-          padding: 12px 14px !important;
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-        }
-        .maplibregl-popup-close-button{
-          color: rgba(160,185,255,0.9) !important;
-          font-size: 18px !important;
-          padding: 8px 10px !important;
-        }
-        .pctPopupTitle{
-          font-weight: 700;
-          font-size: 16px;
-          margin: 0 0 6px 0;
-          letter-spacing: .2px;
-        }
-        .pctPopupGrid{
-          display: grid;
-          grid-template-columns: 86px 1fr;
-          gap: 4px 10px;
-          font-size: 14px;
-          line-height: 1.25;
-        }
-        .pctPopupKey{ color: rgba(230,240,255,0.70); }
-        .pctPopupVal{ text-align: right; font-variant-numeric: tabular-nums; }
-      `;
-      document.head.appendChild(s);
-    }
-
-    let on = false;
-    setInterval(() => {
-      on = !on;
-      const c = on ? "#ff7a18" : "#2bff88";
-      el.style.background = c;
-      ring.style.borderColor = on ? "rgba(255,122,24,.55)" : "rgba(43,255,136,.55)";
-      ring.style.boxShadow = on ? "0 0 22px rgba(255,122,24,.40)" : "0 0 22px rgba(43,255,136,.40)";
-    }, 700);
-
-    return el;
-  }
-
-  // ---------- Basemap (Satellite default + OSM toggle without re-style) ----------
-  const style = {
-    version: 8,
-    sources: {
-      // Satellite (Esri World Imagery)
-      sat: {
-        type: "raster",
-        tiles: [
-          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-        ],
-        tileSize: 256,
-        attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
-      },
-      // OSM standard
-      osm: {
-        type: "raster",
-        tiles: [
-          "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        ],
-        tileSize: 256,
-        attribution: "© OpenStreetMap contributors"
-      }
-    },
-    layers: [
-      { id: "basemap-sat", type: "raster", source: "sat", layout: { visibility: "visible" } },
-      { id: "basemap-osm", type: "raster", source: "osm", layout: { visibility: "none" } }
-    ]
-  };
-
-  const map = new maplibregl.Map({
-    container: "map",
-    style,
-    center: [9.17, 48.78],
-    zoom: 11
-  });
-
-  // keep existing nav control
-  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
-
-  // Custom basemap toggle button placed under nav control
-  class BasemapToggleControl {
-    onAdd(mapInstance) {
-      this.map = mapInstance;
-      const container = document.createElement("div");
-      container.className = "maplibregl-ctrl maplibregl-ctrl-group";
-
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.title = "Toggle basemap (Satellite / OSM)";
-      btn.style.width = "36px";
-      btn.style.height = "36px";
-      btn.style.fontSize = "18px";
-      btn.style.display = "grid";
-      btn.style.placeItems = "center";
-      btn.style.userSelect = "none";
-
-      // Start: Satellite shown => show OSM icon as “next”
-      let showing = "sat"; // sat | osm
-      btn.textContent = "🗺️";
-
-      btn.onclick = () => {
-        if (showing === "sat") {
-          // show OSM
-          mapInstance.setLayoutProperty("basemap-sat", "visibility", "none");
-          mapInstance.setLayoutProperty("basemap-osm", "visibility", "visible");
-          showing = "osm";
-          btn.textContent = "🛰️";
-        } else {
-          // show SAT
-          mapInstance.setLayoutProperty("basemap-osm", "visibility", "none");
-          mapInstance.setLayoutProperty("basemap-sat", "visibility", "visible");
-          showing = "sat";
-          btn.textContent = "🗺️";
-        }
-      };
-
-      container.appendChild(btn);
-      this.container = container;
-      return container;
-    }
-    onRemove() {
-      this.container?.parentNode?.removeChild(this.container);
-      this.map = undefined;
-    }
-  }
-
-  map.addControl(new BasemapToggleControl(), "top-right");
-
-  // ---------- Track layers + hover + popup ----------
-  let hoveredId = null;
-
-  function makeColorExpr() {
-    // alternating colors by properties.i (set in your strava_sync.py)
-    return [
-      "case",
-      ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#46f3ff", // cyan
-      "#ff4bd8" // magenta
-    ];
-  }
-
-  function setUpTrackLayers(track) {
-    // Use promoteId so feature-state hover works reliably
-    map.addSource("track", { type: "geojson", data: track, promoteId: "strava_id" });
-
-    const colorExpr = makeColorExpr();
-
-    // Glow
-    map.addLayer({
-      id: "track-glow",
-      type: "line",
-      source: "track",
-      paint: {
-        "line-color": [
-          "case",
-          ["boolean", ["feature-state", "hover"], false],
-          "rgba(255,255,255,0.95)",
-          colorExpr
-        ],
-        "line-width": [
-          "case",
-          ["boolean", ["feature-state", "hover"], false],
-          16,
-          12
-        ],
-        "line-opacity": [
-          "case",
-          ["boolean", ["feature-state", "hover"], false],
-          0.38,
-          0.28
-        ],
-        "line-blur": 7
-      }
-    });
-
-    // Main
-    map.addLayer({
-      id: "track-main",
-      type: "line",
-      source: "track",
-      paint: {
-        "line-color": [
-          "case",
-          ["boolean", ["feature-state", "hover"], false],
-          "rgba(255,255,255,0.98)",
-          colorExpr
-        ],
-        "line-width": [
-          "case",
-          ["boolean", ["feature-state", "hover"], false],
-          7,
-          5
-        ],
-        "line-opacity": [
-          "case",
-          ["boolean", ["feature-state", "hover"], false],
-          1.0,
-          0.92
-        ]
-      }
-    });
-
-    // Highlight
-    map.addLayer({
-      id: "track-highlight",
-      type: "line",
-      source: "track",
-      paint: {
-        "line-color": "rgba(255,255,255,0.65)",
-        "line-width": 1.6,
-        "line-opacity": [
-          "case",
-          ["boolean", ["feature-state", "hover"], false],
-          0.85,
-          0.55
-        ]
-      }
-    });
-
-    // Hover highlight
-    map.on("mousemove", "track-main", (e) => {
-      map.getCanvas().style.cursor = "pointer";
-      const f = e.features && e.features[0];
-      if (!f) return;
-
-      const id = f.properties?.strava_id;
-      if (!id) return;
-
-      if (hoveredId !== null && hoveredId !== id) {
-        try { map.setFeatureState({ source: "track", id: hoveredId }, { hover: false }); } catch {}
-      }
-      hoveredId = id;
-      try { map.setFeatureState({ source: "track", id }, { hover: true }); } catch {}
-    });
-
-    map.on("mouseleave", "track-main", () => {
-      map.getCanvas().style.cursor = "";
-      if (hoveredId !== null) {
-        try { map.setFeatureState({ source: "track", id: hoveredId }, { hover: false }); } catch {}
-      }
-      hoveredId = null;
-    });
-
-    // Popup on click
-    map.on("click", "track-main", (e) => {
-      const f = e.features && e.features[0];
-      if (!f) return;
-
-      const props = f.properties || {};
-      const type = pickType(props);
-
-      const distM = pickDistanceMeters(props);
-      const timeS = pickMovingTimeSeconds(props);
-      const elevM = pickElevationMeters(props);
-
-      const date = props.start_date ? fmtTs(props.start_date) : "—";
-
-      const html = `
-        <div class="pctPopupTitle">${type}</div>
-        <div class="pctPopupGrid">
-          <div class="pctPopupKey">Date</div><div class="pctPopupVal">${date}</div>
-          <div class="pctPopupKey">Distance</div><div class="pctPopupVal">${fmtDistanceBoth(distM)}</div>
-          <div class="pctPopupKey">Time</div><div class="pctPopupVal">${fmtDuration(timeS)}</div>
-          <div class="pctPopupKey">Elevation</div><div class="pctPopupVal">${fmtElevationBoth(elevM)}</div>
-        </div>
-      `;
-
-      new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: "320px" })
-        .setLngLat(e.lngLat)
-        .setHTML(html)
-        .addTo(map);
-    });
-  }
-
-  // ---------- bbox ----------
   function geojsonBbox(geojson) {
     try {
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       const feats = geojson.type === "FeatureCollection" ? geojson.features : [geojson];
-
       for (const f of feats) {
         const g = f.type === "Feature" ? f.geometry : f;
         const coords =
@@ -482,7 +93,6 @@
           g.type === "MultiLineString" ? g.coordinates.flat() :
           g.type === "Point" ? [g.coordinates] :
           [];
-
         for (const c of coords) {
           const [x, y] = c;
           if (x < minX) minX = x;
@@ -498,147 +108,500 @@
     }
   }
 
-  // ---------- Statistics + Insights rendering ----------
-  function renderStatistics(track) {
-    const feats = Array.isArray(track?.features) ? track.features : [];
-    const propsList = feats.map(f => f.properties || {});
-
-    let totalDistM = 0;
-    let totalTimeS = 0;
-    let totalElevM = 0;
-
-    for (const p of propsList) {
-      const d = pickDistanceMeters(p);
-      const t = pickMovingTimeSeconds(p);
-      const e = pickElevationMeters(p);
-      if (isFinite(d)) totalDistM += d;
-      if (isFinite(t)) totalTimeS += t;
-      if (isFinite(e)) totalElevM += e;
-    }
-
-    // Statistics card
-    if (featuresCard) {
-      setHeading(featuresCard, "Statistics");
-      const ul = ensureList(featuresCard);
-      ul.innerHTML = "";
-
-      // Order requested: Distance -> Elevation -> Time
-      const li1 = document.createElement("li");
-      li1.textContent = `Total: ${fmtDistanceBoth(totalDistM)}`;
-      ul.appendChild(li1);
-
-      const li2 = document.createElement("li");
-      li2.textContent = `Elevation: ${fmtElevationBoth(totalElevM)}`;
-      ul.appendChild(li2);
-
-      const li3 = document.createElement("li");
-      li3.textContent = `Time: ${fmtDuration(totalTimeS)}`;
-      ul.appendChild(li3);
-    }
-
-    // Insights card
-    if (stepsCard) {
-      setHeading(stepsCard, "Insights");
-      const ul = ensureList(stepsCard);
-      ul.innerHTML = "";
-
-      // Progress (PCT)
-      const pctTotalMi = 2650;
-      const completedMi = totalDistM * M_TO_MI;
-      const completedPct = pctTotalMi > 0 ? (completedMi / pctTotalMi) * 100 : 0;
-      const remainingMi = Math.max(0, pctTotalMi - completedMi);
-
-      // Active days
-      const daysSet = new Set(propsList.map(p => isoDay(p.start_date)).filter(Boolean));
-      const activeDays = daysSet.size || 0;
-
-      // Avg per active day
-      const avgPerDayMi = activeDays > 0 ? completedMi / activeDays : NaN;
-
-      // Performance
-      const activities = propsList.length || 0;
-      const avgDistMi = activities > 0 ? completedMi / activities : NaN;
-      const avgElevFt = activities > 0 ? (totalElevM * M_TO_FT) / activities : NaN;
-      const totalHours = totalTimeS / 3600;
-      const avgPaceMph = totalHours > 0 ? completedMi / totalHours : NaN;
-
-      // Timeline
-      const dates = propsList.map(p => p.start_date).filter(Boolean).sort();
-      const first = dates[0] ? fmtTs(dates[0]) : "—";
-      const last = dates[dates.length - 1] ? fmtTs(dates[dates.length - 1]) : "—";
-
-      // Rest days: between first & last inclusive - activeDays
-      let restDays = "—";
-      try {
-        if (dates[0] && dates[dates.length - 1]) {
-          const d0 = new Date(dates[0]);
-          const d1 = new Date(dates[dates.length - 1]);
-          const spanDays = Math.floor((Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate()) - Date.UTC(d0.getFullYear(), d0.getMonth(), d0.getDate())) / 86400000) + 1;
-          restDays = Math.max(0, spanDays - activeDays).toString();
-        }
-      } catch {}
-
-      // Geography (no reverse-geocode on GitHub Pages; show bbox + ranges)
-      const bbox = geojsonBbox(track);
-      let geoLine = "—";
-      if (bbox) {
-        const [minX, minY, maxX, maxY] = bbox;
-        geoLine = `Lat: ${minY.toFixed(3)}–${maxY.toFixed(3)} · Lon: ${minX.toFixed(3)}–${maxX.toFixed(3)}`;
+  function ensurePulseKeyframes() {
+    if (document.getElementById("pctPulseStyle")) return;
+    const s = document.createElement("style");
+    s.id = "pctPulseStyle";
+    s.textContent = `
+      @keyframes pctPulse {
+        0%   { transform: scale(0.55); opacity: 0.85; }
+        70%  { transform: scale(1.15); opacity: 0.20; }
+        100% { transform: scale(1.25); opacity: 0.00; }
       }
+    `;
+    document.head.appendChild(s);
+  }
 
-      // Build list
-      const mk = (txt) => {
-        const li = document.createElement("li");
-        li.textContent = txt;
-        return li;
-      };
+  // ---------- basemap style (2 raster layers, toggle via visibility) ----------
+  const style = {
+    version: 8,
+    sources: {
+      sat: {
+        type: "raster",
+        tiles: [
+          // Esri World Imagery
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        ],
+        tileSize: 256,
+        attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
+      },
+      osm: {
+        type: "raster",
+        tiles: [
+          "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        ],
+        tileSize: 256,
+        attribution: "© OpenStreetMap contributors"
+      }
+    },
+    layers: [
+      { id: "sat-layer", type: "raster", source: "sat", layout: { visibility: "visible" } },
+      { id: "osm-layer", type: "raster", source: "osm", layout: { visibility: "none" } }
+    ]
+  };
 
-      ul.appendChild(mk(`PCT completed: ${fmtNum(completedMi, 1)} mi / ${pctTotalMi} mi (${fmtNum(completedPct, 1)}%)`));
-      ul.appendChild(mk(`Remaining: ${fmtNum(remainingMi, 1)} mi`));
-      ul.appendChild(mk(`Average per active day: ${fmtNum(avgPerDayMi, 1)} mi / ${fmtNum(avgPerDayMi / 0.621371, 1)} km`));
+  const map = new maplibregl.Map({
+    container: "map",
+    style,
+    center: [9.17, 48.78],
+    zoom: 11
+  });
 
-      ul.appendChild(mk(`Avg distance per activity: ${fmtNum(avgDistMi, 1)} mi / ${fmtNum(avgDistMi / 0.621371, 1)} km`));
-      ul.appendChild(mk(`Avg elevation per activity: ${fmtInt(avgElevFt)} ft / ${fmtInt(avgElevFt / M_TO_FT)} m`));
-      ul.appendChild(mk(`Avg speed: ${fmtNum(avgPaceMph, 1)} mi/h / ${fmtNum(avgPaceMph * 1.609344, 1)} km/h`));
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
-      ul.appendChild(mk(`First activity: ${first}`));
-      ul.appendChild(mk(`Last activity: ${last}`));
-      ul.appendChild(mk(`Active days: ${activeDays} · Rest days: ${restDays}`));
+  // Basemap toggle control (small icon button) – placed under nav buttons
+  class BasemapToggle {
+    onAdd(map) {
+      this._map = map;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.title = "Toggle basemap (Satellite / OSM)";
+      btn.setAttribute("aria-label", "Toggle basemap");
+      btn.style.width = "36px";
+      btn.style.height = "36px";
+      btn.style.borderRadius = "10px";
+      btn.style.border = "1px solid rgba(255,255,255,.22)";
+      btn.style.background = "rgba(10,12,16,.65)";
+      btn.style.backdropFilter = "blur(8px)";
+      btn.style.color = "white";
+      btn.style.cursor = "pointer";
+      btn.style.boxShadow = "0 10px 26px rgba(0,0,0,.35)";
+      btn.style.display = "grid";
+      btn.style.placeItems = "center";
+      btn.style.fontSize = "18px";
+      btn.textContent = "🗺️"; // clean icon-only
 
-      ul.appendChild(mk(`Geography: ${geoLine}`));
+      const wrap = document.createElement("div");
+      wrap.className = "maplibregl-ctrl maplibregl-ctrl-group";
+      wrap.style.marginTop = "6px";
+      wrap.style.overflow = "hidden";
+      wrap.appendChild(btn);
+
+      btn.addEventListener("click", () => {
+        const satVis = map.getLayoutProperty("sat-layer", "visibility") !== "none";
+        map.setLayoutProperty("sat-layer", "visibility", satVis ? "none" : "visible");
+        map.setLayoutProperty("osm-layer", "visibility", satVis ? "visible" : "none");
+      });
+
+      this._container = wrap;
+      return this._container;
+    }
+    onRemove() {
+      this._container?.parentNode?.removeChild(this._container);
+      this._map = undefined;
+    }
+  }
+  map.addControl(new BasemapToggle(), "top-right");
+
+  // ---------- marker (blinking again) ----------
+  let marker;
+  function createBlinkMarkerEl() {
+    ensurePulseKeyframes();
+
+    const el = document.createElement("div");
+    el.style.width = "16px";
+    el.style.height = "16px";
+    el.style.borderRadius = "999px";
+    el.style.border = "2px solid rgba(232,238,245,.95)";
+    el.style.boxShadow = "0 10px 26px rgba(0,0,0,.45)";
+    el.style.background = "#2bff88";
+    el.style.position = "relative";
+
+    const ring = document.createElement("div");
+    ring.style.position = "absolute";
+    ring.style.left = "-10px";
+    ring.style.top = "-10px";
+    ring.style.width = "36px";
+    ring.style.height = "36px";
+    ring.style.borderRadius = "999px";
+    ring.style.border = "2px solid rgba(43,255,136,.55)";
+    ring.style.boxShadow = "0 0 22px rgba(43,255,136,.40)";
+    ring.style.animation = "pctPulse 1.6s ease-out infinite";
+    el.appendChild(ring);
+
+    let on = false;
+    setInterval(() => {
+      on = !on;
+      const c = on ? "#ff7a18" : "#2bff88";
+      el.style.background = c;
+      ring.style.borderColor = on ? "rgba(255,122,24,.55)" : "rgba(43,255,136,.55)";
+      ring.style.boxShadow = on ? "0 0 22px rgba(255,122,24,.40)" : "0 0 22px rgba(43,255,136,.40)";
+    }, 700);
+
+    return el;
+  }
+
+  // ---------- layers / interactivity ----------
+  let didFitOnce = false;
+  let popup;
+
+  // hover highlight: we render a separate line with filter = hovered feature
+  let hoveredId = null;
+  function setHover(id) {
+    hoveredId = id;
+    if (!map.getLayer("track-hover")) return;
+    if (id == null) {
+      map.setFilter("track-hover", ["==", ["get", "strava_id"], -1]);
+      return;
+    }
+    map.setFilter("track-hover", ["==", ["to-number", ["get", "strava_id"]], Number(id)]);
+  }
+
+  function buildPopupHTML(props) {
+    const type = activityTypeLabel(props);
+
+    const start = props.start_date ? fmtDate(props.start_date) : "—";
+
+    const distM = Number(props.distance_m);
+    const km = Number.isFinite(distM) ? toKm(distM) : null;
+    const mi = Number.isFinite(distM) ? toMi(distM) : null;
+
+    const tSec = Number(props.moving_time_s);
+    const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
+
+    const elevM = pickElevationMeters(props);
+    const elevStr = elevM == null
+      ? "—"
+      : `${fmtInt(elevM)} m / ${fmtInt(toFt(elevM))} ft`;
+
+    const distStr = (km == null || mi == null)
+      ? "—"
+      : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
+
+    // Styled popup (no name)
+    return `
+      <div class="pct-popup">
+        <div class="pct-popup-title">${type}</div>
+        <div class="pct-popup-grid">
+          <div class="k">Date</div><div class="v">${start}</div>
+          <div class="k">Distance</div><div class="v">${distStr}</div>
+          <div class="k">Time</div><div class="v">${time}</div>
+          <div class="k">Elevation</div><div class="v">${elevStr}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function injectPopupCSSOnce() {
+    if (document.getElementById("pctPopupStyle")) return;
+    const s = document.createElement("style");
+    s.id = "pctPopupStyle";
+    s.textContent = `
+      .maplibregl-popup-content{
+        background: rgba(15,18,24,.88) !important;
+        color: rgba(245,248,255,.92) !important;
+        border: 1px solid rgba(255,255,255,.14) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 16px 40px rgba(0,0,0,.45) !important;
+        backdrop-filter: blur(10px);
+        padding: 12px 14px !important;
+        min-width: 240px;
+      }
+      .maplibregl-popup-close-button{
+        color: rgba(255,255,255,.8) !important;
+        font-size: 18px !important;
+        padding: 6px 10px !important;
+      }
+      .pct-popup-title{
+        font-weight: 700;
+        font-size: 16px;
+        margin-bottom: 8px;
+        letter-spacing: .2px;
+      }
+      .pct-popup-grid{
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 4px 14px;
+        font-size: 14px;
+        line-height: 1.25;
+      }
+      .pct-popup-grid .k{ color: rgba(245,248,255,.70); }
+      .pct-popup-grid .v{ color: rgba(245,248,255,.92); font-weight: 600; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  // latest "live progress" line: animate draw of latest activity
+  let liveAnim = { raf: null, t0: 0, coords: null, durationMs: 2200 };
+
+  function stopLiveAnim() {
+    if (liveAnim.raf) cancelAnimationFrame(liveAnim.raf);
+    liveAnim.raf = null;
+    liveAnim.coords = null;
+  }
+
+  function startLiveAnim(coords) {
+    stopLiveAnim();
+    if (!coords || coords.length < 2) return;
+
+    liveAnim.coords = coords;
+    liveAnim.t0 = performance.now();
+
+    const step = (now) => {
+      if (!map.getSource("latest-progress")) return;
+      const elapsed = now - liveAnim.t0;
+      const p = Math.min(1, elapsed / liveAnim.durationMs);
+      const n = Math.max(2, Math.floor(p * coords.length));
+      const sliced = coords.slice(0, n);
+
+      map.getSource("latest-progress").setData({
+        type: "Feature",
+        properties: {},
+        geometry: { type: "LineString", coordinates: sliced }
+      });
+
+      if (p < 1) {
+        liveAnim.raf = requestAnimationFrame(step);
+      } else {
+        // loop smoothly
+        liveAnim.t0 = performance.now() + 600;
+        liveAnim.raf = requestAnimationFrame(step);
+      }
+    };
+
+    liveAnim.raf = requestAnimationFrame(step);
+  }
+
+  function computeStats(track) {
+    const feats = (track && track.features) ? track.features : [];
+    let distM = 0;
+    let timeS = 0;
+    let elevM = 0;
+    let elevCount = 0;
+
+    const dates = new Set();
+    let firstTs = null;
+    let lastTs = null;
+
+    for (const f of feats) {
+      const p = f.properties || {};
+      const d = Number(p.distance_m);
+      if (Number.isFinite(d)) distM += d;
+
+      const t = Number(p.moving_time_s);
+      if (Number.isFinite(t)) timeS += t;
+
+      const e = pickElevationMeters(p);
+      if (e != null) { elevM += e; elevCount++; }
+
+      const sd = p.start_date ? String(p.start_date) : "";
+      if (sd) {
+        // active day = date portion
+        const day = sd.slice(0, 10);
+        if (day) dates.add(day);
+
+        const ts = Date.parse(sd);
+        if (Number.isFinite(ts)) {
+          if (firstTs == null || ts < firstTs) firstTs = ts;
+          if (lastTs == null || ts > lastTs) lastTs = ts;
+        }
+      }
     }
 
-    return { totalDistM, totalTimeS, totalElevM };
+    const activeDays = dates.size;
+
+    // rest days between first & last inclusive
+    let restDays = null;
+    if (firstTs != null && lastTs != null) {
+      const daysSpan = Math.floor((lastTs - firstTs) / 86400000) + 1;
+      restDays = Math.max(0, daysSpan - activeDays);
+    }
+
+    const totalKm = toKm(distM);
+    const totalMi = toMi(distM);
+
+    const avgPerActivityMi = feats.length ? (totalMi / feats.length) : null;
+    const avgElevPerActivityFt = (feats.length && elevCount) ? (toFt(elevM) / feats.length) : null;
+
+    const hours = timeS / 3600;
+    const avgMph = (hours > 0) ? (totalMi / hours) : null;
+    const avgKmh = (hours > 0) ? (totalKm / hours) : null;
+
+    const pctCompleted = totalMi / PCT_TOTAL_MI * 100;
+    const remainingMi = Math.max(0, PCT_TOTAL_MI - totalMi);
+    const remainingKm = remainingMi * 1.609344;
+
+    const avgPerActiveDayMi = (activeDays > 0) ? (totalMi / activeDays) : null;
+    const avgPerActiveDayKm = (activeDays > 0) ? (totalKm / activeDays) : null;
+
+    return {
+      featsCount: feats.length,
+      distM, timeS, elevM, elevCount,
+      totalKm, totalMi,
+      firstTs, lastTs, activeDays, restDays,
+      pctCompleted, remainingMi, remainingKm,
+      avgPerActivityMi, avgElevPerActivityFt,
+      avgMph, avgKmh,
+      avgPerActiveDayMi, avgPerActiveDayKm
+    };
   }
 
-  function pickLatestFeature(track) {
-    const feats = Array.isArray(track?.features) ? track.features : [];
-    if (!feats.length) return null;
-    const sorted = feats
-      .slice()
-      .filter(f => f?.properties?.start_date)
-      .sort((a, b) => String(a.properties.start_date).localeCompare(String(b.properties.start_date)));
-    return sorted.length ? sorted[sorted.length - 1] : feats[feats.length - 1];
+  function setList(el, items) {
+    el.innerHTML = "";
+    for (const txt of items) {
+      const li = document.createElement("li");
+      li.textContent = txt;
+      el.appendChild(li);
+    }
   }
 
-  // ---------- Refresh ----------
+  function findLatestFeature(track) {
+    const feats = (track && track.features) ? track.features : [];
+    let best = null;
+    let bestTs = -Infinity;
+    for (const f of feats) {
+      const p = f.properties || {};
+      const ts = p.start_date ? Date.parse(p.start_date) : NaN;
+      if (Number.isFinite(ts) && ts > bestTs) {
+        bestTs = ts;
+        best = f;
+      }
+    }
+    return best;
+  }
+
   async function refresh() {
     try {
       statusEl.textContent = "updating…";
 
       const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
+      const feats = (track && track.features) ? track.features : [];
 
-      // Add / update track source & layers
+      // Create sources/layers once
       if (!map.getSource("track")) {
-        setUpTrackLayers(track);
+        injectPopupCSSOnce();
+
+        map.addSource("track", { type: "geojson", data: track });
+
+        // Alternating colors per activity (properties.i)
+        const colorExpr = [
+          "case",
+          ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#46f3ff",
+          "#ff4bd8"
+        ];
+
+        // glow
+        map.addLayer({
+          id: "track-glow",
+          type: "line",
+          source: "track",
+          paint: {
+            "line-color": colorExpr,
+            "line-width": 12,
+            "line-opacity": 0.28,
+            "line-blur": 6
+          }
+        });
+
+        // main
+        map.addLayer({
+          id: "track-main",
+          type: "line",
+          source: "track",
+          paint: {
+            "line-color": colorExpr,
+            "line-width": 5,
+            "line-opacity": 0.92
+          }
+        });
+
+        // highlight edge
+        map.addLayer({
+          id: "track-highlight",
+          type: "line",
+          source: "track",
+          paint: {
+            "line-color": "rgba(255,255,255,0.65)",
+            "line-width": 1.6,
+            "line-opacity": 0.55
+          }
+        });
+
+        // hover highlight layer (filter updated on hover)
+        map.addLayer({
+          id: "track-hover",
+          type: "line",
+          source: "track",
+          paint: {
+            "line-color": "rgba(255,255,255,0.92)",
+            "line-width": 7,
+            "line-opacity": 0.75,
+            "line-blur": 0.6
+          },
+          filter: ["==", ["get", "strava_id"], -1]
+        });
+
+        // latest progress animated line (on top)
+        map.addSource("latest-progress", {
+          type: "geojson",
+          data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] } }
+        });
+        map.addLayer({
+          id: "latest-progress-glow",
+          type: "line",
+          source: "latest-progress",
+          paint: {
+            "line-color": "rgba(255,255,255,0.40)",
+            "line-width": 18,
+            "line-opacity": 0.22,
+            "line-blur": 10
+          }
+        });
+        map.addLayer({
+          id: "latest-progress",
+          type: "line",
+          source: "latest-progress",
+          paint: {
+            "line-color": "rgba(255,255,255,0.95)",
+            "line-width": 3,
+            "line-opacity": 0.85
+          }
+        });
+
+        // hover interaction
+        map.on("mousemove", "track-main", (e) => {
+          map.getCanvas().style.cursor = "pointer";
+          const f = e.features && e.features[0];
+          if (!f) return;
+          const id = (f.properties && f.properties.strava_id) ? f.properties.strava_id : null;
+          if (id !== hoveredId) setHover(id);
+        });
+        map.on("mouseleave", "track-main", () => {
+          map.getCanvas().style.cursor = "";
+          setHover(null);
+        });
+
+        // click popup
+        map.on("click", "track-main", (e) => {
+          const f = e.features && e.features[0];
+          if (!f) return;
+
+          const p = f.properties || {};
+          const html = buildPopupHTML(p);
+
+          if (popup) popup.remove();
+          popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: "320px" })
+            .setLngLat(e.lngLat)
+            .setHTML(html)
+            .addTo(map);
+        });
       } else {
         map.getSource("track").setData(track);
       }
 
-      // Stats & insights
-      const totals = renderStatistics(track);
-
-      // Marker / latest
+      // marker & latest coords
       const lngLat = [latest.lon, latest.lat];
       if (!marker) {
         marker = new maplibregl.Marker({ element: createBlinkMarkerEl() })
@@ -648,34 +611,100 @@
         marker.setLngLat(lngLat);
       }
 
-      // Status/meta text (2 lines, no "Tipp" anymore)
-      const latestFeature = pickLatestFeature(track);
-      let latestSummary = "";
-      if (latestFeature) {
-        const p = latestFeature.properties || {};
-        const type = pickType(p);
-        const distM = pickDistanceMeters(p);
-        const timeS = pickMovingTimeSeconds(p);
-        latestSummary = `${type}: ${fmtDistanceBoth(distM)} · ${fmtDuration(timeS)}`;
-      }
+      // Compute statistics + fill Statistics box
+      const s = computeStats(track);
 
-      // Use innerText so \n becomes a real line break
-      metaEl.innerText =
-        `Last updated: ${fmtTs(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}\n` +
-        (latestSummary ? latestSummary : "");
+      // Recommended order: Distance, Elevation, Time
+      const totalDistLine = `Total Distance: ${fmtNumber(s.totalKm, 1)} km / ${fmtNumber(s.totalMi, 1)} mi`;
+      const totalElevLine = (s.elevCount > 0)
+        ? `Total Elevation: ${fmtInt(s.elevM)} m / ${fmtInt(toFt(s.elevM))} ft`
+        : `Total Elevation: —`;
+      const totalTimeLine = `Total Time: ${fmtDuration(s.timeS)}`;
 
-      // Fit bounds
-      const bbox = geojsonBbox(track);
-      if (bbox) {
-        map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, duration: 800 });
-      } else {
-        map.easeTo({ center: lngLat, zoom: 13, duration: 800 });
-      }
+      setList(statsListEl, [totalDistLine, totalElevLine, totalTimeLine]);
 
+      // Fill Insights box (Progress / Performance / Timeline)
+      const progress = [
+        `PCT completed: ${fmtNumber(s.totalKm, 1)} km / ${fmtNumber(s.totalMi, 1)} mi of ${fmtInt(PCT_TOTAL_KM)} km / ${fmtInt(PCT_TOTAL_MI)} mi (${fmtNumber(s.pctCompleted, 1)}%)`,
+        `Remaining: ${fmtNumber(s.remainingKm, 1)} km / ${fmtNumber(s.remainingMi, 1)} mi`,
+        `Average per active day: ${s.activeDays ? `${fmtNumber(s.avgPerActiveDayKm, 1)} km / ${fmtNumber(s.avgPerActiveDayMi, 1)} mi` : "—"}`
+      ];
+
+      const perf = [
+        `Avg distance per activity: ${s.featsCount ? `${fmtNumber(s.totalKm / s.featsCount, 1)} km / ${fmtNumber(s.totalMi / s.featsCount, 1)} mi` : "—"}`,
+        `Avg elevation per activity: ${s.elevCount ? `${fmtInt(s.elevM / s.featsCount)} m / ${fmtInt(toFt(s.elevM) / s.featsCount)} ft` : "—"}`,
+        `Avg speed: ${s.avgKmh ? `${fmtNumber(s.avgKmh, 1)} km/h / ${fmtNumber(s.avgMph, 1)} mi/h` : "—"}`
+      ];
+
+      const timeline = [
+        `First activity: ${s.firstTs ? new Date(s.firstTs).toLocaleDateString() : "—"}`,
+        `Last activity: ${s.lastTs ? new Date(s.lastTs).toLocaleDateString() : "—"}`,
+        `Active days: ${s.activeDays || "—"}${s.restDays != null ? ` · Rest days: ${s.restDays}` : ""}`
+      ];
+
+      setList(insightsListEl, [...progress, ...perf, ...timeline]);
+
+      // Status text + Meta (Last updated + coords)
       statusEl.textContent = "online";
+
+      // pick latest activity feature (for status + live progress)
+      const latestFeat = findLatestFeature(track);
+      let lastActLine = "";
+      if (latestFeat && latestFeat.properties) {
+        const p = latestFeat.properties;
+        const type = activityTypeLabel(p);
+
+        const distM = Number(p.distance_m);
+        const km = Number.isFinite(distM) ? toKm(distM) : null;
+        const mi = Number.isFinite(distM) ? toMi(distM) : null;
+
+        const tSec = Number(p.moving_time_s);
+        const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
+
+        const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
+
+        // Force a line break before the activity summary (cleaner)
+        lastActLine = `<br>${type}: ${distStr} · ${time}`;
+      }
+
+      metaEl.innerHTML =
+        `Last updated: ${fmtDate(latest.ts)} · Lat/Lon: ${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}${lastActLine}`;
+
+      // Replace the old "Tip" line with something useful (no more tip)
+      statusExtraEl.textContent = latestFeat
+        ? "Tap a track to see details. Hover highlights on desktop."
+        : "Waiting for activities…";
+
+      // Fit bounds once
+      if (!didFitOnce) {
+        const bbox = geojsonBbox(track);
+        if (bbox) {
+          map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, duration: 800 });
+        } else {
+          map.easeTo({ center: lngLat, zoom: 13, duration: 800 });
+        }
+        didFitOnce = true;
+      }
+
+      // Start live progress animation on newest track
+      if (latestFeat && latestFeat.geometry && latestFeat.geometry.type === "LineString") {
+        startLiveAnim(latestFeat.geometry.coordinates);
+      } else {
+        // clear
+        if (map.getSource("latest-progress")) {
+          map.getSource("latest-progress").setData({
+            type: "Feature",
+            properties: {},
+            geometry: { type: "LineString", coordinates: [] }
+          });
+        }
+        stopLiveAnim();
+      }
+
     } catch (e) {
-      statusEl.textContent = "Error (data missing?)";
-      metaEl.innerText = "Please create data/track.geojson and data/latest.json.";
+      statusEl.textContent = "error";
+      metaEl.textContent = "Missing data/track.geojson or data/latest.json";
+      if (statusExtraEl) statusExtraEl.textContent = "";
     }
   }
 
