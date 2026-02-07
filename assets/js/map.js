@@ -1,8 +1,7 @@
 (async function () {
-  const statusEl = document.getElementById("status");
   const statusExtraEl = document.getElementById("status-extra");
+  const statusBadgeEl = document.getElementById("statusBadge");
 
-  // NEW status fields (from map.md block)
   const lastUpdatedEl = document.getElementById("lastUpdated");
   const latlonEl = document.getElementById("latlon");
   const latestSummaryEl = document.getElementById("latestSummary");
@@ -175,9 +174,6 @@
         font-size: 12px;
         color: rgba(245,248,255,.62);
         margin-bottom: 6px;
-        display:flex;
-        align-items:center;
-        gap:8px;
       }
       .pct-chip .value{
         font-size: 16px;
@@ -219,7 +215,6 @@
         font-weight: 800;
       }
 
-      /* progress bar */
       .pct-progressbar{
         height: 8px;
         border-radius: 999px;
@@ -281,7 +276,33 @@
         font-size: 18px;
       }
 
-      /* NEW: Status card look like the other sections */
+      /* Status card: compact + badge */
+      .pct-status-card .pct-status-head{
+        display:flex;
+        align-items:center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .pct-badge{
+        font-size: 12px;
+        font-weight: 800;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,.16);
+        background: rgba(255,255,255,.06);
+        color: rgba(245,248,255,.90);
+      }
+      .pct-badge.ok{
+        border-color: rgba(43,255,136,.30);
+        background: rgba(43,255,136,.12);
+        color: rgba(210,255,228,.95);
+      }
+      .pct-badge.err{
+        border-color: rgba(255,122,24,.35);
+        background: rgba(255,122,24,.12);
+        color: rgba(255,235,220,.95);
+      }
+
       .pct-status-card .pct-status-grid{
         margin-top: 10px;
         background: rgba(255,255,255,.04);
@@ -290,6 +311,12 @@
         padding: 10px 12px;
         display: grid;
         gap: 6px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .pct-status-card .pct-row{ grid-template-columns: 1fr auto; }
+      .pct-status-card .pct-row-full{ grid-column: 1 / -1; }
+      @media (max-width: 680px){
+        .pct-status-card .pct-status-grid{ grid-template-columns: 1fr; }
       }
     `;
     document.head.appendChild(s);
@@ -301,9 +328,7 @@
     sources: {
       sat: {
         type: "raster",
-        tiles: [
-          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-        ],
+        tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
         tileSize: 256,
         attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
       },
@@ -410,7 +435,7 @@
     return el;
   }
 
-  // ---------- layers / interactivity ----------
+  // ---------- interactivity ----------
   let didFitOnce = false;
   let popup;
   let hoveredId = null;
@@ -437,13 +462,8 @@
     const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
 
     const elevM = pickElevationMeters(props);
-    const elevStr = elevM == null
-      ? "—"
-      : `${fmtInt(elevM)} m / ${fmtInt(toFt(elevM))} ft`;
-
-    const distStr = (km == null || mi == null)
-      ? "—"
-      : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
+    const elevStr = elevM == null ? "—" : `${fmtInt(elevM)} m / ${fmtInt(toFt(elevM))} ft`;
+    const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
 
     return `
       <div class="pct-popup">
@@ -656,7 +676,10 @@
 
   async function refresh() {
     try {
-      statusEl.textContent = "updating…";
+      if (statusBadgeEl) {
+        statusBadgeEl.textContent = "updating…";
+        statusBadgeEl.classList.remove("ok", "err");
+      }
 
       const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
 
@@ -763,8 +786,13 @@
       setStatsUI(s);
       setInsightsUI(s);
 
-      // status fields (top card)
-      statusEl.textContent = "online";
+      // status fields
+      if (statusBadgeEl) {
+        statusBadgeEl.textContent = "online";
+        statusBadgeEl.classList.add("ok");
+        statusBadgeEl.classList.remove("err");
+      }
+
       if (lastUpdatedEl) lastUpdatedEl.textContent = fmtDate(latest.ts);
       if (latlonEl) latlonEl.textContent = `${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
 
@@ -802,7 +830,11 @@
       else stopLiveAnim();
 
     } catch (e) {
-      statusEl.textContent = "error";
+      if (statusBadgeEl) {
+        statusBadgeEl.textContent = "error";
+        statusBadgeEl.classList.add("err");
+        statusBadgeEl.classList.remove("ok");
+      }
       if (lastUpdatedEl) lastUpdatedEl.textContent = "—";
       if (latlonEl) latlonEl.textContent = "—";
       if (latestSummaryEl) latestSummaryEl.textContent = "—";
