@@ -1,8 +1,6 @@
 (async function () {
-  const statusEl = document.getElementById("status");
+  // Optional elements (index.md provides these)
   const statusExtraEl = document.getElementById("status-extra");
-
-  // NEW status fields (from map.md block)
   const lastUpdatedEl = document.getElementById("lastUpdated");
   const latlonEl = document.getElementById("latlon");
   const latestSummaryEl = document.getElementById("latestSummary");
@@ -23,7 +21,10 @@
 
   function fmtNumber(n, digits = 1) {
     if (!Number.isFinite(n)) return "—";
-    return n.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
+    return n.toLocaleString(undefined, {
+      maximumFractionDigits: digits,
+      minimumFractionDigits: digits
+    });
   }
   function fmtInt(n) {
     if (!Number.isFinite(n)) return "—";
@@ -102,20 +103,6 @@
     } catch { return null; }
   }
 
-  function ensurePulseKeyframes() {
-    if (document.getElementById("pctPulseStyle")) return;
-    const s = document.createElement("style");
-    s.id = "pctPulseStyle";
-    s.textContent = `
-      @keyframes pctPulse {
-        0%   { transform: scale(0.55); opacity: 0.85; }
-        70%  { transform: scale(1.15); opacity: 0.20; }
-        100% { transform: scale(1.25); opacity: 0.00; }
-      }
-    `;
-    document.head.appendChild(s);
-  }
-
   // ---------- UI CSS ----------
   function injectUICSSOnce() {
     if (document.getElementById("pctUICSS")) return;
@@ -175,9 +162,6 @@
         font-size: 12px;
         color: rgba(245,248,255,.62);
         margin-bottom: 6px;
-        display:flex;
-        align-items:center;
-        gap:8px;
       }
       .pct-chip .value{
         font-size: 16px;
@@ -219,7 +203,6 @@
         font-weight: 800;
       }
 
-      /* progress bar */
       .pct-progressbar{
         height: 8px;
         border-radius: 999px;
@@ -281,7 +264,7 @@
         font-size: 18px;
       }
 
-      /* NEW: Status card look like the other sections */
+      /* Status card: compact + flat like the others */
       .pct-status-card .pct-status-grid{
         margin-top: 10px;
         background: rgba(255,255,255,.04);
@@ -295,7 +278,7 @@
     document.head.appendChild(s);
   }
 
-  // ---------- basemap style ----------
+  // ---------- basemap style (Satellite default + Topo toggle) ----------
   const style = {
     version: 8,
     sources: {
@@ -307,20 +290,20 @@
         tileSize: 256,
         attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
       },
-      osm: {
+      topo: {
         type: "raster",
         tiles: [
-          "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
+          "https://b.tile.opentopomap.org/{z}/{x}/{y}.png",
+          "https://c.tile.opentopomap.org/{z}/{x}/{y}.png"
         ],
         tileSize: 256,
-        attribution: "© OpenStreetMap contributors"
+        attribution: "© OpenTopoMap (CC-BY-SA) · © OpenStreetMap contributors"
       }
     },
     layers: [
       { id: "sat-layer", type: "raster", source: "sat", layout: { visibility: "visible" } },
-      { id: "osm-layer", type: "raster", source: "osm", layout: { visibility: "none" } }
+      { id: "topo-layer", type: "raster", source: "topo", layout: { visibility: "none" } }
     ]
   };
 
@@ -333,7 +316,7 @@
 
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
-  // ---------- basemap toggle control ----------
+  // ---------- basemap toggle control (ICON FIX ✅) ----------
   class BasemapToggle {
     onAdd(map) {
       this._map = map;
@@ -341,20 +324,26 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "pct-toggle-btn";
-      btn.title = "Toggle basemap (Satellite / OSM)";
+      btn.title = "Toggle basemap (Satellite / Topo)";
       btn.setAttribute("aria-label", "Toggle basemap");
 
       const setIcon = () => {
         const satVis = map.getLayoutProperty("sat-layer", "visibility") !== "none";
-        btn.textContent = satVis ? "🗺️" : "🛰️";
+        // show CURRENT mode icon (stable / intuitive)
+        btn.textContent = satVis ? "🛰️" : "🗻";
       };
 
       btn.addEventListener("click", () => {
         const satVis = map.getLayoutProperty("sat-layer", "visibility") !== "none";
         map.setLayoutProperty("sat-layer", "visibility", satVis ? "none" : "visible");
-        map.setLayoutProperty("osm-layer", "visibility", satVis ? "visible" : "none");
+        map.setLayoutProperty("topo-layer", "visibility", satVis ? "visible" : "none");
+
+        // ✅ ICON FIX: update immediately (no waiting for idle)
         setIcon();
       });
+
+      // ✅ ICON FIX: also update on styledata (covers edge cases)
+      map.on("styledata", setIcon);
 
       const wrap = document.createElement("div");
       wrap.className = "maplibregl-ctrl maplibregl-ctrl-group";
@@ -362,7 +351,6 @@
       wrap.style.overflow = "hidden";
       wrap.appendChild(btn);
 
-      map.on("idle", setIcon);
       this._container = wrap;
       setIcon();
       return this._container;
@@ -375,6 +363,20 @@
 
   // ---------- marker (blinking) ----------
   let marker;
+  function ensurePulseKeyframes() {
+    if (document.getElementById("pctPulseStyle")) return;
+    const s = document.createElement("style");
+    s.id = "pctPulseStyle";
+    s.textContent = `
+      @keyframes pctPulse {
+        0%   { transform: scale(0.55); opacity: 0.85; }
+        70%  { transform: scale(1.15); opacity: 0.20; }
+        100% { transform: scale(1.25); opacity: 0.00; }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
   function createBlinkMarkerEl() {
     ensurePulseKeyframes();
     const el = document.createElement("div");
@@ -654,10 +656,9 @@
     return best;
   }
 
+  // ---------- main refresh ----------
   async function refresh() {
     try {
-      statusEl.textContent = "updating…";
-
       const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
 
       if (!map.getSource("track")) {
@@ -759,26 +760,31 @@
         marker.setLngLat(lngLat);
       }
 
+      // Statistics + Insights
       const s = computeStats(track);
-      setStatsUI(s);
-      setInsightsUI(s);
+      if (statsListEl) setStatsUI(s);
+      if (insightsListEl) setInsightsUI(s);
 
-      // status fields (top card)
-      statusEl.textContent = "online";
+      // Status compact fields
       if (lastUpdatedEl) lastUpdatedEl.textContent = fmtDate(latest.ts);
-      if (latlonEl) latlonEl.textContent = `${latest.lat.toFixed(5)}, ${latest.lon.toFixed(5)}`;
+      if (latlonEl) latlonEl.textContent = `${Number(latest.lat).toFixed(5)}, ${Number(latest.lon).toFixed(5)}`;
 
       const latestFeat = findLatestFeature(track);
       if (latestSummaryEl) {
         if (latestFeat?.properties) {
           const p = latestFeat.properties;
           const type = activityTypeLabel(p);
+
           const distM = Number(p.distance_m);
           const km = Number.isFinite(distM) ? toKm(distM) : null;
           const mi = Number.isFinite(distM) ? toMi(distM) : null;
+
           const tSec = Number(p.moving_time_s);
           const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
+
           const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
+
+          // clean linebreak feel comes from layout (grid), so just one line here
           latestSummaryEl.textContent = `${type}: ${distStr} · ${time}`;
         } else {
           latestSummaryEl.textContent = "—";
@@ -791,6 +797,7 @@
           : "Waiting for activities…";
       }
 
+      // Fit once
       if (!didFitOnce) {
         const bbox = geojsonBbox(track);
         if (bbox) map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, duration: 800 });
@@ -798,11 +805,11 @@
         didFitOnce = true;
       }
 
+      // Live progress only for latest
       if (latestFeat?.geometry?.type === "LineString") startLiveAnim(latestFeat.geometry.coordinates);
       else stopLiveAnim();
 
     } catch (e) {
-      statusEl.textContent = "error";
       if (lastUpdatedEl) lastUpdatedEl.textContent = "—";
       if (latlonEl) latlonEl.textContent = "—";
       if (latestSummaryEl) latestSummaryEl.textContent = "—";
