@@ -1,41 +1,46 @@
 ---
 layout: default
-title: "Updates"
-nav: updates
+title: Photos
+nav: photos
 ---
 
-<div class="card">
-  <div class="card-title">Updates</div>
-
-  <div class="updates">
-    <div class="update">
-      <div class="update-date">2026-02-02</div>
-      <div class="update-text">First real update — trail is on! 🏔️</div>
-    </div>
-
-    <div class="update">
-      <div class="update-date">2026-02-01</div>
-      <div class="update-text">Site is live. Tracker is working.</div>
-    </div>
-  </div>
+<div class="photo-grid">
+{% assign files = site.static_files %}
+{% for file in files %}
+  {% if file.path contains '/images/' %}
+    {% unless file.extname == '.svg' %}
+      <div class="photo-item">
+        <img src="{{ file.path | relative_url }}" loading="lazy" />
+      </div>
+    {% endunless %}
+  {% endif %}
+{% endfor %}
 </div>
 
 <style>
-  .updates{ display:grid; gap: 10px; }
-  .update{
-    padding: 12px 12px;
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,.10);
-    background: rgba(255,255,255,.04);
-  }
-  .update-date{
-    font-size: 12px;
-    opacity: .75;
-    margin-bottom: 6px;
-  }
-  .update-text{
-    font-size: 15px;
-    line-height: 1.35;
-    font-weight: 650;
-  }
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .photo-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .photo-grid { grid-template-columns: 1fr; }
+}
+
+.photo-item {
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.1);
+}
+
+.photo-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 </style>
