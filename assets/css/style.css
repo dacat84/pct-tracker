@@ -106,5 +106,36 @@ main.wrap{padding: 18px var(--pad) 40px;}
   color: var(--text);
   background: rgba(126,231,135,.10);
 }
-code{background: rgba(232,238,245,.08); padding: 2px 6px; border-radius: 8px; border: 1px solid rgba(232,238,245,.08);}
+code{background: rgba(232,238,245,.08); padding: 2px 6px; border-radius: 8px; border: 1px solid rgba(232,238,245,./* =========================
+   Gear / Lighterpack layout
+   ========================= */
+
+.gear-card {
+  padding: 0; /* Card-Rand kontrollieren wir innen */
+  overflow: hidden;
+}
+
+.gear-embed {
+  padding: 24px;
+  background: #ffffff; /* Lighterpack braucht hellen Hintergrund */
+  color: #111;
+  height: 72vh;
+  max-height: 900px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Desktop: mehr Luft */
+@media (min-width: 900px) {
+  .gear-embed {
+    padding: 32px 40px;
+  }
+}
+
+/* Mobile: kompakter */
+@media (max-width: 520px) {
+  .gear-embed {
+    padding: 16px;
+  }
+}
 
