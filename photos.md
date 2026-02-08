@@ -1,44 +1,28 @@
 ---
 layout: default
-title: Photos
+title: "Photos"
 nav: photos
 ---
 
-<div class="photo-grid">
-{% assign files = site.static_files %}
-{% for file in files %}
-  {% if file.path contains '/images/' %}
-    {% unless file.extname == '.svg' %}
-      <div class="photo-item">
-        <img src="{{ file.path | relative_url }}" loading="lazy" />
-      </div>
-    {% endunless %}
-  {% endif %}
-{% endfor %}
+<div class="card photos-card">
+  <a data-flickr-embed="true"
+     href="https://www.flickr.com/photos/35469735@N03/albums/72177720331905792"
+     title="Trail Photos">
+    <img
+      src="https://live.staticflickr.com/65535/55017495061_5f8b9b4b8c_z.jpg"
+      alt="Trail photos" />
+  </a>
 </div>
 
+<script async src="https://embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
+
 <style>
-.photo-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-@media (max-width: 900px) {
-  .photo-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 520px) {
-  .photo-grid { grid-template-columns: 1fr; }
-}
-
-.photo-item {
-  border-radius: 14px;
+.photos-card {
+  padding: 0;
   overflow: hidden;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.1);
 }
 
-.photo-item img {
+.photos-card img {
   width: 100%;
   height: auto;
   display: block;
