@@ -106,7 +106,9 @@ main.wrap{padding: 18px var(--pad) 40px;}
   color: var(--text);
   background: rgba(126,231,135,.10);
 }
-code{background: rgba(232,238,245,.08); padding: 2px 6px; border-radius: 8px; border: 1px solid rgba(232,238,245,./* =========================
+code{background: rgba(232,238,245,.08); padding: 2px 6px; border-radius: 8px; border: 1px solid rgba(232,238,245,.
+
+/* =========================
    Gear / Lighterpack layout
    ========================= */
 
