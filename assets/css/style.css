@@ -109,35 +109,60 @@ main.wrap{padding: 18px var(--pad) 40px;}
 code{background: rgba(232,238,245,.08); padding: 2px 6px; border-radius: 8px; border: 1px solid rgba(232,238,245,.
 
 /* =========================
-   Gear / Lighterpack layout
+   Lighterpack "Paper" Look
    ========================= */
 
-.gear-card {
-  padding: 0; /* Card-Rand kontrollieren wir innen */
-  overflow: hidden;
+/* äußere Karte bleibt dunkel */
+.gear-card{
+  padding: 0; /* wichtig: wir kontrollieren Padding innen */
 }
 
-.gear-embed {
-  padding: 24px;
-  background: #ffffff; /* Lighterpack braucht hellen Hintergrund */
-  color: #111;
-  height: 72vh;
-  max-height: 900px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+/* helle Papierfläche */
+.gear-light{
+  background: #f7f7f4 !important;   /* off-white */
+  color: #111 !important;
+  border-radius: var(--radius);
+  padding: 28px 22px;               /* Luft zum Rand */
 }
 
-/* Desktop: mehr Luft */
-@media (min-width: 900px) {
-  .gear-embed {
-    padding: 32px 40px;
-  }
+/* Inhalt schmaler & zentriert */
+.gear-light > *{
+  max-width: 820px;                 /* <<< hier Breite steuern */
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* Mobile: kompakter */
-@media (max-width: 520px) {
-  .gear-embed {
-    padding: 16px;
-  }
+/* Erzwinge dunklen Text */
+.gear-light *{
+  color: #111 !important;
 }
 
+/* Tabellen sauber & ruhig */
+.gear-light table,
+.gear-light th,
+.gear-light td{
+  color: #111 !important;
+  border-color: #ddd !important;
+}
+
+/* Überschriften */
+.gear-light h1,
+.gear-light h2,
+.gear-light h3,
+.gear-light h4{
+  color: #000 !important;
+}
+
+/* Charts minimal softer */
+.gear-light svg{
+  background: transparent !important;
+}
+
+/* Scrollbar dezenter */
+.gear-light::-webkit-scrollbar{
+  width: 10px;
+}
+.gear-light::-webkit-scrollbar-thumb{
+  background: rgba(0,0,0,.25);
+  border-radius: 10px;
+}
