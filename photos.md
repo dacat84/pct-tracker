@@ -9,9 +9,15 @@ nav: photos
   <p class="muted small">Auto-synced from Flickr album</p>
 
   <iframe
-    src="https://www.flickr.com/photos/35469735@N03/albums/72177720331905792/player/"
-    style="width:100%; height:85vh; border:0; border-radius:14px;"
+    src="https://www.flickr.com/embed/sets/72177720331905792"
+    loading="lazy"
+    frameborder="0"
     allowfullscreen
-    loading="lazy">
+    style="
+      width:100%;
+      height:90vh;
+      border-radius:14px;
+      background:#111;
+    ">
   </iframe>
 </div>
