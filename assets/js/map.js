@@ -567,6 +567,43 @@
     const avgDistPerActMi = feats.length ? (totalMi / feats.length) : null;
     const avgDistPerActKm = feats.length ? (totalKm / feats.length) : null;
 
+    // ---- Longest / Shortest day (by start_date day) ----
+    const byDay = new Map(); // "YYYY-MM-DD" -> { distM, timeS, elevM, acts, firstTs }
+    for (const f of feats) {
+      const p = f.properties || {};
+      const sd = p.start_date ? String(p.start_date) : "";
+      if (!sd) continue;
+
+      const day = sd.slice(0, 10); // YYYY-MM-DD
+      const ts = Date.parse(sd);
+
+      const d = Number(p.distance_m);
+      const t = Number(p.moving_time_s);
+      const e = pickElevationMeters(p);
+
+      if (!byDay.has(day)) byDay.set(day, { distM: 0, timeS: 0, elevM: 0, acts: 0, firstTs: Number.isFinite(ts) ? ts : null });
+
+      const row = byDay.get(day);
+      if (Number.isFinite(d)) row.distM += d;
+      if (Number.isFinite(t)) row.timeS += t;
+      if (e != null) row.elevM += e;
+      row.acts += 1;
+
+      if (Number.isFinite(ts)) {
+        if (row.firstTs == null || ts < row.firstTs) row.firstTs = ts;
+      }
+    }
+
+    let longestDay = null;
+    let shortestDay = null;
+
+    for (const [day, v] of byDay.entries()) {
+      if (!Number.isFinite(v.distM) || v.distM <= 0) continue;
+      const entry = { day, ...v };
+      if (!longestDay || entry.distM > longestDay.distM) longestDay = entry;
+      if (!shortestDay || entry.distM < shortestDay.distM) shortestDay = entry;
+    }
+
     return {
       featsCount: feats.length,
       distM, timeS, elevM, elevCount,
@@ -574,7 +611,9 @@
       firstTs, lastTs, activeDays, restDays,
       pctCompleted, remainingMi, remainingKm,
       avgDistPerActMi, avgDistPerActKm,
-      avgMph, avgKmh
+      avgMph, avgKmh,
+      longestDay,
+      shortestDay
     };
   }
 
@@ -640,6 +679,18 @@
 
     const pctWidth = Math.max(0, Math.min(100, Number.isFinite(s.pctCompleted) ? s.pctCompleted : 0));
 
+    function fmtDayLine(d) {
+      if (!d) return "—";
+      const km = toKm(d.distM);
+      const mi = toMi(d.distM);
+      const date = d.firstTs ? new Date(d.firstTs).toLocaleDateString() : d.day;
+      const time = (Number.isFinite(d.timeS) && d.timeS > 0) ? fmtDuration(d.timeS) : "—";
+      return `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi · ${time} · ${date}`;
+    }
+
+    const longestLine = fmtDayLine(s.longestDay);
+    const shortestLine = fmtDayLine(s.shortestDay);
+
     insightsListEl.innerHTML = `
       <div class="pct-sections">
         <div class="pct-section">
@@ -659,6 +710,8 @@
             <div class="pct-row"><span>First activity</span><b>${firstLine}</b></div>
             <div class="pct-row"><span>Last activity</span><b>${lastLine}</b></div>
             <div class="pct-row"><span>Days</span><b>${daysLine}</b></div>
+            <div class="pct-row"><span>Longest day</span><b>${longestLine}</b></div>
+            <div class="pct-row"><span>Shortest day</span><b>${shortestLine}</b></div>
           </div>
         </div>
       </div>
