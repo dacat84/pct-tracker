@@ -9,8 +9,6 @@ permalink: /gear/
   <div class="card-sub">
     This is my first attempt at going ultralight, with a base weight under <strong>4.5 kg / 10 lb</strong>.<br>
     Carrying less feels simpler and makes long days on trail more enjoyable.<br><br>
-    If the embedded list does not load, you can
-    <a href="https://lighterpack.com/r/lm2int" target="_blank" rel="noopener">open it here</a>.
   </div>
 </div>
 
