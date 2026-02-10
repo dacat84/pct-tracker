@@ -6,18 +6,22 @@ nav: updates
 
 <div class="updates">
 
-## Trail Updates
+  <h2 class="updates-title">Trail Updates</h2>
 
-**Feb 2, 2026**  
-Reached the next town. Took a rest day, resupply done.
+  <div class="update-card">
+    <div class="update-date">Feb 2, 2026</div>
+    <div class="update-text">
+      Reached the next town. Took a rest day, resupply done.
+    </div>
+  </div>
 
----
+  <div class="update-card">
+    <div class="update-date">Feb 1, 2026</div>
+    <div class="update-text">
+      First day on trail. Legs are good. Weather perfect.
+    </div>
+  </div>
 
-**Feb 1, 2026**  
-First day on trail. Legs are good. Weather perfect.
-
----
-
-*(Older updates at the bottom)*
+  <div class="update-note">(Older updates at the bottom)</div>
 
 </div>
