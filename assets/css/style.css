@@ -179,8 +179,7 @@ a:visited{ color: var(--accent); }
 a:hover{ text-decoration: underline; }
 
 /* =========================================================
-   Trail Updates – SCOPED, damit Lighterpack NICHT betroffen ist
-   Voraussetzung: updates.md ist in <div class="updates"> ... </div>
+   Trail Updates – STABIL & SCOPED (kein Markdown-Hack, kein :has)
    ========================================================= */
 
 .updates{
@@ -188,8 +187,7 @@ a:hover{ text-decoration: underline; }
   margin: 0 auto;
 }
 
-/* Titel "Trail Updates" als Card Header */
-.updates h2{
+.updates-title{
   margin: 0 0 14px;
   background: rgba(17,22,28,.72);
   border: 1px solid rgba(232,238,245,.12);
@@ -200,49 +198,29 @@ a:hover{ text-decoration: underline; }
   letter-spacing: .2px;
 }
 
-/* Die Markdown-Separator-Linien (---) ausblenden */
-.updates hr{
-  display:none;
-}
-
-/* JEDER Eintrag ist bei dir ein <p> mit **Datum** als <strong> am Anfang.
-   Wir stylen genau diese Absätze als Card.
-   (Modernes CSS :has() – funktioniert auf iOS Safari & modernen Browsern) */
-.updates p:has(> strong:first-child){
-  margin: 0 0 12px;
+.update-card{
   background: rgba(17,22,28,.60);
   border: 1px solid rgba(232,238,245,.12);
   border-radius: 16px;
   padding: 14px 16px;
   box-shadow: 0 10px 30px rgba(0,0,0,.18);
-  line-height: 1.5;
-  color: rgba(232,238,245,.88);
+  margin: 0 0 12px;
 }
 
-/* Datum im Eintrag */
-.updates p:has(> strong:first-child) > strong:first-child{
-  display:block;
+.update-date{
   font-size: 18px;
   font-weight: 900;
   color: rgba(232,238,245,.95);
   margin-bottom: 6px;
 }
 
-/* Hinweis-Zeile "(Older updates...)" soll nicht wie ein Eintrag aussehen */
-.updates p em{
-  color: rgba(232,238,245,.70);
+.update-text{
+  color: rgba(232,238,245,.88);
+  line-height: 1.5;
 }
 
-/* Falls ein Browser :has() nicht kann:
-   Dann bleiben die Updates einfach “normal” – aber ohne komische graue Flächen.
-   (Wichtig ist: wir stylen NICHT mehr global main h2 / p) */
-
-
-/* =========================================================
-   Lighterpack Embed Safety
-   (Nichts globales, nur eine kleine Sicherung falls irgendwo
-   Text-Farben/Backgrounds durchrutschen)
-   ========================================================= */
-
-/* Falls du dem Lighterpack-Container eine Klasse gibst, kannst du hier noch stärker isolieren.
-   Aktuell reicht das Entfernen der globalen Updates-Regeln. */
+.update-note{
+  margin-top: 6px;
+  color: rgba(232,238,245,.70);
+  font-style: italic;
+}
