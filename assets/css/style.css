@@ -22,7 +22,7 @@ body{
   color:var(--text);
 }
 
-/* Wichtig: etwas mehr “Luft” */
+/* Wichtig: etwas mehr Luft */
 .wrap{
   max-width:var(--max);
   margin:0 auto;
@@ -73,7 +73,7 @@ main.wrap{
   padding: 18px 0 28px;
 }
 
-/* Cards: mehr padding + bessere Lesbarkeit */
+/* Cards */
 .card{
   background: rgba(17,22,28,.72);
   border: 1px solid var(--line);
@@ -81,7 +81,6 @@ main.wrap{
   padding: 18px 18px;
   box-shadow: var(--shadow);
 }
-
 .card + .card{ margin-top: 14px; }
 
 .card-title{
@@ -89,6 +88,7 @@ main.wrap{
   margin-bottom:6px;
   letter-spacing: .1px;
 }
+
 .muted{color:var(--muted)}
 .small{font-size:12px}
 
@@ -127,7 +127,7 @@ main.wrap{
   line-height: 1.55;
 }
 
-/* Posts (falls du sie noch irgendwo nutzt) */
+/* Posts */
 .posts{display:grid; gap: 12px; margin-top: 12px;}
 .post-card{
   display:block;
@@ -173,38 +173,76 @@ code{
   border: 1px solid rgba(232,238,245,.08);
 }
 
+/* Links allgemein */
+a{ color: var(--accent); }
+a:visited{ color: var(--accent); }
+a:hover{ text-decoration: underline; }
 
-/* ===== Trail Updates (Markdown only, mobile friendly) ===== */
+/* =========================================================
+   Trail Updates – SCOPED, damit Lighterpack NICHT betroffen ist
+   Voraussetzung: updates.md ist in <div class="updates"> ... </div>
+   ========================================================= */
 
-main h2{
-  margin-top: 18px;
+.updates{
+  max-width: 760px;
+  margin: 0 auto;
 }
 
-main h2 + p{
-  margin-top: 10px;
-}
-
-main h2{
+/* Titel "Trail Updates" als Card Header */
+.updates h2{
+  margin: 0 0 14px;
   background: rgba(17,22,28,.72);
   border: 1px solid rgba(232,238,245,.12);
-  border-radius: 16px 16px 0 0;
-  padding: 12px 14px;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: .3px;
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-size: 22px;
+  font-weight: 850;
+  letter-spacing: .2px;
 }
 
-main h2 + p{
-  background: rgba(17,22,28,.72);
-  border-left: 1px solid rgba(232,238,245,.12);
-  border-right: 1px solid rgba(232,238,245,.12);
-  border-bottom: 1px solid rgba(232,238,245,.12);
-  border-radius: 0 0 16px 16px;
-  padding: 14px;
-  color: rgba(232,238,245,.85);
+/* Die Markdown-Separator-Linien (---) ausblenden */
+.updates hr{
+  display:none;
+}
+
+/* JEDER Eintrag ist bei dir ein <p> mit **Datum** als <strong> am Anfang.
+   Wir stylen genau diese Absätze als Card.
+   (Modernes CSS :has() – funktioniert auf iOS Safari & modernen Browsern) */
+.updates p:has(> strong:first-child){
+  margin: 0 0 12px;
+  background: rgba(17,22,28,.60);
+  border: 1px solid rgba(232,238,245,.12);
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
   line-height: 1.5;
+  color: rgba(232,238,245,.88);
 }
 
-main h2:not(:first-of-type){
-  margin-top: 14px;
+/* Datum im Eintrag */
+.updates p:has(> strong:first-child) > strong:first-child{
+  display:block;
+  font-size: 18px;
+  font-weight: 900;
+  color: rgba(232,238,245,.95);
+  margin-bottom: 6px;
 }
+
+/* Hinweis-Zeile "(Older updates...)" soll nicht wie ein Eintrag aussehen */
+.updates p em{
+  color: rgba(232,238,245,.70);
+}
+
+/* Falls ein Browser :has() nicht kann:
+   Dann bleiben die Updates einfach “normal” – aber ohne komische graue Flächen.
+   (Wichtig ist: wir stylen NICHT mehr global main h2 / p) */
+
+
+/* =========================================================
+   Lighterpack Embed Safety
+   (Nichts globales, nur eine kleine Sicherung falls irgendwo
+   Text-Farben/Backgrounds durchrutschen)
+   ========================================================= */
+
+/* Falls du dem Lighterpack-Container eine Klasse gibst, kannst du hier noch stärker isolieren.
+   Aktuell reicht das Entfernen der globalen Updates-Regeln. */
