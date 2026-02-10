@@ -37,6 +37,14 @@
   function fmtDate(ts) {
     try { return new Date(ts).toLocaleString(); } catch { return String(ts); }
   }
+  function fmtDateShort(ts) {
+    try {
+      const d = new Date(ts);
+      return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+    } catch {
+      return "—";
+    }
+  }
 
   // 1 Day 10 h 29 min
   function fmtDuration(totalSeconds) {
@@ -239,6 +247,19 @@
         height: 100%;
         width: 0%;
         background: linear-gradient(90deg, rgba(70,243,255,.95), rgba(255,75,216,.95));
+      }
+
+      /* NEW: 3 chips under progress */
+      .pct-insight-chipgrid{
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+      @media (max-width: 860px){
+        .pct-insight-chipgrid{
+          grid-template-columns: 1fr;
+        }
       }
 
       /* Popup */
@@ -453,8 +474,8 @@
   }
 
   // ---------- latest "live progress" line (SLOWER + LONGER PAUSE) ----------
-  const LIVE_DRAW_MS = 7500;   // was 2200 -> slower draw
-  const LIVE_PAUSE_MS = 3500;  // was ~600 -> longer wait between loops
+  const LIVE_DRAW_MS = 7500;   // slower draw
+  const LIVE_PAUSE_MS = 3500;  // longer wait between loops
 
   let liveAnim = { raf: null, t0: 0, coords: null, timer: null };
 
@@ -524,18 +545,23 @@
     const days = new Set();
     let firstTs = null, lastTs = null;
 
+    // For longest/shortest activity:
+    let longest = null;   // { distM, timeS, dateStr }
+    let shortest = null;  // { distM, timeS, dateStr }
+
     for (const f of feats) {
       const p = f.properties || {};
-      const d = Number(p.distance_m);
-      if (Number.isFinite(d)) distM += d;
 
+      const d = Number(p.distance_m);
       const t = Number(p.moving_time_s);
+      const sd = p.start_date ? String(p.start_date) : "";
+
+      if (Number.isFinite(d)) distM += d;
       if (Number.isFinite(t)) timeS += t;
 
       const e = pickElevationMeters(p);
       if (e != null) { elevM += e; elevCount++; }
 
-      const sd = p.start_date ? String(p.start_date) : "";
       if (sd) {
         days.add(sd.slice(0, 10));
         const ts = Date.parse(sd);
@@ -543,6 +569,18 @@
           if (firstTs == null || ts < firstTs) firstTs = ts;
           if (lastTs == null || ts > lastTs) lastTs = ts;
         }
+      }
+
+      // Update longest/shortest by distance (ignore invalid)
+      if (Number.isFinite(d) && d > 0) {
+        const dateLabel = sd ? fmtDateShort(sd) : "—";
+        const item = {
+          distM: d,
+          timeS: Number.isFinite(t) ? t : null,
+          dateLabel
+        };
+        if (!longest || d > longest.distM) longest = item;
+        if (!shortest || d < shortest.distM) shortest = item;
       }
     }
 
@@ -567,43 +605,6 @@
     const avgDistPerActMi = feats.length ? (totalMi / feats.length) : null;
     const avgDistPerActKm = feats.length ? (totalKm / feats.length) : null;
 
-    // ---- Longest / Shortest day (by start_date day) ----
-    const byDay = new Map(); // "YYYY-MM-DD" -> { distM, timeS, elevM, acts, firstTs }
-    for (const f of feats) {
-      const p = f.properties || {};
-      const sd = p.start_date ? String(p.start_date) : "";
-      if (!sd) continue;
-
-      const day = sd.slice(0, 10); // YYYY-MM-DD
-      const ts = Date.parse(sd);
-
-      const d = Number(p.distance_m);
-      const t = Number(p.moving_time_s);
-      const e = pickElevationMeters(p);
-
-      if (!byDay.has(day)) byDay.set(day, { distM: 0, timeS: 0, elevM: 0, acts: 0, firstTs: Number.isFinite(ts) ? ts : null });
-
-      const row = byDay.get(day);
-      if (Number.isFinite(d)) row.distM += d;
-      if (Number.isFinite(t)) row.timeS += t;
-      if (e != null) row.elevM += e;
-      row.acts += 1;
-
-      if (Number.isFinite(ts)) {
-        if (row.firstTs == null || ts < row.firstTs) row.firstTs = ts;
-      }
-    }
-
-    let longestDay = null;
-    let shortestDay = null;
-
-    for (const [day, v] of byDay.entries()) {
-      if (!Number.isFinite(v.distM) || v.distM <= 0) continue;
-      const entry = { day, ...v };
-      if (!longestDay || entry.distM > longestDay.distM) longestDay = entry;
-      if (!shortestDay || entry.distM < shortestDay.distM) shortestDay = entry;
-    }
-
     return {
       featsCount: feats.length,
       distM, timeS, elevM, elevCount,
@@ -612,8 +613,8 @@
       pctCompleted, remainingMi, remainingKm,
       avgDistPerActMi, avgDistPerActKm,
       avgMph, avgKmh,
-      longestDay,
-      shortestDay
+      longest,
+      shortest
     };
   }
 
@@ -667,29 +668,35 @@
   }
 
   function setInsightsUI(s) {
-    const pctLine =
-      `${fmtNumber(s.totalKm, 1)} km / ${fmtNumber(s.totalMi, 1)} mi of ` +
-      `${fmtInt(PCT_TOTAL_KM)} km / ${fmtInt(PCT_TOTAL_MI)} mi (${fmtNumber(s.pctCompleted, 1)}%)`;
+    // Progress line format requested:
+    // "2.8% · 118.1 km of 4265 km · 73.4 mi of 2650 mi"
+    const pctTxt = Number.isFinite(s.pctCompleted) ? `${fmtNumber(s.pctCompleted, 1)}%` : "—%";
+    const kmLine = `${fmtNumber(s.totalKm, 1)} km of ${fmtInt(PCT_TOTAL_KM)} km`;
+    const miLine = `${fmtNumber(s.totalMi, 1)} mi of ${fmtInt(PCT_TOTAL_MI)} mi`;
+    const pctLine = `${pctTxt} · ${kmLine} · ${miLine}`;
 
     const remainingLine = `${fmtNumber(s.remainingKm, 1)} km / ${fmtNumber(s.remainingMi, 1)} mi`;
+    const pctWidth = Math.max(0, Math.min(100, Number.isFinite(s.pctCompleted) ? s.pctCompleted : 0));
 
+    // Timeline chip (same info as before, but as a chip)
     const firstLine = s.firstTs ? new Date(s.firstTs).toLocaleDateString() : "—";
     const lastLine = s.lastTs ? new Date(s.lastTs).toLocaleDateString() : "—";
     const daysLine = `${s.activeDays || 0} active days${s.restDays != null ? ` · ${s.restDays} rest days` : ""}`;
 
-    const pctWidth = Math.max(0, Math.min(100, Number.isFinite(s.pctCompleted) ? s.pctCompleted : 0));
-
-    function fmtDayLine(d) {
-      if (!d) return "—";
-      const km = toKm(d.distM);
-      const mi = toMi(d.distM);
-      const date = d.firstTs ? new Date(d.firstTs).toLocaleDateString() : d.day;
-      const time = (Number.isFinite(d.timeS) && d.timeS > 0) ? fmtDuration(d.timeS) : "—";
-      return `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi · ${time} · ${date}`;
+    // Longest/Shortest chips
+    function fmtDayChip(item) {
+      if (!item) return { value: "—", sub: "" };
+      const km = toKm(item.distM);
+      const mi = toMi(item.distM);
+      const dist = `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
+      const time = item.timeS != null ? fmtDuration(item.timeS) : "—";
+      return {
+        value: `${item.dateLabel}`,
+        sub: `${dist} · ${time}`
+      };
     }
-
-    const longestLine = fmtDayLine(s.longestDay);
-    const shortestLine = fmtDayLine(s.shortestDay);
+    const longestChip = fmtDayChip(s.longest);
+    const shortestChip = fmtDayChip(s.shortest);
 
     insightsListEl.innerHTML = `
       <div class="pct-sections">
@@ -702,16 +709,25 @@
             </div>
             <div class="pct-row" style="margin-top:6px;"><span>Remaining</span><b>${remainingLine}</b></div>
           </div>
-        </div>
 
-        <div class="pct-section">
-          <div class="pct-section-title">Timeline</div>
-          <div class="pct-rows">
-            <div class="pct-row"><span>First activity</span><b>${firstLine}</b></div>
-            <div class="pct-row"><span>Last activity</span><b>${lastLine}</b></div>
-            <div class="pct-row"><span>Days</span><b>${daysLine}</b></div>
-            <div class="pct-row"><span>Longest day</span><b>${longestLine}</b></div>
-            <div class="pct-row"><span>Shortest day</span><b>${shortestLine}</b></div>
+          <div class="pct-insight-chipgrid">
+            <div class="pct-chip">
+              <div class="label">Timeline</div>
+              <div class="value">${daysLine}</div>
+              <div class="sub">${firstLine} → ${lastLine}</div>
+            </div>
+
+            <div class="pct-chip">
+              <div class="label">Longest Day</div>
+              <div class="value">${longestChip.value}</div>
+              <div class="sub">${longestChip.sub}</div>
+            </div>
+
+            <div class="pct-chip">
+              <div class="label">Shortest Day</div>
+              <div class="value">${shortestChip.value}</div>
+              <div class="sub">${shortestChip.sub}</div>
+            </div>
           </div>
         </div>
       </div>
