@@ -7,8 +7,7 @@ permalink: /gear/
 <div class="card">
   <div class="card-title">Gear</div>
   <div class="card-sub">
-    This is my first attempt at going ultralight, with a base weight under <strong>4.5 kg / 10 lb</strong>.<br>
-    Carrying less feels simpler and makes long days on trail more enjoyable.<br><br>
+    A complete overview of the gear carried on trail, created with lighterpack.com
   </div>
 </div>
 
