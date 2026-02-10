@@ -7,8 +7,10 @@ permalink: /gear/
 <div class="card">
   <div class="card-title">Gear</div>
   <div class="card-sub">
-    Meine Lighterpack-Liste (eingebettet). Falls sie nicht lädt:
-    <a href="https://lighterpack.com/r/lm2int" target="_blank" rel="noopener">hier öffnen</a>.
+    This is my first attempt at going ultralight, with a base weight under <strong>4.5 kg / 10 lb</strong>.<br>
+    Carrying less feels simpler and makes long days on trail more enjoyable.<br><br>
+    If the embedded list does not load, you can
+    <a href="https://lighterpack.com/r/lm2int" target="_blank" rel="noopener">open it here</a>.
   </div>
 </div>
 
