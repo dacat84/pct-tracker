@@ -1,10 +1,9 @@
 (async function () {
   // --- REMOVE STATUS BOX ABOVE MAP (hero/status card) ---
-  // This removes the whole top "Status" card so it can't break layout or show stale text.
   const heroEl = document.querySelector(".hero");
   if (heroEl) heroEl.remove();
 
-  // We keep these IDs optional so nothing crashes if they still exist in HTML.
+  // Optional IDs (safe)
   const statusEl = document.getElementById("status");
   const metaEl = document.getElementById("meta");
   const statusExtraEl = document.getElementById("status-extra");
@@ -249,17 +248,38 @@
         background: linear-gradient(90deg, rgba(70,243,255,.95), rgba(255,75,216,.95));
       }
 
-      /* NEW: 3 chips under progress */
-      .pct-insight-chipgrid{
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+      /* Day chips row (Longest/Shortest only) */
+      .pct-daychips{
+        display:grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
         margin-top: 10px;
       }
-      @media (max-width: 860px){
-        .pct-insight-chipgrid{
-          grid-template-columns: 1fr;
-        }
+      @media (max-width: 680px){
+        .pct-daychips{ grid-template-columns: 1fr; }
+      }
+
+      /* Day chip typography:
+         - km highlighted
+         - mi/time smaller
+         - date muted (NOT bold) */
+      .pct-day-km{
+        font-size: 16px;
+        font-weight: 900;
+        color: rgba(245,248,255,.92);
+        line-height: 1.1;
+      }
+      .pct-day-meta{
+        margin-top: 6px;
+        font-size: 12px;
+        color: rgba(245,248,255,.68);
+        font-weight: 700;
+      }
+      .pct-day-date{
+        margin-top: 6px;
+        font-size: 12px;
+        color: rgba(245,248,255,.55);
+        font-weight: 600; /* deliberately NOT bold */
       }
 
       /* Popup */
@@ -313,7 +333,6 @@
   }
 
   // ---------- basemap style ----------
-  // SAT (default) + TOPO (hiking oriented)
   const style = {
     version: 8,
     sources: {
@@ -364,7 +383,6 @@
 
       const setIcon = () => {
         const satVis = map.getLayoutProperty("sat-layer", "visibility") !== "none";
-        // Icon shows what you will switch TO when tapped:
         btn.textContent = satVis ? "🗺️" : "🛰️";
       };
 
@@ -473,9 +491,9 @@
     `;
   }
 
-  // ---------- latest "live progress" line (SLOWER + LONGER PAUSE) ----------
-  const LIVE_DRAW_MS = 7500;   // slower draw
-  const LIVE_PAUSE_MS = 3500;  // longer wait between loops
+  // ---------- latest "live progress" line ----------
+  const LIVE_DRAW_MS = 7500;
+  const LIVE_PAUSE_MS = 3500;
 
   let liveAnim = { raf: null, t0: 0, coords: null, timer: null };
 
@@ -511,8 +529,6 @@
 
         const elapsed = now - liveAnim.t0;
         const p = Math.min(1, elapsed / LIVE_DRAW_MS);
-
-        // draw progressively; ensure at least 2 points
         const n = Math.max(2, Math.floor(p * coords.length));
 
         map.getSource("latest-progress").setData({
@@ -524,7 +540,6 @@
         if (p < 1) {
           liveAnim.raf = requestAnimationFrame(step);
         } else {
-          // pause, then restart
           liveAnim.raf = null;
           liveAnim.timer = setTimeout(() => {
             clearLiveLine();
@@ -545,9 +560,9 @@
     const days = new Set();
     let firstTs = null, lastTs = null;
 
-    // For longest/shortest activity:
-    let longest = null;   // { distM, timeS, dateStr }
-    let shortest = null;  // { distM, timeS, dateStr }
+    // longest/shortest activity by distance
+    let longest = null;   // { distM, timeS, dateLabel }
+    let shortest = null;  // { distM, timeS, dateLabel }
 
     for (const f of feats) {
       const p = f.properties || {};
@@ -571,7 +586,6 @@
         }
       }
 
-      // Update longest/shortest by distance (ignore invalid)
       if (Number.isFinite(d) && d > 0) {
         const dateLabel = sd ? fmtDateShort(sd) : "—";
         const item = {
@@ -668,8 +682,7 @@
   }
 
   function setInsightsUI(s) {
-    // Progress line format requested:
-    // "2.8% · 118.1 km of 4265 km · 73.4 mi of 2650 mi"
+    // Progress line: "2.8% · 118.1 km of 4,265 km · 73.4 mi of 2,650 mi"
     const pctTxt = Number.isFinite(s.pctCompleted) ? `${fmtNumber(s.pctCompleted, 1)}%` : "—%";
     const kmLine = `${fmtNumber(s.totalKm, 1)} km of ${fmtInt(PCT_TOTAL_KM)} km`;
     const miLine = `${fmtNumber(s.totalMi, 1)} mi of ${fmtInt(PCT_TOTAL_MI)} mi`;
@@ -678,25 +691,34 @@
     const remainingLine = `${fmtNumber(s.remainingKm, 1)} km / ${fmtNumber(s.remainingMi, 1)} mi`;
     const pctWidth = Math.max(0, Math.min(100, Number.isFinite(s.pctCompleted) ? s.pctCompleted : 0));
 
-    // Timeline chip (same info as before, but as a chip)
+    // Timeline big (readable)
     const firstLine = s.firstTs ? new Date(s.firstTs).toLocaleDateString() : "—";
     const lastLine = s.lastTs ? new Date(s.lastTs).toLocaleDateString() : "—";
     const daysLine = `${s.activeDays || 0} active days${s.restDays != null ? ` · ${s.restDays} rest days` : ""}`;
 
-    // Longest/Shortest chips
-    function fmtDayChip(item) {
-      if (!item) return { value: "—", sub: "" };
+    function dayChipHTML(label, item) {
+      if (!item) {
+        return `
+          <div class="pct-chip">
+            <div class="label">${label}</div>
+            <div class="pct-day-km">—</div>
+            <div class="pct-day-meta"></div>
+            <div class="pct-day-date"></div>
+          </div>
+        `;
+      }
       const km = toKm(item.distM);
       const mi = toMi(item.distM);
-      const dist = `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
       const time = item.timeS != null ? fmtDuration(item.timeS) : "—";
-      return {
-        value: `${item.dateLabel}`,
-        sub: `${dist} · ${time}`
-      };
+      return `
+        <div class="pct-chip">
+          <div class="label">${label}</div>
+          <div class="pct-day-km">${fmtNumber(km, 1)} km</div>
+          <div class="pct-day-meta">${fmtNumber(mi, 1)} mi · ${time}</div>
+          <div class="pct-day-date">${item.dateLabel}</div>
+        </div>
+      `;
     }
-    const longestChip = fmtDayChip(s.longest);
-    const shortestChip = fmtDayChip(s.shortest);
 
     insightsListEl.innerHTML = `
       <div class="pct-sections">
@@ -710,24 +732,18 @@
             <div class="pct-row" style="margin-top:6px;"><span>Remaining</span><b>${remainingLine}</b></div>
           </div>
 
-          <div class="pct-insight-chipgrid">
-            <div class="pct-chip">
-              <div class="label">Timeline</div>
-              <div class="value">${daysLine}</div>
-              <div class="sub">${firstLine} → ${lastLine}</div>
+          <div class="pct-section" style="margin-top:10px;">
+            <div class="pct-section-title">Timeline</div>
+            <div class="pct-rows">
+              <div class="pct-row"><span>First activity</span><b>${firstLine}</b></div>
+              <div class="pct-row"><span>Last activity</span><b>${lastLine}</b></div>
+              <div class="pct-row"><span>Days</span><b>${daysLine}</b></div>
             </div>
+          </div>
 
-            <div class="pct-chip">
-              <div class="label">Longest Day</div>
-              <div class="value">${longestChip.value}</div>
-              <div class="sub">${longestChip.sub}</div>
-            </div>
-
-            <div class="pct-chip">
-              <div class="label">Shortest Day</div>
-              <div class="value">${shortestChip.value}</div>
-              <div class="sub">${shortestChip.sub}</div>
-            </div>
+          <div class="pct-daychips">
+            ${dayChipHTML("Longest Day", s.longest)}
+            ${dayChipHTML("Shortest Day", s.shortest)}
           </div>
         </div>
       </div>
@@ -750,7 +766,6 @@
 
   async function refresh() {
     try {
-      // If status elements still exist, keep them silent (you asked to remove UI).
       if (statusEl) statusEl.textContent = "";
       if (metaEl) metaEl.textContent = "";
       if (statusExtraEl) statusExtraEl.textContent = "";
@@ -877,7 +892,6 @@
       }
 
     } catch (e) {
-      // keep silent (no status box)
       stopLiveAnim();
       clearLiveLine();
 
