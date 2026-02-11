@@ -1,19 +1,78 @@
-# PCT Demo Tracker (GitHub Pages) Live Demo
+# PCT Trail Tracker
 
-This is a demo template: **Map + Blog + Gear**, designed to be edited from an iPhone.
+A lightweight personal trail tracker built with GitHub Pages.
 
-## How to publish on GitHub Pages
-1. Create a new GitHub repo (public).
-2. Upload all files from this folder to the repo root.
-3. Repo → Settings → Pages → Deploy from branch → `main` / `(root)`.
-4. Open the provided URL.
+This site combines live-ish activity data, maps, photos, and short updates into a single, mobile-friendly page that can be edited directly from a phone.
 
-## Update your track
-Replace:
-- `data/track.geojson`
-- `data/latest.json`
+---
 
-## Add a blog post
-Add a new file to `_posts/` named like `YYYY-MM-DD-title.md`.
-Upload photos to `images/` and reference them like:
-`![alt text](/images/my-photo.jpg)`
+## What this site does
+
+- **Map & Progress**
+  - Displays the current trail track
+  - Shows distance, elevation, time, averages, and progress
+  - Data is generated from activity tracking (e.g. Strava export / sync workflow)
+
+- **Trail Updates**
+  - Simple text-based updates written in Markdown
+  - Designed to be fast to edit from a phone while on trail
+
+- **Photos**
+  - Auto-synced from a Flickr album
+  - No local image management needed
+
+- **Gear**
+  - Embedded gear list created with [lighterpack.com](https://lighterpack.com)
+  - Always up to date without manual copying
+
+---
+
+## How it works
+
+- The site is built with **GitHub Pages (Jekyll)**
+- Styling and layout are optimized for **mobile editing**
+- Activity data and tracks live in `/data/`
+- Pages are simple Markdown files:
+  - `index.md` – map & stats
+  - `updates.md` – trail updates
+  - `photos.md` – photo gallery
+  - `gear.md` – gear overview
+
+No CMS, no database, no backend server.
+
+---
+
+## Folder structure (simplified)
+
+.
+├── _layouts/ # Page layouts
+├── assets/ # CSS and frontend assets
+├── scripts/ # Map, stats, and data logic
+├── data/ # Track and activity data
+├── index.md # Map & statistics
+├── updates.md # Trail updates
+├── photos.md # Flickr photos
+├── gear.md # Gear & Lighterpack
+├── _config.yml # GitHub Pages config
+└── README.md
+
+
+---
+
+## Why this exists
+
+This project is meant to be:
+- simple
+- robust
+- editable from a phone
+- independent of social platforms
+
+It’s a personal trail log, not a social feed.
+
+---
+
+## License
+
+Personal project.  
+Feel free to take inspiration, but this is not intended as a drop-in product.
+
