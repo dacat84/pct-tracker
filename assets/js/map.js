@@ -633,22 +633,22 @@
   }
 
   function setStatsUI(s) {
-    const elevMain = s.elevCount ? `${fmtInt(s.elevM)} m` : "—";
-    const elevSub = s.elevCount ? `${fmtInt(toFt(s.elevM))} ft` : "";
+    const elevMain = s.elevCount ? `${fmtInt(toFt(s.elevM))} ft` : "—";
+    const elevSub = "";
 
-    const avgDistMain = s.featsCount ? `${fmtNumber(s.avgDistPerActKm, 1)} km` : "—";
-    const avgDistSub = s.featsCount ? `${fmtNumber(s.avgDistPerActMi, 1)} mi` : "";
+    const avgDistMain = s.featsCount ? `${fmtNumber(s.avgDistPerActMi, 1)} mi` : "—";
+    const avgDistSub = "";
 
-    const avgSpeedMain = s.avgKmh ? `${fmtNumber(s.avgKmh, 1)} km/h` : "—";
-    const avgSpeedSub = s.avgMph ? `${fmtNumber(s.avgMph, 1)} mi/h` : "";
+    const avgSpeedMain = s.avgMph ? `${fmtNumber(s.avgMph, 1)} mi/h` : "—";
+    const avgSpeedSub = "";
 
     statsListEl.innerHTML = `
       <div class="pct-stats-wrap">
         <div class="pct-stat-hero">
           <div class="label">Total Distance</div>
           <div class="big">
-            <div class="primary">${fmtNumber(s.totalKm, 1)} km</div>
-            <div class="secondary">${fmtNumber(s.totalMi, 1)} mi</div>
+            <div class="primary">${fmtNumber(s.totalMi, 1)} mi</div>
+            <div class="secondary"></div>
           </div>
         </div>
 
@@ -684,11 +684,10 @@
   function setInsightsUI(s) {
     // Progress line: "2.8% · 118.1 km of 4,265 km · 73.4 mi of 2,650 mi"
     const pctTxt = Number.isFinite(s.pctCompleted) ? `${fmtNumber(s.pctCompleted, 1)}%` : "—%";
-    const kmLine = `${fmtNumber(s.totalKm, 1)} km of ${fmtInt(PCT_TOTAL_KM)} km`;
     const miLine = `${fmtNumber(s.totalMi, 1)} mi of ${fmtInt(PCT_TOTAL_MI)} mi`;
-    const pctLine = `${pctTxt} · ${kmLine} · ${miLine}`;
+    const pctLine = `${pctTxt} · ${miLine}`;
 
-    const remainingLine = `${fmtNumber(s.remainingKm, 1)} km / ${fmtNumber(s.remainingMi, 1)} mi`;
+    const remainingLine = `${fmtNumber(s.remainingMi, 1)} mi`;
     const pctWidth = Math.max(0, Math.min(100, Number.isFinite(s.pctCompleted) ? s.pctCompleted : 0));
 
     // Timeline big (readable)
@@ -713,8 +712,8 @@
       return `
         <div class="pct-chip">
           <div class="label">${label}</div>
-          <div class="pct-day-km">${fmtNumber(km, 1)} km</div>
-          <div class="pct-day-meta">${fmtNumber(mi, 1)} mi · ${time}</div>
+          <div class="pct-day-km">${fmtNumber(mi, 1)} mi</div>
+          <div class="pct-day-meta">${time}</div>
           <div class="pct-day-date">${item.dateLabel}</div>
         </div>
       `;
