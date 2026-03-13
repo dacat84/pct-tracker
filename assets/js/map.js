@@ -463,33 +463,34 @@
   }
 
   function buildPopupHTML(props) {
-    const type = activityTypeLabel(props);
-    const start = props.start_date ? fmtDate(props.start_date) : "—";
+  const type = activityTypeLabel(props);
+  const start = props.start_date ? fmtDate(props.start_date) : "—";
 
-    const distM = Number(props.distance_m);
-    const km = Number.isFinite(distM) ? toKm(distM) : null;
-    const mi = Number.isFinite(distM) ? toMi(distM) : null;
+  const distM = Number(props.distance_m);
+  const km = Number.isFinite(distM) ? toKm(distM) : null;
+  const mi = Number.isFinite(distM) ? toMi(distM) : null;
 
-    const tSec = Number(props.moving_time_s);
-    const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
+  const tSec = Number(props.moving_time_s);
+  const time = Number.isFinite(tSec) ? fmtDuration(tSec) : "—";
 
-    const elevM = pickElevationMeters(props);
-    cconst elevStr = elevM == null ? "—" : `${fmtInt(toFt(elevM))} ft`;
+  const elevM = pickElevationMeters(props);
+  const elevStr = elevM == null ? "—" : `${fmtInt(elevM)} m / ${fmtInt(toFt(elevM))} ft`;
 
-    const distStr = mi == null ? "—" : `${fmtNumber(mi, 1)} mi`;
+  const distStr = (km == null || mi == null) ? "—" : `${fmtNumber(km, 1)} km / ${fmtNumber(mi, 1)} mi`;
 
-    return `
-      <div class="pct-popup">
-        <div class="pct-popup-title">${type}</div>
-        <div class="pct-popup-grid">
-          <div class="k">Date</div><div class="v">${start}</div>
-          <div class="k">Distance</div><div class="v">${distStr}</div>
-          <div class="k">Time</div><div class="v">${time}</div>
-          <div class="k">Elevation</div><div class="v">${elevStr}</div>
-        </div>
+  return `
+    <div class="pct-popup">
+      <div class="pct-popup-title">${type}</div>
+      <div class="pct-popup-grid">
+        <div class="k">Date</div><div class="v">${start}</div>
+        <div class="k">Distance</div><div class="v">${distStr}</div>
+        <div class="k">Time</div><div class="v">${time}</div>
+        <div class="k">Elevation</div><div class="v">${elevStr}</div>
       </div>
-    `;
-  }
+    </div>
+  `;
+}
+
 
   // ---------- latest "live progress" line ----------
   const LIVE_DRAW_MS = 7500;
@@ -633,91 +634,121 @@
   }
 
   function setStatsUI(s) {
-    const elevMain = s.elevCount ? `${fmtInt(toFt(s.elevM))} ft` : "—";
-    const elevSub = "";
+  const elevMain = s.elevCount ? `${fmtInt(s.elevM)} m` : "—";
+  const elevSub = s.elevCount ? `${fmtInt(toFt(s.elevM))} ft` : "";
 
-    const avgDistMain = s.featsCount ? `${fmtNumber(s.avgDistPerActMi, 1)} mi` : "—";
-    const avgDistSub = "";
+  const avgDistMain = s.featsCount ? `${fmtNumber(s.avgDistPerActKm, 1)} km` : "—";
+  const avgDistSub = s.featsCount ? `${fmtNumber(s.avgDistPerActMi, 1)} mi` : "";
 
-    const avgSpeedMain = s.avgMph ? `${fmtNumber(s.avgMph, 1)} mi/h` : "—";
-    const avgSpeedSub = "";
+  const avgSpeedMain = s.avgKmh ? `${fmtNumber(s.avgKmh, 1)} km/h` : "—";
+  const avgSpeedSub = s.avgMph ? `${fmtNumber(s.avgMph, 1)} mi/h` : "";
 
-    statsListEl.innerHTML = `
-      <div class="pct-stats-wrap">
-        <div class="pct-stat-hero">
-          <div class="label">Total Distance</div>
-          <div class="big">
-            <div class="primary">${fmtNumber(s.totalMi, 1)} mi</div>
-            <div class="secondary"></div>
-          </div>
+  statsListEl.innerHTML = `
+    <div class="pct-stats-wrap">
+      <div class="pct-stat-hero">
+        <div class="label">Total Distance</div>
+        <div class="big">
+          <div class="primary">${fmtNumber(s.totalKm, 1)} km</div>
+          <div class="secondary">${fmtNumber(s.totalMi, 1)} mi</div>
+        </div>
+      </div>
+
+      <div class="pct-chip-grid">
+        <div class="pct-chip">
+          <div class="label">Total Elevation</div>
+          <div class="value">${elevMain}</div>
+          <div class="sub">${elevSub}</div>
         </div>
 
-        <div class="pct-chip-grid">
-          <div class="pct-chip">
-            <div class="label">Total Elevation</div>
-            <div class="value">${elevMain}</div>
-            <div class="sub">${elevSub}</div>
-          </div>
-
-          <div class="pct-chip">
-            <div class="label">Total Time</div>
-            <div class="value">${fmtDuration(s.timeS)}</div>
-            <div class="sub">${s.featsCount ? `${s.featsCount} activities` : ""}</div>
-          </div>
-
-          <div class="pct-chip">
-            <div class="label">Avg Distance / Activity</div>
-            <div class="value">${avgDistMain}</div>
-            <div class="sub">${avgDistSub}</div>
-          </div>
-
-          <div class="pct-chip">
-            <div class="label">Avg Speed</div>
-            <div class="value">${avgSpeedMain}</div>
-            <div class="sub">${avgSpeedSub}</div>
-          </div>
+        <div class="pct-chip">
+          <div class="label">Total Time</div>
+          <div class="value">${fmtDuration(s.timeS)}</div>
+          <div class="sub">${s.featsCount ? `${s.featsCount} activities` : ""}</div>
         </div>
+
+        <div class="pct-chip">
+          <div class="label">Avg Distance / Activity</div>
+          <div class="value">${avgDistMain}</div>
+          <div class="sub">${avgDistSub}</div>
+        </div>
+
+        <div class="pct-chip">
+          <div class="label">Avg Speed</div>
+          <div class="value">${avgSpeedMain}</div>
+          <div class="sub">${avgSpeedSub}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+  function setInsightsUI(s) {
+  const pctTxt = Number.isFinite(s.pctCompleted) ? `${fmtNumber(s.pctCompleted, 1)}%` : "—%";
+  const kmLine = `${fmtNumber(s.totalKm, 1)} km of ${fmtInt(PCT_TOTAL_KM)} km`;
+  const miLine = `${fmtNumber(s.totalMi, 1)} mi of ${fmtInt(PCT_TOTAL_MI)} mi`;
+  const pctLine = `${pctTxt} · ${kmLine} · ${miLine}`;
+
+  const remainingLine = `${fmtNumber(s.remainingKm, 1)} km / ${fmtNumber(s.remainingMi, 1)} mi`;
+  const pctWidth = Math.max(0, Math.min(100, Number.isFinite(s.pctCompleted) ? s.pctCompleted : 0));
+
+  const firstLine = s.firstTs ? new Date(s.firstTs).toLocaleDateString() : "—";
+  const lastLine = s.lastTs ? new Date(s.lastTs).toLocaleDateString() : "—";
+  const daysLine = `${s.activeDays || 0} active days${s.restDays != null ? ` · ${s.restDays} rest days` : ""}`;
+
+  function dayChipHTML(label, item) {
+    if (!item) {
+      return `
+        <div class="pct-chip">
+          <div class="label">${label}</div>
+          <div class="pct-day-km">—</div>
+          <div class="pct-day-meta"></div>
+          <div class="pct-day-date"></div>
+        </div>
+      `;
+    }
+    const km = toKm(item.distM);
+    const mi = toMi(item.distM);
+    const time = item.timeS != null ? fmtDuration(item.timeS) : "—";
+    return `
+      <div class="pct-chip">
+        <div class="label">${label}</div>
+        <div class="pct-day-km">${fmtNumber(km, 1)} km</div>
+        <div class="pct-day-meta">${fmtNumber(mi, 1)} mi · ${time}</div>
+        <div class="pct-day-date">${item.dateLabel}</div>
       </div>
     `;
   }
 
-  function setInsightsUI(s) {
-    // Progress line: "2.8% · 118.1 km of 4,265 km · 73.4 mi of 2,650 mi"
-    const pctTxt = Number.isFinite(s.pctCompleted) ? `${fmtNumber(s.pctCompleted, 1)}%` : "—%";
-    const miLine = `${fmtNumber(s.totalMi, 1)} mi of ${fmtInt(PCT_TOTAL_MI)} mi`;
-    const pctLine = `${pctTxt} · ${miLine}`;
-
-    const remainingLine = `${fmtNumber(s.remainingMi, 1)} mi`;
-    const pctWidth = Math.max(0, Math.min(100, Number.isFinite(s.pctCompleted) ? s.pctCompleted : 0));
-
-    // Timeline big (readable)
-    const firstLine = s.firstTs ? new Date(s.firstTs).toLocaleDateString() : "—";
-    const lastLine = s.lastTs ? new Date(s.lastTs).toLocaleDateString() : "—";
-    const daysLine = `${s.activeDays || 0} active days${s.restDays != null ? ` · ${s.restDays} rest days` : ""}`;
-
-    function dayChipHTML(label, item) {
-      if (!item) {
-        return `
-          <div class="pct-chip">
-            <div class="label">${label}</div>
-            <div class="pct-day-km">—</div>
-            <div class="pct-day-meta"></div>
-            <div class="pct-day-date"></div>
+  insightsListEl.innerHTML = `
+    <div class="pct-sections">
+      <div class="pct-section">
+        <div class="pct-section-title">Progress</div>
+        <div class="pct-rows">
+          <div class="pct-row"><span>PCT completed</span><b>${pctLine}</b></div>
+          <div class="pct-progressbar" aria-label="PCT progress">
+            <div class="pct-progressfill" style="width:${pctWidth}%;"></div>
           </div>
-        `;
-      }
-      const km = toKm(item.distM);
-      const mi = toMi(item.distM);
-      const time = item.timeS != null ? fmtDuration(item.timeS) : "—";
-      return `
-        <div class="pct-chip">
-          <div class="label">${label}</div>
-          <div class="pct-day-km">${fmtNumber(mi, 1)} mi</div>
-          <div class="pct-day-meta">${time}</div>
-          <div class="pct-day-date">${item.dateLabel}</div>
+          <div class="pct-row" style="margin-top:6px;"><span>Remaining</span><b>${remainingLine}</b></div>
         </div>
-      `;
-    }
+
+        <div class="pct-section" style="margin-top:10px;">
+          <div class="pct-section-title">Timeline</div>
+          <div class="pct-rows">
+            <div class="pct-row"><span>First activity</span><b>${firstLine}</b></div>
+            <div class="pct-row"><span>Last activity</span><b>${lastLine}</b></div>
+            <div class="pct-row"><span>Days</span><b>${daysLine}</b></div>
+          </div>
+        </div>
+
+        <div class="pct-daychips">
+          ${dayChipHTML("Longest Day", s.longest)}
+          ${dayChipHTML("Shortest Day", s.shortest)}
+        </div>
+      </div>
+    </div>
+  `;
+}
 
     insightsListEl.innerHTML = `
       <div class="pct-sections">
