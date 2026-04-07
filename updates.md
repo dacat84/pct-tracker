@@ -9,6 +9,13 @@ nav: updates
   <h2 class="updates-title">Trail Updates</h2>
 
 <div class="update-card">
+    <div class="update-date">April 7, 2026</div>
+    <div class="update-text">
+      Fossil Girl (trailangel) gave us a ride at 7am back to Scissors Crossing, plan is to walk 15mi to first water cache then maybe another 5mi to camp. Ditched size 13's in town (shipped home) and picked up 12.5 wides + toe socks. Climbing ~3k ft today, hopefully clouds roll in and its not all sun. 
+    </div>
+  </div>
+
+<div class="update-card">
     <div class="update-date">April 6, 2026</div>
     <div class="update-text">
       Taking a full rest day here in Julian. shuttle leaves tomorrow morning at 7am to get back on the trail by 7:30. restocking food for two days, will buy food at Warner Springs. aiming for Idyllwild by next  Saturday.
