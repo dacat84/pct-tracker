@@ -147,7 +147,7 @@ nav: photos
 
       let photos = (data.photoset && data.photoset.photo) ? data.photoset.photo : [];
       // newest first (if date_upload is present)
-      photos.sort((a,b) => new Date(a.datetaken) - new Date(b.datetaken));;
+      photos.sort((a,b) => new Date(b.datetaken) - new Date(a.datetaken));
 
       grid.innerHTML = "";
       for (const p of photos){
