@@ -139,7 +139,7 @@ nav: photos
       "&api_key=" + encodeURIComponent(FLICKR_API_KEY) +
       "&user_id=" + encodeURIComponent(USER_ID) +
       "&photoset_id=" + encodeURIComponent(PHOTOSET_ID) +
-      "&extras=" + encodeURIComponent("url_q,url_m,url_z,url_c,url_l,url_o,date_upload");
+      "&extras=" + encodeURIComponent("url_q,url_m,url_z,url_c,url_l,url_o,date_upload,date_taken");;
 
     try{
       const data = await jsonp(base);
@@ -147,7 +147,7 @@ nav: photos
 
       let photos = (data.photoset && data.photoset.photo) ? data.photoset.photo : [];
       // newest first (if date_upload is present)
-      photos.sort((a,b) => (parseInt(b.dateupload||0) - parseInt(a.dateupload||0)));
+      photos.sort((a,b) => new Date(a.datetaken) - new Date(b.datetaken));;
 
       grid.innerHTML = "";
       for (const p of photos){
