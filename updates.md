@@ -9,6 +9,15 @@ nav: updates
   <h2 class="updates-title">Trail Updates</h2>
 
 <div class="update-card">
+    <div class="update-date">April 13, 2026</div>
+    <div class="update-text">
+      Came off San Jacinto yesterday, storm blew through and lightly dusted the peak with snow. Taking a zero day today in Idyllwild, going back up tomorrow. To summit San Jac will be 6mi of straight up and 5k ft of climb from
+      our dropoff point, Humbert Park. Packing microspikes for the summit just in case. Next town after this will be Bear Valley on approx April 19th. 
+    </div>
+  </div>
+
+
+<div class="update-card">
     <div class="update-date">April 11, 2026</div>
     <div class="update-text">
       Camped behind Paradise Valley Cafe last night. Started up San Jacinto today, walking 20ish today, 12 tomorrow. midday tommorow make our way into Idyllwild for a zero day. summit san jac on tuesday. 
