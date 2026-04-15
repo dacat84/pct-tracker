@@ -11,7 +11,7 @@ nav: updates
 <div class="update-card">
     <div class="update-date">April 15, 2026</div>
     <div class="update-text">
-      Going up to the peak of San Jacinto (10,800ft) and now back down to 1,700ft today has kicked my butt. Snow and slush up on San Jac and now its desert next to Palm Springs. Nitsy (trail angel) is picking us up at mile 209 (hwy 10), we are staying the night at her place and back on the trail tomorrow.
+      Going up to the peak of San Jacinto (10,800ft) yesterday and now back down to 1,700ft today has kicked my butt. Snow and slush up on San Jac and now its desert next to Palm Springs. Nitsy (trail angel) is picking us up at mile 209 (hwy 10), we are staying the night at her place and back on the trail tomorrow.
     </div>
   </div>
 
