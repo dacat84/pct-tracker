@@ -11,7 +11,7 @@ nav: updates
 <div class="update-card">
     <div class="update-date">April 16, 2026</div>
     <div class="update-text">
-      Had a great stay at Nitsy's. Shower, laundry, dinner and breakfast. She's dropping us off back at the trail at ~6:30. 19mi day ahead, next town is Big Bear. Going to be paying extra attention with stops and stretching of my ankles/legs. 
+      Had a great stay at Nitsy's. Shower, laundry, dinner and breakfast. She's dropping us off back at the trail at ~6:30. 19mi day ahead, next town is Big Bear. Wont hit Big Bear for three days. Going to be paying extra attention with stops and stretching of my ankles/legs. 
     </div>
   </div>
 
