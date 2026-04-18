@@ -285,17 +285,17 @@ function setStatsUI(s) {
   let todaySection = "";
   if (s.todayData && s.lastDay) {
     const td = s.todayData;
-    const dateStr = new Date(s.lastDay + "T12:00:00").toLocaleDateString('de-DE', { weekday: "short", month: "short", day: "numeric" });
+    const dateStr = new Date(s.lastDay + "T12:00:00").toLocaleDateString('en-US', { weekday: "short", month: "short", day: "numeric" });
     const elevStr = td.elevM > 0 ? fmtInt(td.elevM) + " m ↑" : "";
     const actsStr = td.acts > 1 ? td.acts + " segments" : "1 segment";
-    todaySection = '<div class="pct-section" style="margin-top:10px"><div class="pct-section-title">Last Active Day <span style="font-weight:500;opacity:.65;font-size:12px">' + dateStr + '</span></div><div class="pct-stat-hero" style="margin-bottom:0"><div class="big"><div class="primary">' + fmtNumber(toKm(td.distM), 1) + ' km</div><div class="secondary">' + fmtNumber(toMi(td.distM), 1) + ' mi</div></div><div style="margin-top:6px;font-size:13px;color:rgba(245,248,255,.68);display:flex;gap:14px;flex-wrap:wrap">' + (td.timeS > 0 ? '<span>⏱ ' + fmtDuration(td.timeS) + '</span>' : '') + (elevStr ? '<span>⛰ ' + elevStr + '</span>' : '') + '<span>🏃 ' + actsStr + '</span></div></div></div>';
+    todaySection = '<div class="pct-section" style="margin-top:10px"><div class="pct-section-title">Last Active Day <span style="font-weight:500;opacity:.65;font-size:12px">' + dateStr + '</span></div><div class="pct-stat-hero" style="margin-bottom:0"><div class="big"><div class="primary">' + fmtNumber(toKm(td.distM), 1) + ' km</div><div class="secondary">' + fmtNumber(toMi(td.distM), 1) + ' mi</div></div><div style="margin-top:6px;font-size:13px;color:rgba(245,248,255,.68);display:flex;gap:14px;flex-wrap:wrap">' + (td.timeS > 0 ? '<span>Time: ' + fmtDuration(td.timeS) + '</span>' : '') + (elevStr ? '<span>Elev: ' + elevStr + '</span>' : '') + '<span>' + actsStr + '</span></div></div></div>';
   }
   let last7Section = "";
   if (s.last7 && s.last7.length > 1) {
     const maxDist = Math.max(...s.last7.map(d => d.distM));
     const bars = s.last7.map(d => {
       const minDist = Math.min(...s.last7.map(x => x.distM)); const range = maxDist - minDist; const pct = maxDist > 0 ? (range > maxDist * 0.15 ? Math.max(15, ((d.distM - minDist) / range) * 80 + 15) : Math.max(30, (d.distM / maxDist) * 100)) : 30;
-      const dayLabel = new Date(d.date + "T12:00:00").toLocaleDateString('de-DE', { weekday: "short" });
+      const dayLabel = new Date(d.date + "T12:00:00").toLocaleDateString('en-US', { weekday: "short" });
       const km = fmtNumber(toKm(d.distM), 0);
       const isLast = d.date === s.lastDay;
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:0"><div style="font-size:10px;color:rgba(245,248,255,.55);font-weight:700;white-space:nowrap">' + km + '</div><div style="width:100%;height:60px;display:flex;align-items:flex-end"><div style="width:100%;height:' + pct + '%;border-radius:4px 4px 2px 2px;background:' + (isLast ? 'linear-gradient(180deg,rgba(70,243,255,.9),rgba(70,243,255,.5))' : 'rgba(255,255,255,.18)') + '"></div></div><div style="font-size:10px;color:rgba(245,248,255,' + (isLast ? '.85' : '.45') + ');font-weight:' + (isLast ? '800' : '600') + '">' + dayLabel + '</div></div>';
