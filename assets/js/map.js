@@ -227,63 +227,84 @@
   }
 
   function computeStats(track) {
-    const feats = (track && track.features) ? track.features : [];
-    let distM = 0, timeS = 0, elevM = 0, elevCount = 0;
-    const days = new Set();
-    let firstTs = null, lastTs = null, longest = null, shortest = null;
-    for (const f of feats) {
-      const p = f.properties || {};
-      const d = Number(p.distance_m), t = Number(p.moving_time_s), sd = p.start_date ? String(p.start_date) : "";
-      if (Number.isFinite(d)) distM += d;
-      if (Number.isFinite(t)) timeS += t;
-      const e = pickElevationMeters(p);
-      if (e != null) { elevM += e; elevCount++; }
-      if (sd) {
-        days.add(sd.slice(0, 10));
-        const ts = Date.parse(sd);
-        if (Number.isFinite(ts)) { if (firstTs == null || ts < firstTs) firstTs = ts; if (lastTs == null || ts > lastTs) lastTs = ts; }
+  const feats = (track && track.features) ? track.features : [];
+  let distM = 0, timeS = 0, elevM = 0, elevCount = 0;
+  const days = new Set();
+  let firstTs = null, lastTs = null, longest = null, shortest = null;
+  const byDay = {};
+  for (const f of feats) {
+    const p = f.properties || {};
+    const d = Number(p.distance_m), t = Number(p.moving_time_s), sd = p.start_date ? String(p.start_date) : "";
+    if (Number.isFinite(d)) distM += d;
+    if (Number.isFinite(t)) timeS += t;
+    const e = pickElevationMeters(p);
+    if (e != null) { elevM += e; elevCount++; }
+    if (sd) {
+      const dayKey = sd.slice(0, 10);
+      days.add(dayKey);
+      const ts = Date.parse(sd);
+      if (Number.isFinite(ts)) {
+        if (firstTs == null || ts < firstTs) firstTs = ts;
+        if (lastTs == null || ts > lastTs) lastTs = ts;
       }
-      if (Number.isFinite(d) && d > 0) {
-        const item = { distM: d, timeS: Number.isFinite(t) ? t : null, dateLabel: sd ? fmtDateShort(sd) : "—" };
-        if (!longest || d > longest.distM) longest = item;
-        if (!shortest || d < shortest.distM) shortest = item;
-      }
+      if (!byDay[dayKey]) byDay[dayKey] = { distM: 0, timeS: 0, elevM: 0, acts: 0 };
+      if (Number.isFinite(d)) byDay[dayKey].distM += d;
+      if (Number.isFinite(t)) byDay[dayKey].timeS += t;
+      if (e != null) byDay[dayKey].elevM += e;
+      byDay[dayKey].acts++;
     }
-    const activeDays = days.size;
-    let restDays = null;
-    if (firstTs != null && lastTs != null) restDays = Math.max(0, Math.floor((lastTs - firstTs) / 86400000) + 1 - activeDays);
-    const totalKm = toKm(distM), totalMi = toMi(distM), hours = timeS / 3600;
-    return {
-      featsCount: feats.length, distM, timeS, elevM, elevCount, totalKm, totalMi,
-      firstTs, lastTs, activeDays, restDays,
-      pctCompleted: (totalMi / PCT_TOTAL_MI) * 100,
-      remainingMi: Math.max(0, PCT_TOTAL_MI - totalMi),
-      remainingKm: Math.max(0, PCT_TOTAL_MI - totalMi) * 1.609344,
-      avgDistPerActKm: feats.length ? totalKm / feats.length : null,
-      avgDistPerActMi: feats.length ? totalMi / feats.length : null,
-      avgKmh: hours > 0 ? totalKm / hours : null,
-      avgMph: hours > 0 ? totalMi / hours : null,
-      longest, shortest
-    };
+    if (Number.isFinite(d) && d > 0) {
+      const item = { distM: d, timeS: Number.isFinite(t) ? t : null, dateLabel: sd ? fmtDateShort(sd) : "—" };
+      if (!longest || d > longest.distM) longest = item;
+      if (!shortest || d < shortest.distM) shortest = item;
+    }
   }
-
-  function setStatsUI(s) {
+  const activeDays = days.size;
+  let restDays = null;
+  if (firstTs != null && lastTs != null) restDays = Math.max(0, Math.floor((lastTs - firstTs) / 86400000) + 1 - activeDays);
+  const totalKm = toKm(distM), totalMi = toMi(distM), hours = timeS / 3600;
+  const sortedDays = Object.keys(byDay).sort();
+  const lastDay = sortedDays[sortedDays.length - 1] || null;
+  const todayData = lastDay ? byDay[lastDay] : null;
+  const last7 = sortedDays.slice(-7).map(k => ({ date: k, ...byDay[k] }));
+  return { featsCount: feats.length, distM, timeS, elevM, elevCount, totalKm, totalMi, firstTs, lastTs, activeDays, restDays, pctCompleted: (totalMi / PCT_TOTAL_MI) * 100, remainingMi: Math.max(0, PCT_TOTAL_MI - totalMi), remainingKm: Math.max(0, PCT_TOTAL_MI - totalMi) * 1.609344, avgDistPerActKm: feats.length ? totalKm / feats.length : null, avgDistPerActMi: feats.length ? totalMi / feats.length : null, avgKmh: hours > 0 ? totalKm / hours : null, avgMph: hours > 0 ? totalMi / hours : null, longest, shortest, lastDay, todayData, last7 };
+}
+function setStatsUI(s) {
     statsListEl.innerHTML = `<div class="pct-stats-wrap"><div class="pct-stat-hero"><div class="label">Total Distance</div><div class="big"><div class="primary">${fmtNumber(s.totalKm, 1)} km</div><div class="secondary">${fmtNumber(s.totalMi, 1)} mi</div></div></div><div class="pct-chip-grid"><div class="pct-chip"><div class="label">Total Elevation</div><div class="value">${s.elevCount ? fmtInt(s.elevM) + " m" : "—"}</div><div class="sub">${s.elevCount ? fmtInt(toFt(s.elevM)) + " ft" : ""}</div></div><div class="pct-chip"><div class="label">Total Time</div><div class="value">${fmtDuration(s.timeS)}</div><div class="sub">${s.featsCount ? s.featsCount + " activities" : ""}</div></div><div class="pct-chip"><div class="label">Avg Distance / Activity</div><div class="value">${s.featsCount ? fmtNumber(s.avgDistPerActKm, 1) + " km" : "—"}</div><div class="sub">${s.featsCount ? fmtNumber(s.avgDistPerActMi, 1) + " mi" : ""}</div></div><div class="pct-chip"><div class="label">Avg Speed</div><div class="value">${s.avgKmh ? fmtNumber(s.avgKmh, 1) + " km/h" : "—"}</div><div class="sub">${s.avgMph ? fmtNumber(s.avgMph, 1) + " mi/h" : ""}</div></div></div></div>`;
   }
 
   function setInsightsUI(s) {
-    const pctTxt = Number.isFinite(s.pctCompleted) ? `${fmtNumber(s.pctCompleted, 1)}%` : "—%";
-    const pctLine = `${pctTxt} · ${fmtNumber(s.totalKm, 1)} km of ${fmtInt(PCT_TOTAL_KM)} km · ${fmtNumber(s.totalMi, 1)} mi of ${fmtInt(PCT_TOTAL_MI)} mi`;
-    const pctWidth = Math.max(0, Math.min(100, s.pctCompleted || 0));
-    const daysLine = `${s.activeDays || 0} active days${s.restDays != null ? ` · ${s.restDays} rest days` : ""}`;
-    function chip(label, item) {
-      if (!item) return `<div class="pct-chip"><div class="label">${label}</div><div class="pct-day-km">—</div></div>`;
-      return `<div class="pct-chip"><div class="label">${label}</div><div class="pct-day-km">${fmtNumber(toKm(item.distM), 1)} km</div><div class="pct-day-meta">${fmtNumber(toMi(item.distM), 1)} mi · ${item.timeS != null ? fmtDuration(item.timeS) : "—"}</div><div class="pct-day-date">${item.dateLabel}</div></div>`;
-    }
-    insightsListEl.innerHTML = `<div class="pct-sections"><div class="pct-section"><div class="pct-section-title">Progress</div><div class="pct-rows"><div class="pct-row"><span>PCT completed</span><b>${pctLine}</b></div><div class="pct-progressbar"><div class="pct-progressfill" style="width:${pctWidth}%"></div></div><div class="pct-row" style="margin-top:6px"><span>Remaining</span><b>${fmtNumber(s.remainingKm, 1)} km / ${fmtNumber(s.remainingMi, 1)} mi</b></div></div><div class="pct-section" style="margin-top:10px"><div class="pct-section-title">Timeline</div><div class="pct-rows"><div class="pct-row"><span>First activity</span><b>${s.firstTs ? new Date(s.firstTs).toLocaleDateString() : "—"}</b></div><div class="pct-row"><span>Last activity</span><b>${s.lastTs ? new Date(s.lastTs).toLocaleDateString() : "—"}</b></div><div class="pct-row"><span>Days</span><b>${daysLine}</b></div></div></div><div class="pct-daychips">${chip("Longest Day", s.longest)}${chip("Shortest Day", s.shortest)}</div></div></div>`;
+  const pctTxt = Number.isFinite(s.pctCompleted) ? fmtNumber(s.pctCompleted, 1) + "%" : "—%";
+  const pctLine = pctTxt + " · " + fmtNumber(s.totalKm, 1) + " km of " + fmtInt(PCT_TOTAL_KM) + " km · " + fmtNumber(s.totalMi, 1) + " mi of " + fmtInt(PCT_TOTAL_MI) + " mi";
+  const pctWidth = Math.max(0, Math.min(100, s.pctCompleted || 0));
+  const daysLine = (s.activeDays || 0) + " active days" + (s.restDays != null ? " · " + s.restDays + " rest days" : "");
+  function chip(label, item) {
+    if (!item) return '<div class="pct-chip"><div class="label">' + label + '</div><div class="pct-day-km">—</div></div>';
+    return '<div class="pct-chip"><div class="label">' + label + '</div><div class="pct-day-km">' + fmtNumber(toKm(item.distM), 1) + ' km</div><div class="pct-day-meta">' + fmtNumber(toMi(item.distM), 1) + ' mi · ' + (item.timeS != null ? fmtDuration(item.timeS) : "—") + '</div><div class="pct-day-date">' + item.dateLabel + '</div></div>';
   }
-
-  function findLatestFeature(track) {
+  let todaySection = "";
+  if (s.todayData && s.lastDay) {
+    const td = s.todayData;
+    const dateStr = new Date(s.lastDay + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    const elevStr = td.elevM > 0 ? fmtInt(td.elevM) + " m ↑" : "";
+    const actsStr = td.acts > 1 ? td.acts + " segments" : "1 segment";
+    todaySection = '<div class="pct-section" style="margin-top:10px"><div class="pct-section-title">Last Active Day <span style="font-weight:500;opacity:.65;font-size:12px">' + dateStr + '</span></div><div class="pct-stat-hero" style="margin-bottom:0"><div class="big"><div class="primary">' + fmtNumber(toKm(td.distM), 1) + ' km</div><div class="secondary">' + fmtNumber(toMi(td.distM), 1) + ' mi</div></div><div style="margin-top:6px;font-size:13px;color:rgba(245,248,255,.68);display:flex;gap:14px;flex-wrap:wrap">' + (td.timeS > 0 ? '<span>⏱ ' + fmtDuration(td.timeS) + '</span>' : '') + (elevStr ? '<span>⛰ ' + elevStr + '</span>' : '') + '<span>📍 ' + actsStr + '</span></div></div></div>';
+  }
+  let last7Section = "";
+  if (s.last7 && s.last7.length > 1) {
+    const maxDist = Math.max(...s.last7.map(d => d.distM));
+    const bars = s.last7.map(d => {
+      const pct = maxDist > 0 ? Math.max(4, (d.distM / maxDist) * 100) : 4;
+      const dayLabel = new Date(d.date + "T12:00:00").toLocaleDateString(undefined, { weekday: "short" });
+      const km = fmtNumber(toKm(d.distM), 0);
+      const isLast = d.date === s.lastDay;
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:0"><div style="font-size:10px;color:rgba(245,248,255,.55);font-weight:700;white-space:nowrap">' + km + '</div><div style="width:100%;height:60px;display:flex;align-items:flex-end"><div style="width:100%;height:' + pct + '%;border-radius:4px 4px 2px 2px;background:' + (isLast ? 'linear-gradient(180deg,rgba(70,243,255,.9),rgba(70,243,255,.5))' : 'rgba(255,255,255,.18)') + '"></div></div><div style="font-size:10px;color:rgba(245,248,255,' + (isLast ? '.85' : '.45') + ');font-weight:' + (isLast ? '800' : '600') + '">' + dayLabel + '</div></div>';
+    }).join("");
+    last7Section = '<div class="pct-section" style="margin-top:10px"><div class="pct-section-title">Last ' + s.last7.length + ' Active Days</div><div style="display:flex;gap:6px;align-items:flex-end;padding:4px 0">' + bars + '</div></div>';
+  }
+  insightsListEl.innerHTML = '<div class="pct-sections">' + todaySection + last7Section + '<div class="pct-section" style="margin-top:10px"><div class="pct-section-title">Progress</div><div class="pct-rows"><div class="pct-row"><span>PCT completed</span><b>' + pctLine + '</b></div><div class="pct-progressbar"><div class="pct-progressfill" style="width:' + pctWidth + '%"></div></div><div class="pct-row" style="margin-top:6px"><span>Remaining</span><b>' + fmtNumber(s.remainingKm, 1) + ' km / ' + fmtNumber(s.remainingMi, 1) + ' mi</b></div></div></div><div class="pct-section" style="margin-top:10px"><div class="pct-section-title">Timeline</div><div class="pct-rows"><div class="pct-row"><span>First activity</span><b>' + (s.firstTs ? new Date(s.firstTs).toLocaleDateString() : "—") + '</b></div><div class="pct-row"><span>Last activity</span><b>' + (s.lastTs ? new Date(s.lastTs).toLocaleDateString() : "—") + '</b></div><div class="pct-row"><span>Days</span><b>' + daysLine + '</b></div></div></div><div class="pct-daychips" style="margin-top:10px">' + chip("Longest Day", s.longest) + chip("Shortest Day", s.shortest) + '</div></div>';
+}
+function findLatestFeature(track) {
     const feats = (track && track.features) ? track.features : [];
     let best = null, bestTs = -Infinity;
     for (const f of feats) { const ts = f.properties?.start_date ? Date.parse(f.properties.start_date) : NaN; if (Number.isFinite(ts) && ts > bestTs) { bestTs = ts; best = f; } }
