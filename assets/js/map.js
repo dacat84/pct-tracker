@@ -29,7 +29,7 @@
   function fmtDate(ts) { try { return new Date(ts).toLocaleString(); } catch { return String(ts); } }
   function fmtDateShort(ts) {
     try {
-      return new Date(ts).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+      return new Date(ts).toLocaleDateString('en-GB', { year: "numeric", month: "short", day: "numeric" });
     } catch { return "—"; }
   }
   function fmtDuration(totalSeconds) {
@@ -277,7 +277,7 @@ function setStatsUI(s) {
   const pctTxt = Number.isFinite(s.pctCompleted) ? fmtNumber(s.pctCompleted, 1) + "%" : "—%";
   const pctLine = pctTxt + " · " + fmtNumber(s.totalKm, 1) + " km of " + fmtInt(PCT_TOTAL_KM) + " km · " + fmtNumber(s.totalMi, 1) + " mi of " + fmtInt(PCT_TOTAL_MI) + " mi";
   const pctWidth = Math.max(0, Math.min(100, s.pctCompleted || 0));
-  const daysLine = (s.activeDays || 0) + " active days" + (s.restDays != null ? " · " + s.restDays + " rest days" : "");
+  const daysLine = (s.activeDays || 0) + " active days" + (s.restDays != null && s.restDays > 0 ? " · " + s.restDays + " rest days" : "");
   function chip(label, item) {
     if (!item) return '<div class="pct-chip"><div class="label">' + label + '</div><div class="pct-day-km">—</div></div>';
     return '<div class="pct-chip"><div class="label">' + label + '</div><div class="pct-day-km">' + fmtNumber(toKm(item.distM), 1) + ' km</div><div class="pct-day-meta">' + fmtNumber(toMi(item.distM), 1) + ' mi · ' + (item.timeS != null ? fmtDuration(item.timeS) : "—") + '</div><div class="pct-day-date">' + item.dateLabel + '</div></div>';
@@ -311,7 +311,7 @@ function setStatsUI(s) {
     last7Section = '<div class="pct-section" style="margin-top:10px"><div class="pct-section-title">Recent Days</div>'
       + '<div style="display:flex;flex-direction:row;gap:6px;align-items:stretch;height:90px;padding:4px 0;overflow:hidden">' + bars + '</div></div>';
   }
-  insightsListEl.innerHTML = '<div class="pct-sections">' + todaySection + last7Section + '<div class="pct-section" style="margin-top:10px"><div class="pct-section-title">Progress</div><div class="pct-rows"><div style="margin-bottom:4px"><div style="font-size:12px;color:rgba(245,248,255,.62);margin-bottom:3px">PCT completed</div><div style="font-size:12px;font-weight:800;color:rgba(245,248,255,.9);line-height:1.5">' + pctLine + '</div></div><div class="pct-progressbar"><div class="pct-progressfill" style="width:' + pctWidth + '%"></div></div><div class="pct-row" style="margin-top:6px"><span>Remaining</span><b>' + fmtNumber(s.remainingKm, 1) + ' km / ' + fmtNumber(s.remainingMi, 1) + ' mi</b></div></div></div><div class="pct-section" style="margin-top:10px"><div class="pct-section-title">Timeline</div><div class="pct-rows"><div class="pct-row"><span>First activity</span><b>' + (s.firstTs ? new Date(s.firstTs).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : "—") + '</b></div><div class="pct-row"><span>Last activity</span><b>' + (s.lastTs ? new Date(s.lastTs).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : "—") + '</b></div><div class="pct-row"><span>Days</span><b>' + daysLine + '</b></div></div></div><div class="pct-daychips" style="margin-top:10px">' + chip("Longest Day", s.longest) + chip("Shortest Day", s.shortest) + '</div></div>';
+  insightsListEl.innerHTML = '<div class="pct-sections">' + todaySection + last7Section + '<div class="pct-section" style="margin-top:10px"><div class="pct-section-title">PCT Progress</div><div class="pct-rows"><div style="margin-bottom:4px"><div style="font-size:12px;color:rgba(245,248,255,.62);margin-bottom:3px;display:none">PCT completed</div><div style="font-size:12px;font-weight:800;color:rgba(245,248,255,.9);line-height:1.5">' + pctLine + '</div></div><div class="pct-progressbar"><div class="pct-progressfill" style="width:' + pctWidth + '%"></div></div><div class="pct-row" style="margin-top:6px"><span>Remaining</span><b>' + fmtNumber(s.remainingKm, 1) + ' km / ' + fmtNumber(s.remainingMi, 1) + ' mi</b></div></div></div><div class="pct-section" style="margin-top:10px"><div class="pct-section-title">Timeline</div><div class="pct-rows"><div class="pct-row"><span>First activity</span><b>' + (s.firstTs ? new Date(s.firstTs).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : "—") + '</b></div><div class="pct-row"><span>Last activity</span><b>' + (s.lastTs ? new Date(s.lastTs).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : "—") + '</b></div><div class="pct-row"><span>Days</span><b>' + daysLine + '</b></div></div></div><div class="pct-daychips" style="margin-top:10px">' + chip("Longest Day", s.longest) + chip("Shortest Day", s.shortest) + '</div></div>';
 }
 function findLatestFeature(track) {
     const feats = (track && track.features) ? track.features : [];
