@@ -1,0 +1,29 @@
+name: Keep Alive
+
+on:
+  schedule:
+    - cron: "0 9 1,15 * *"
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Keep workflow alive
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p .github
+          echo "Last keep-alive: $(date -u)" > .github/keepalive.txt
+          git add .github/keepalive.txt
+          if git diff --staged --quiet; then
+            echo "Nothing to commit."
+          else
+            git commit -m "chore: keep workflows alive [skip ci]"
+            git push
+          fi
