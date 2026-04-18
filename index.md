@@ -9,7 +9,7 @@ head_extra: |
     .status-card {
       position: relative;
       overflow: hidden;
-    }
+    }Page_DownPage_DownPage_DownPage_DownPage_Down
 
     .status-card .status-header {
       display: flex;
@@ -86,7 +86,7 @@ head_extra: |
   </style>
 body_extra: |
   <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-  <script src="/demo-tracker/assets/js/map.js"></script>
+  <script src="/pct-tracker/assets/js/map.js"></script>
 ---
 
 <div class="hero">
