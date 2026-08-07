@@ -33,7 +33,7 @@ Live map, stats, photos, and trail updates — synced automatically from Strava.
   - No local image management needed
 
 - **Gear**
-  - Embedded gear list from [grampacker.net](https://grampacker.net)
+  - Embedded gear list from [lighterpack.com](https://lighterpack.com)
   - Always up to date without manual copying
 
 ---
@@ -68,38 +68,3 @@ Live map, stats, photos, and trail updates — synced automatically from Strava.
 │   └── Full_PCT_Simplified.geojson  # PCT centerline (PCTA, CC BY 4.0)
 ├── scripts/
 │   └── strava_sync.py           # Python sync script
-├── index.md                     # Map & statistics page
-├── updates.md                   # Trail updates
-├── photos.md                    # Flickr photo gallery
-├── gear.md                      # Gear & Lighterpack
-├── _config.yml                  # Jekyll config (title, baseurl)
-└── README.md
-```
-
----
-
-## Why this exists
-
-This project is meant to be:
-
-- simple and fast to use from a phone
-- automatic — no manual data entry while hiking
-- independent of social platforms
-- robust enough to run for 6 months unattended
-
-It's a personal trail log, not a social feed.
-
----
-
-## Data sources
-
-- Activity tracks: [Strava API](https://developers.strava.com/)
-- PCT centerline: [PCTA Open Data](https://www.pcta.org/discover-the-trail/maps/pct-data/) (CC BY 4.0)
-- Photos: [Flickr](https://flickr.com)
-- Gear list: [Grampacker](https://grampacker.net)
-
----
-
-## License
-
-Personal project. Feel free to take inspiration, but this is not intended as a drop-in product.
