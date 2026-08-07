@@ -7,7 +7,7 @@ permalink: /gear/
 <div class="card">
   <div class="card-title">Gear</div>
   <div class="card-sub">
-    A complete overview of the gear carried on trail, created with grampacker.net
+    A complete overview of the gear carried on trail, created with lighterpack.com
   </div>
 </div>
 
@@ -15,19 +15,19 @@ permalink: /gear/
   <div class="lp-shell">
     <div class="lp-frame">
       <!-- Lighterpack embed -->
-      <script src="https://grampacker.net/e/j1wteq"></script>
-      <div id="j1wteq"></div>
+      <script src="https://lighterpack.com/e/lm2int"></script>
+      <div id="lm2int"></div>
     </div>
   </div>
 </div>
 
 <script>
-  // Grampacker rendert ein iframe nachträglich – wir warten kurz, bis es da ist,
+  // Lighterpack rendert ein iframe nachträglich – wir warten kurz, bis es da ist,
   // und setzen dann Styling am iframe-Element selbst (nicht im Inhalt).
   (function () {
     let tries = 0;
     const timer = setInterval(() => {
-      const iframe = document.querySelector('iframe');
+      const iframe = document.querySelector('#lm2int iframe');
       tries++;
 
       if (iframe) {
@@ -62,22 +62,10 @@ permalink: /gear/
   }
 
   /* Das iframe selbst: Höhe + “helles” Aussehen erzwingen */
-  iframe{
+  #lm2int iframe{
     width: 100% !important;
     height: 72vh !important;
     max-height: 900px !important;
     border-radius: 12px !important;
 
     /* DER TRICK: macht dark -> light */
-    filter: invert(1) hue-rotate(180deg);
-    background: #fff;
-    display: block;
-  }
-
-  /* Auf sehr kleinen Screens etwas mehr Höhe */
-  @media (max-width: 520px){
-    iframe{ height: 78vh !important; }
-    .lp-shell{ padding: 10px; }
-    .lp-frame{ padding: 10px; }
-  }
-</style>
