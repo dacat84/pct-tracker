@@ -27,7 +27,7 @@ permalink: /gear/
   (function () {
     let tries = 0;
     const timer = setInterval(() => {
-      const iframe = document.querySelector('#lm2int iframe');
+      const iframe = document.querySelector('#bv8lr0 iframe');
       tries++;
 
       if (iframe) {
@@ -62,7 +62,7 @@ permalink: /gear/
   }
 
   /* Das iframe selbst: Höhe + “helles” Aussehen erzwingen */
-  #lm2int iframe{
+  #bv8lr0 iframe{
     width: 100% !important;
     height: 72vh !important;
     max-height: 900px !important;
