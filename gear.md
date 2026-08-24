@@ -6,19 +6,36 @@ permalink: /gear/
 <div class="card">
   <div class="card-title">Gear</div>
   <div class="card-sub">
-    A complete overview of the gear carried on trail — base weight, clothing, electronics and more.
+    A complete overview of the gear carried on trail, created with lighterpack.com
   </div>
 </div>
-
-<div class="card" style="text-align:center; padding: 40px 24px;">
-  <div style="font-size:15px; color:rgba(232,238,245,.65); margin-bottom:20px;">
-    Gear list hosted on Lighterpack — opens in a new tab.
+<div class="card lp-card">
+  <div class="lp-shell">
+    <div class="lp-frame">
+      <script src="https://lighterpack.com/e/bv8lr0"></script>
+      <div id="bv8lr0"></div>
+    </div>
   </div>
-  <a
-    href="https://lighterpack.com/r/bv8lr0"
-    target="_blank"
-    rel="noopener"
-    style="display:inline-block; padding:12px 28px; border-radius:999px; background:rgba(70,243,255,.12); border:1px solid rgba(70,243,255,.35); color:#46f3ff; font-weight:700; font-size:14px; text-decoration:none; letter-spacing:.2px;">
-    View Gear List on Lighterpack
-  </a>
 </div>
+<script>
+  (function () {
+    let tries = 0;
+    const timer = setInterval(() => {
+      const iframe = document.querySelector('#bv8lr0 iframe');
+      tries++;
+      if (iframe) {
+        iframe.setAttribute('title', 'Lighterpack gear list');
+        iframe.style.background = '#ffffff';
+        iframe.style.border = '0';
+        clearInterval(timer);
+      }
+      if (tries > 80) clearInterval(timer);
+    }, 100);
+  })();
+</script>
+<style>
+  .lp-shell{ max-width:980px; margin:0 auto; padding:14px; background:rgba(255,255,255,0.03); border-radius:16px; }
+  .lp-frame{ background:#f6f3ea; border-radius:14px; padding:12px; overflow:hidden; border:1px solid rgba(0,0,0,0.10); }
+  #bv8lr0 iframe{ width:100% !important; height:72vh !important; max-height:900px !important; border-radius:12px !important; filter:invert(1) hue-rotate(180deg); background:#fff; display:block; }
+  @media (max-width:520px){ #bv8lr0 iframe{ height:78vh !important; } .lp-shell{ padding:10px; } .lp-frame{ padding:10px; } }
+</style>
