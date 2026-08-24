@@ -6,40 +6,19 @@ permalink: /gear/
 <div class="card">
   <div class="card-title">Gear</div>
   <div class="card-sub">
-    A complete overview of the gear carried on trail, created with lighterpack.com
+    A complete overview of the gear carried on trail — base weight, clothing, electronics and more.
   </div>
 </div>
-<div class="card lp-card">
-  <div class="lp-shell">
-    <div class="lp-frame">
-      <iframe
-        src="https://lighterpack.com/r/bv8lr0"
-        title="Lighterpack gear list"
-        width="100%"
-        height="800"
-        frameborder="0"
-        style="border:0; border-radius:12px; background:#fff;">
-      </iframe>
-    </div>
+
+<div class="card" style="text-align:center; padding: 40px 24px;">
+  <div style="font-size:15px; color:rgba(232,238,245,.65); margin-bottom:20px;">
+    Gear list hosted on Lighterpack — opens in a new tab.
   </div>
+  <a
+    href="https://lighterpack.com/r/bv8lr0"
+    target="_blank"
+    rel="noopener"
+    style="display:inline-block; padding:12px 28px; border-radius:999px; background:rgba(70,243,255,.12); border:1px solid rgba(70,243,255,.35); color:#46f3ff; font-weight:700; font-size:14px; text-decoration:none; letter-spacing:.2px;">
+    View Gear List on Lighterpack
+  </a>
 </div>
-<style>
-  .lp-shell{
-    max-width: 980px;
-    margin: 0 auto;
-    padding: 14px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 16px;
-  }
-  .lp-frame{
-    background: #f6f3ea;
-    border-radius: 14px;
-    padding: 12px;
-    overflow: hidden;
-    border: 1px solid rgba(0,0,0,0.10);
-  }
-  @media (max-width: 520px){
-    .lp-shell{ padding: 10px; }
-    .lp-frame{ padding: 10px; }
-  }
-</style>
