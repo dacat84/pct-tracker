@@ -153,3 +153,7 @@ body.map-expanded .mapbackdrop{ display:block; position:fixed; inset:0; backgrou
 
 /* ---- Off-screen map so map.js can compute stats on the Stats page ---- */
 .map-compute{ position:absolute !important; left:-10000px !important; top:0 !important; width:860px !important; height:520px !important; min-height:0 !important; border:0 !important; box-shadow:none !important; border-radius:0 !important; }
+
+/* Sprachumschaltung Update-Texte */
+html[lang="de"] .update-text .lang-en{ display:none; }
+html[lang="en"] .update-text .lang-de{ display:none; }
