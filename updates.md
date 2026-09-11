@@ -16,6 +16,7 @@ nav: updates
 <div class="lang-de" markdown="1">{{ u.de | markdownify }}</div>
 <div class="lang-en" markdown="1">{{ u.en | markdownify }}</div>
 </div>
+</div>  
 {% endfor %}
 <div class="update-note" data-en="(Older updates at the bottom)" data-de="(Ältere Updates unten)">(Older updates at the bottom)</div>
 
