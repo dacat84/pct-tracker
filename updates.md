@@ -12,7 +12,9 @@ nav: updates
 {% for u in items %}{% assign mi = u.date | date: "%-m" | minus: 1 %}{% assign date_en = u.date | date: "%B %-d, %Y, %-I:%M %p" %}{% capture date_de %}{{ u.date | date: "%-d" }}. {{ months_de[mi] }} {{ u.date | date: "%Y, %H:%M" }} Uhr{% endcapture %}
 <div class="update-card">
 <div class="update-date" data-en="{{ date_en }}" data-de="{{ date_de }}">{{ date_en }}</div>
-<div class="update-text" data-en="{{ u.en | escape }}" data-de="{{ u.de | escape }}">{{ u.en | escape }}</div>
+<div class="update-text">
+<div class="lang-de" markdown="1">{{ u.de | markdownify }}</div>
+<div class="lang-en" markdown="1">{{ u.en | markdownify }}</div>
 </div>
 {% endfor %}
 <div class="update-note" data-en="(Older updates at the bottom)" data-de="(Ältere Updates unten)">(Older updates at the bottom)</div>
