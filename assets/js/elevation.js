@@ -19,7 +19,7 @@
   var STR = DE ? {
     liveDay: "Tag", inThe: "Ich bin gerade in ", rightNow: ".",
     fromCampo: " ab Campo", nearestWp: " \u00B7 n\u00e4chster Wegpunkt ", stillPre: "noch ", toEnd: " bis zum Northern Terminus.",
-    climb: "H\u00f6henprofil <b>P</b>acific <b>C</b>rest <b>T</b>rail", nowAt: "Aktuell ",
+    climb: "H\u00f6henprofil <b>P</b>acific <b>C</b>rest <b>T</b>rail", nowAt: "Aktuell auf ",
     here: "Standort", legPass: "Pass / Gipfel", legSide: "Abstecher", legTown: "Versorgungsort",
     legState: "Voll = getrackt \u00B7 blass = noch nicht", near: "Nahe ",
     distWord: "Distanz", altWord: "H\u00f6he", resupply: "Versorgungsort", zoomHint: "Sektion antippen zum Zoomen"
@@ -111,7 +111,9 @@
       ".el-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font:11.5px Inter,system-ui,sans-serif;color:#6c7365}" +
       ".el-legend span{display:inline-flex;align-items:center;gap:6px}" +
       ".el-band{cursor:pointer;transition:filter .1s ease}.el-band:hover{filter:brightness(1.07)}" +
-      ".el-back{position:absolute;top:8px;left:8px;z-index:5;background:#fff;border:1px solid #e2e0d4;border-radius:8px;padding:4px 10px;font:600 11.5px Inter,system-ui,sans-serif;color:#3e6b46;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}.el-back:hover{background:#f4f2ea}";
+      ".el-back{position:absolute;top:8px;left:8px;z-index:5;background:#fff;border:1px solid #e2e0d4;border-radius:8px;padding:4px 10px;font:600 11.5px Inter,system-ui,sans-serif;color:#3e6b46;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}.el-back:hover{background:#f4f2ea}" +
+      ".el-expand{position:absolute;top:8px;right:8px;z-index:6;width:30px;height:30px;border:1px solid #e2e0d4;border-radius:9px;background:rgba(255,255,255,.92);color:#3e6b46;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.08)}.el-expand:hover{background:#fff}" +
+      ".el-card.el-full{position:fixed;inset:12px;z-index:60;margin:0;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.32)}.el-card.el-full .el-prof{min-height:70vh;display:flex;flex-direction:column;justify-content:center}body.el-full-open{overflow:hidden}";
     document.head.appendChild(s);
   }
 
@@ -142,6 +144,7 @@
     return best;
   }
 
+  // Project each tracked activity onto the profile -> merged [kmMin,kmMax] ranges.
   function walkedRangesFrom(track, pts) {
     if (!track || !track.features) return [];
     function nearKm(lat, lon) {
@@ -189,7 +192,7 @@
 
   function fillHero(reg, F) {
     if (!CUR) return;
-    var scale = NOMINAL / TOTAL_KM;
+    var scale = NOMINAL / TOTAL_KM;                 // show official 4265 km / 2650 mi, not the simplified length
     var pos = CUR.km * scale;
     var toGo = Math.max(0, NOMINAL - pos);
     var pct = Math.round((pos / NOMINAL) * 100);
@@ -278,7 +281,7 @@
                   : [[914, "3k"], [1829, "6k"], [2743, "9k"], [3658, "12k"]];
     var bY = baseY + 8, bH = 22, lY = bY + bH + 18;
 
-    var viewA = 0, viewB = TOTAL;
+    var viewA = 0, viewB = TOTAL, isFull = false;
 
     function draw() {
       var full = viewA <= 0.5 && viewB >= TOTAL - 0.5;
@@ -373,6 +376,7 @@
         '<div class="el-now">' + STR.nowAt + EARR + ' <b>' + elevStr(cur.m) + '</b> \u00B7 ' + regName(reg) + '</div></div>' +
         '<div class="el-prof" id="elProf">' +
         (full ? '' : '<button class="el-back" type="button">\u2039 ' + (DE ? "\u00dcbersicht" : "Overview") + '</button>') +
+        '<button class="el-expand" type="button" aria-label="' + (DE ? "Vollbild" : "Fullscreen") + '">\u2921</button>' +
         svg + '</div>' +
         '<div class="el-legend">' +
         '<span><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#cf7440"/></svg> ' + STR.here + '</span>' +
@@ -385,6 +389,18 @@
         '</div></div>';
 
       var prof = container.querySelector("#elProf");
+      var elCard = container.querySelector(".el-card");
+      var expBtn = prof.querySelector(".el-expand");
+      if (expBtn) {
+        if (isFull) { elCard.classList.add("el-full"); document.body.classList.add("el-full-open"); expBtn.innerHTML = "\u2715"; }
+        expBtn.addEventListener("click", function () {
+          isFull = !isFull;
+          elCard.classList.toggle("el-full", isFull);
+          document.body.classList.toggle("el-full-open", isFull);
+          expBtn.innerHTML = isFull ? "\u2715" : "\u2921";
+          setTimeout(function () { if (prof._placeChip) prof._placeChip(); }, 80);
+        });
+      }
       if (markerInView) {
         var chip = document.createElement("div");
         chip.className = "el-chip";
@@ -427,6 +443,14 @@
     }
 
     draw();
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && isFull) {
+        isFull = false;
+        var c = container.querySelector(".el-card"); if (c) c.classList.remove("el-full");
+        document.body.classList.remove("el-full-open");
+        var b = container.querySelector(".el-expand"); if (b) b.innerHTML = "\u2921";
+      }
+    });
     window.addEventListener("resize", function () {
       var prof = container.querySelector("#elProf");
       if (prof && prof._placeChip) prof._placeChip();
