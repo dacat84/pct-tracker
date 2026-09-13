@@ -248,6 +248,7 @@
       S[bi][1] = Math.max(S[bi][1], Math.min(p[1], maxM));
     });
     function y(m) { return PADT + (1 - m / maxM) * (baseY - PADT); }
+    function lineM(km) { var bi = 0, bd = 1e18; for (var i = 0; i < S.length; i++) { var dd = Math.abs(S[i][0] - km); if (dd < bd) { bd = dd; bi = i; } } return S[bi][1]; }
     var GRID = DE ? [[1000, "1k"], [2000, "2k"], [3000, "3k"], [4000, "4k"]]
                   : [[914, "3k"], [1829, "6k"], [2743, "9k"], [3658, "12k"]];
     var bY = baseY + 8, bH = 22, lY = bY + bH + 18;
@@ -258,7 +259,7 @@
       var full = viewA <= 0.5 && viewB >= TOTAL - 0.5;
       var fs = full ? 1 : 1.45;
       function x(km) { return PADL + ((km - viewA) / (viewB - viewA)) * (W - PADL - PADR); }
-      var markX = x(cur.km), markY = y(cur.m), markerInView = cur.km >= viewA && cur.km <= viewB;
+      var markX = x(cur.km), markY = y(Math.min(lineM(cur.km), maxM)), markerInView = cur.km >= viewA && cur.km <= viewB;
 
       var line = "M " + x(S[0][0]).toFixed(1) + " " + y(S[0][1]).toFixed(1);
       S.forEach(function (pt) { line += " L " + x(pt[0]).toFixed(1) + " " + y(pt[1]).toFixed(1); });
@@ -282,32 +283,61 @@
       });
 
       var z = TOTAL / Math.max(1, (viewB - viewA));
-      function lmIcon(t, ix, iy, col, op) {
-        if (t === "peak") return '<path d="M' + (ix - 3.2) + ' ' + iy + ' L' + ix + ' ' + (iy - 6.6) + ' L' + (ix + 3.2) + ' ' + iy + ' Z" fill="' + col + '" opacity="' + op + '"/>';
-        if (t === "pass") return '<circle cx="' + ix + '" cy="' + (iy - 2.4) + '" r="2.7" fill="none" stroke="' + col + '" stroke-width="1.5" opacity="' + op + '"/>';
-        if (t === "water") return '<circle cx="' + ix + '" cy="' + (iy - 2) + '" r="2.3" fill="' + col + '" opacity="' + op + '"/>';
-        if (t === "park") return '<rect x="' + (ix - 2.3) + '" y="' + (iy - 2.3) + '" width="4.6" height="4.6" fill="' + col + '" opacity="' + op + '" transform="rotate(45 ' + ix + ' ' + iy + ')"/>';
-        if (t === "term") return '<path d="M' + ix + ' ' + (iy + 2) + ' L' + ix + ' ' + (iy - 9.5) + ' L' + (ix + 7) + ' ' + (iy - 7.5) + ' L' + ix + ' ' + (iy - 5.5) + ' Z" fill="' + col + '" opacity="' + op + '"/>';
-        return '<circle cx="' + ix + '" cy="' + iy + '" r="2.1" fill="' + col + '" opacity="' + op + '"/>';
+      function icoTop(t, ix, iy, col) {
+        if (t === "pass") return '<circle cx="' + ix + '" cy="' + iy + '" r="2.8" fill="#fff" stroke="' + col + '" stroke-width="1.6"/>';
+        return '<path d="M' + (ix - 3.6) + ' ' + (iy + 2.4) + ' L' + ix + ' ' + (iy - 4.8) + ' L' + (ix + 3.6) + ' ' + (iy + 2.4) + ' Z" fill="' + col + '"/>';
       }
-      var lmData = [], lm = "";
+      function icoBot(t, ix, iy, col, op) {
+        if (t === "water") return '<circle cx="' + ix + '" cy="' + iy + '" r="2.4" fill="' + col + '" opacity="' + op + '"/>';
+        if (t === "park") return '<rect x="' + (ix - 2.3) + '" y="' + (iy - 2.3) + '" width="4.6" height="4.6" fill="' + col + '" opacity="' + op + '" transform="rotate(45 ' + ix + ' ' + iy + ')"/>';
+        if (t === "term") return '<path d="M' + ix + ' ' + (iy + 3) + ' L' + ix + ' ' + (iy - 8) + ' L' + (ix + 7) + ' ' + (iy - 6) + ' L' + ix + ' ' + (iy - 4) + ' Z" fill="' + col + '"/>';
+        return '<circle cx="' + ix + '" cy="' + iy + '" r="2.2" fill="' + col + '" opacity="' + op + '"/>';
+      }
+      var lmData = [], top = [], bot = "";
       LM.forEach(function (m) {
-        var lx = x(m[0] * MI2KM * F), done = inWalked(m[0] * MI2KM * F), tier = m[3], t = m[2];
+        var km = m[0] * MI2KM * F, lx = x(km), tier = m[3], t = m[2], done = inWalked(km);
+        if (!((tier <= 2) || (z >= 2.2))) return;
+        var showLabel = (tier === 1) || (tier === 2 && z >= 2.2);
         var col = TYPECOL[t] || "#6b7280";
-        var showIcon = (tier <= 2) || (z >= 2.2);
-        if (!showIcon) return;
-        var op = done ? 1 : (tier === 1 ? 0.9 : (tier === 2 ? 0.62 : 0.42));
-        lm += lmIcon(t, lx, baseY, col, op);
-        var showLabel = (tier === 1) || (tier === 2 && z >= 2.3) || (tier === 3 && z >= 4.2);
-        if (showLabel) {
-          var tcol = done ? "#20301c" : "#5f6656";
-          var fsz = ((tier === 1 ? 9.5 : 8) * fs).toFixed(1);
-          var ay = baseY - 8;
-          lm += '<text class="el-town" x="' + (lx + 3) + '" y="' + ay + '" transform="rotate(-90 ' + (lx + 3) + ' ' + ay + ')" text-anchor="start" font-size="' + fsz + '" font-family="Inter" font-weight="' + (tier === 1 ? "700" : "600") + '" paint-order="stroke" stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round" fill="' + tcol + '" opacity="' + (done ? 1 : 0.82) + '">' + m[1] + '</text>';
+        var di = lmData.push({ x: lx, name: m[1], type: t, mi: m[0] }) - 1;
+        if (t === "peak" || t === "pass") {
+          top.push({ lx: lx, py: y(Math.min(lineM(km), maxM)), t: t, name: m[1], col: col, label: showLabel, di: di });
+        } else {
+          var op = done ? 1 : (tier === 1 ? 0.9 : 0.55);
+          bot += icoBot(t, lx, baseY, col, op);
+          if (showLabel) {
+            var tcol = done ? "#20301c" : "#5f6656";
+            if (t === "term") {
+              var lft = lx < W / 2, tx = lft ? lx + 4 : lx - 4, anc = lft ? "start" : "end";
+              bot += '<text x="' + tx + '" y="' + (baseY - 6) + '" text-anchor="' + anc + '" font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="700" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" fill="' + tcol + '">' + m[1] + '</text>';
+            } else {
+              var ty = baseY - 6;
+              bot += '<text class="el-town" x="' + (lx + 3) + '" y="' + ty + '" transform="rotate(-90 ' + (lx + 3) + ' ' + ty + ')" text-anchor="start" font-size="' + ((tier === 1 ? 8.5 : 7.6) * fs).toFixed(1) + '" font-family="Inter" font-weight="' + (tier === 1 ? "700" : "500") + '" paint-order="stroke" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" fill="' + (done ? "#20301c" : "#7f8472") + '">' + m[1] + '</text>';
+            }
+          }
+          bot += '<rect class="el-lmhit" data-i="' + di + '" x="' + (lx - 6) + '" y="' + (baseY - 8) + '" width="12" height="46"/>';
         }
-        lmData.push({ x: lx, name: m[1], type: t, mi: m[0] });
-        lm += '<rect class="el-lmhit" data-i="' + (lmData.length - 1) + '" x="' + (lx - 6) + '" y="' + (baseY - 46) + '" width="12" height="52"/>';
       });
+      var labeled = top.filter(function (o) { return o.label; }).sort(function (a, b) { return a.lx - b.lx; });
+      var levelEnds = [];
+      labeled.forEach(function (o) {
+        var w = o.name.length * (5.2 * fs) + 8, L = o.lx - w / 2, lev = 0;
+        while (levelEnds[lev] != null && levelEnds[lev] > L - 4) lev++;
+        levelEnds[lev] = o.lx + w / 2;
+        o.ly = 47 - lev * 12;
+      });
+      var topSvg = "";
+      top.forEach(function (o) {
+        topSvg += icoTop(o.t, o.lx, o.py, o.col);
+        var hitTop = o.py - 8;
+        if (o.label) {
+          topSvg += '<line x1="' + o.lx + '" y1="' + (o.py - 4) + '" x2="' + o.lx + '" y2="' + (o.ly + 2) + '" stroke="' + o.col + '" stroke-width="1" opacity=".5"/>';
+          topSvg += '<text x="' + o.lx + '" y="' + o.ly + '" text-anchor="middle" font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="700" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" fill="' + o.col + '">' + o.name + '</text>';
+          hitTop = o.ly - 8;
+        }
+        topSvg += '<rect class="el-lmhit" data-i="' + o.di + '" x="' + (o.lx - 6) + '" y="' + hitTop + '" width="12" height="' + (baseY - hitTop) + '"/>';
+      });
+      var lm = bot + topSvg;
 
       var marker = markerInView
         ? ('<line x1="' + markX + '" y1="' + markY + '" x2="' + markX + '" y2="' + (bY + bH) + '" stroke="#cf7440" stroke-width="1.6" stroke-dasharray="4 3"/>' +
