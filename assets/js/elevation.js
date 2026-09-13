@@ -19,14 +19,14 @@
   var STR = DE ? {
     liveDay: "Tag", inThe: "Ich bin gerade in ", rightNow: ".",
     fromCampo: " ab Campo", nearestWp: " \u00B7 n\u00e4chster Wegpunkt ", stillPre: "noch ", toEnd: " bis zum Northern Terminus.",
-    climb: "<b>P</b>acific <b>C</b>rest <b>T</b>rail", nowAt: "Aktuell auf ",
+    climb: "Pacific Crest Trail", nowAt: "Aktuell auf ",
     here: "Standort", legPass: "Pass / Gipfel", legSide: "Abstecher", legTown: "Versorgungsort",
     legState: "Voll = getrackt \u00B7 blass = noch nicht", near: "Nahe ",
     distWord: "Distanz", altWord: "H\u00f6he", resupply: "Versorgungsort", zoomHint: "Sektion antippen zum Zoomen"
   } : {
     liveDay: "Day", inThe: "I'm in the ", rightNow: " right now.",
     fromCampo: " from Campo", nearestWp: " \u00B7 next waypoint ", stillPre: "", toEnd: " still to the Northern Terminus.",
-    climb: "<b>P</b>acific <b>C</b>rest <b>T</b>rail", nowAt: "Now at ",
+    climb: "Pacific Crest Trail", nowAt: "Now at ",
     here: "You are here", legPass: "Pass / peak", legSide: "Side trip", legTown: "Resupply town",
     legState: "Solid = tracked \u00B7 faded = not yet", near: "Near ",
     distWord: "distance", altWord: "elevation", resupply: "Resupply", zoomHint: "Tap a section to zoom"
@@ -46,11 +46,11 @@
     { name: "Washington", a: 3455, b: 4265, c: "#b39ac8", st: "WA" }
   ];
   var MI2KM = 1.60934;
-  var TYPECOL = { peak: "#b5651d", pass: "#2c7a3d", town: "#6b7280", water: "#2f7fae", park: "#3e9a51", term: "#cf7440" };
-  var TYPEDE = { peak: "Gipfel", pass: "Pass", town: "Ort", water: "Wasser / Feature", park: "Park / Wildnis", term: "Terminus" };
-  var TYPEEN = { peak: "Peak", pass: "Pass", town: "Resupply", water: "Water / feature", park: "Park / wilderness", term: "Terminus" };
+  var TYPECOL = { peak: "#b5651d", pass: "#2c7a3d", town: "#6b7280", water: "#2f7fae", park: "#3e9a51", term: "#cf7440", side: "#cf7440", desert: "#d19a3a" };
+  var TYPEDE = { peak: "Gipfel", pass: "Pass", town: "Ort", water: "Wasser / Feature", park: "Park / Wildnis", term: "Terminus", side: "Abstecher", desert: "W\u00fcste" };
+  var TYPEEN = { peak: "Peak", pass: "Pass", town: "Resupply", water: "Water / feature", park: "Park / wilderness", term: "Terminus", side: "Side trip", desert: "Desert" };
   // [mile, name, type, tier]  tier 1 = headline (always), 2 = star (on zoom), 3 = rest (tap)
-  var LM = [[0,"Campo","term",1],[20,"Lake Morena","water",3],[42,"Mt. Laguna","town",2],[77,"Scissors Crossing","pass",3],[91,"San Felipe Hills","peak",3],[109,"Warner Springs","town",3],[127,"Agua Caliente","park",3],[152,"Paradise Valley Café","town",3],[170,"San Jacinto Mtns","peak",3],[179,"Idyllwild","town",3],[187,"San Jacinto Peak","peak",2],[191,"Fuller Ridge","peak",3],[210,"San Gorgonio Pass","pass",2],[266,"Big Bear","town",2],[308,"Deep Creek Hot Springs","water",2],[342,"Cajon Pass","pass",2],[369,"Wrightwood","town",3],[379,"Mt. Baden-Powell","peak",1],[390,"Angeles Crest","pass",3],[444,"Acton","town",3],[452,"Vasquez Rocks","park",3],[454,"Agua Dulce","town",2],[462,"Sierra Pelona","peak",3],[517,"Mojave Desert","park",3],[566,"Tehachapi","town",2],[652,"Walker Pass","pass",2],[702,"Kennedy Meadows S","town",2],[745,"Horseshoe Meadows","water",3],[750,"Cottonwood Pass","pass",3],[767,"Mt. Whitney","peak",1],[779,"Forester Pass","pass",1],[785,"Kern Canyon","water",3],[792,"Glen Pass","pass",2],[800,"Kings Canyon","park",3],[807,"Pinchot Pass","pass",3],[815,"Mather Pass","pass",2],[838,"Evolution Basin","water",3],[843,"Muir Pass","pass",2],[857,"Muir Trail Ranch","town",3],[878,"Vermilion Valley Resort","town",3],[906,"Reds Meadow","town",3],[907,"Devils Postpile","park",3],[910,"Mammoth Lakes","town",3],[942,"Tuolumne Meadows","town",2],[950,"Yosemite NP","park",3],[1017,"Sonora Pass","pass",2],[1032,"Ebbetts Pass","pass",3],[1077,"Carson Pass","pass",3],[1090,"Lake Tahoe","water",1],[1092,"Echo Summit","pass",3],[1094,"South Lake Tahoe","town",3],[1153,"Donner Pass","pass",2],[1155,"Donner Lake","water",3],[1195,"Sierra Buttes","peak",3],[1245,"Bucks Lake","water",3],[1250,"Bucks Summit","pass",3],[1270,"Feather River","water",3],[1287,"Belden","town",3],[1325,"Halfway Point","term",2],[1350,"Lassen Volcanic NP","park",3],[1352,"Lassen Peak","peak",2],[1373,"Hat Creek Rim","park",2],[1375,"Hat Creek","town",3],[1378,"Subway Cave","water",2],[1418,"Burney Falls","water",2],[1410,"Burney","town",3],[1450,"McCloud River","water",3],[1500,"Mt. Shasta","peak",1],[1501,"Castle Crags","park",2],[1505,"Sacramento River","water",3],[1560,"Trinity Alps","peak",3],[1597,"Etna Summit","pass",3],[1599,"Etna","town",3],[1620,"Siskiyou Wild.","park",3],[1630,"Marble Mountains","peak",3],[1656,"Seiad Valley","town",3],[1658,"Klamath River","water",2],[1690,"Oregon Border","term",2],[1710,"Siskiyou Summit","pass",3],[1726,"Ashland","town",3],[1745,"Hyatt Lake","water",3],[1775,"Mt. McLoughlin","peak",3],[1790,"Sky Lakes Wild.","park",3],[1820,"Crater Lake","water",1],[1825,"Mt. Mazama","peak",3],[1880,"Diamond Peak","peak",2],[1907,"Willamette Pass","pass",3],[1965,"Three Sisters","peak",2],[1990,"McKenzie Pass","pass",3],[1998,"Mt. Washington","peak",3],[2001,"Santiam Pass","pass",3],[2005,"Three Fingered Jack","peak",2],[2030,"Mt. Jefferson","peak",2],[2035,"Jefferson Park","park",3],[2045,"Olallie Lake","water",3],[2085,"Timothy Lake","water",3],[2097,"Mt. Hood","peak",1],[2098,"Timberline Lodge","town",2],[2115,"Eagle Creek","water",3],[2120,"Tunnel Falls","water",2],[2144,"Cascade Locks","town",3],[2147,"Bridge of the Gods","term",2],[2180,"Indian Heaven Wild.","park",3],[2225,"Mt. Adams","peak",2],[2260,"Goat Rocks Wild.","park",3],[2265,"Goat Rocks","peak",2],[2270,"Knife Edge","peak",3],[2295,"White Pass","pass",3],[2320,"Mt. Rainier","peak",2],[2322,"Chinook Pass","pass",3],[2393,"Snoqualmie Pass","pass",2],[2400,"Kendall Katwalk","peak",2],[2410,"Alpine Lakes Wild.","park",3],[2461,"Stevens Pass","pass",2],[2465,"Skykomish River","water",3],[2510,"Glacier Peak Wild.","park",3],[2530,"Glacier Peak","peak",1],[2570,"High Bridge","water",3],[2572,"Stehekin","town",2],[2591,"Rainy Pass","pass",2],[2600,"North Cascades","park",3],[2620,"Harts Pass","pass",2],[2630,"Pasayten Wild.","park",3],[2650,"Northern Terminus","term",1]];
+  var LM = [[0,"Campo","term",1],[20,"Lake Morena","water",3],[42,"Mt. Laguna","town",2],[77,"Scissors Crossing","pass",3],[91,"San Felipe Hills","peak",3],[109,"Warner Springs","town",3],[127,"Agua Caliente","park",3],[152,"Paradise Valley Café","town",3],[170,"San Jacinto Mtns","peak",3],[179,"Idyllwild","town",3],[187,"San Jacinto Peak","peak",2],[191,"Fuller Ridge","peak",3],[210,"San Gorgonio Pass","pass",2],[266,"Big Bear","town",2],[308,"Deep Creek Hot Springs","water",2],[342,"Cajon Pass","pass",2],[369,"Wrightwood","town",3],[379,"Mt. Baden-Powell","peak",1],[390,"Angeles Crest","pass",3],[444,"Acton","town",3],[452,"Vasquez Rocks","park",3],[454,"Agua Dulce","town",2],[462,"Sierra Pelona","peak",3],[517,"Mojave Desert","desert",2],[566,"Tehachapi","town",2],[652,"Walker Pass","pass",2],[702,"Kennedy Meadows S","town",2],[745,"Horseshoe Meadows","water",3],[750,"Cottonwood Pass","pass",3],[767,"Mt. Whitney","peak",1],[779,"Forester Pass","pass",1],[770,"Sequoia NP","park",2],[785,"Kern Canyon","water",3],[792,"Glen Pass","pass",2],[800,"Kings Canyon NP","park",2],[807,"Pinchot Pass","pass",3],[815,"Mather Pass","pass",2],[838,"Evolution Basin","water",3],[843,"Muir Pass","pass",2],[857,"Muir Trail Ranch","town",3],[878,"Vermilion Valley Resort","town",3],[906,"Reds Meadow","town",3],[907,"Devils Postpile","park",3],[910,"Mammoth Lakes","town",3],[942,"Tuolumne Meadows","town",2],[950,"Yosemite NP","park",2],[1017,"Sonora Pass","pass",2],[1032,"Ebbetts Pass","pass",3],[1077,"Carson Pass","pass",3],[1090,"Lake Tahoe","water",1],[1088,"Tahoe Rim","side",1],[1092,"Echo Summit","pass",3],[1094,"South Lake Tahoe","town",3],[1153,"Donner Pass","pass",2],[1155,"Donner Lake","water",3],[1195,"Sierra Buttes","peak",3],[1245,"Bucks Lake","water",3],[1250,"Bucks Summit","pass",3],[1270,"Feather River","water",3],[1287,"Belden","town",3],[1325,"Halfway Point","term",2],[1350,"Lassen Volcanic NP","park",2],[1352,"Lassen Peak","peak",2],[1373,"Hat Creek Rim","park",2],[1375,"Hat Creek","town",3],[1378,"Subway Cave","water",2],[1418,"Burney Falls","water",2],[1410,"Burney","town",3],[1450,"McCloud River","water",3],[1500,"Mt. Shasta","peak",1],[1501,"Castle Crags","park",2],[1505,"Sacramento River","water",3],[1560,"Trinity Alps","peak",3],[1597,"Etna Summit","pass",3],[1599,"Etna","town",3],[1620,"Siskiyou Wild.","park",3],[1630,"Marble Mountains","peak",3],[1656,"Seiad Valley","town",3],[1658,"Klamath River","water",2],[1690,"Oregon Border","term",2],[1710,"Siskiyou Summit","pass",3],[1726,"Ashland","town",3],[1745,"Hyatt Lake","water",3],[1775,"Mt. McLoughlin","peak",3],[1790,"Sky Lakes Wild.","park",3],[1820,"Crater Lake","water",1],[1825,"Mt. Mazama","peak",3],[1880,"Diamond Peak","peak",2],[1907,"Willamette Pass","pass",3],[1965,"Three Sisters","peak",2],[1990,"McKenzie Pass","pass",3],[1998,"Mt. Washington","peak",3],[2001,"Santiam Pass","pass",3],[2005,"Three Fingered Jack","peak",2],[2030,"Mt. Jefferson","peak",2],[2035,"Jefferson Park","park",3],[2045,"Olallie Lake","water",3],[2085,"Timothy Lake","water",3],[2097,"Mt. Hood","peak",1],[2098,"Timberline Lodge","town",2],[2115,"Eagle Creek","water",3],[2120,"Tunnel Falls","water",2],[2144,"Cascade Locks","town",3],[2147,"Bridge of the Gods","term",2],[2180,"Indian Heaven Wild.","park",3],[2225,"Mt. Adams","peak",2],[2260,"Goat Rocks Wild.","park",3],[2265,"Goat Rocks","peak",2],[2270,"Knife Edge","peak",3],[2295,"White Pass","pass",3],[2320,"Mt. Rainier","peak",2],[2322,"Chinook Pass","pass",3],[2393,"Snoqualmie Pass","pass",2],[2400,"Kendall Katwalk","peak",2],[2410,"Alpine Lakes Wild.","park",3],[2461,"Stevens Pass","pass",2],[2465,"Skykomish River","water",3],[2510,"Glacier Peak Wild.","park",3],[2530,"Glacier Peak","peak",1],[2570,"High Bridge","water",3],[2572,"Stehekin","town",2],[2591,"Rainy Pass","pass",2],[2600,"North Cascades NP","park",2],[2620,"Harts Pass","pass",2],[2630,"Pasayten Wild.","park",3],[2650,"Northern Terminus","term",1]];
   var LIFT = [[767, 4421], [779, 4009], [843, 3637], [1017, 2933]];
   var WAY = LM.filter(function (m) { return m[2] === "town" || m[2] === "term"; }).map(function (m) { return [m[0] * MI2KM, m[1]]; });
 
@@ -78,7 +78,7 @@
     s.textContent =
       ".el-card{background:#fff;border:1px solid #e8e6da;border-radius:22px;padding:20px 20px 12px;box-shadow:0 1px 2px rgba(20,32,28,.04),0 14px 40px rgba(20,32,28,.06);color:#1e241c}" +
       ".el-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:4px}" +
-      ".el-head h2{margin:0;font:600 21px/1.1 'Fraunces',Georgia,serif;letter-spacing:-.01em}.el-head h2 b{font-weight:800}" +
+      ".el-head h2{margin:0;font:500 21px/1.1 'Fraunces',Georgia,serif;letter-spacing:-.01em}.el-head h2 b{font-weight:700}" +
       ".el-now{font-size:13px;color:#6c7365}.el-now b{color:#1e241c}" +
       ".el-prof{position:relative}.el-prof svg{display:block;width:100%;height:auto;overflow:visible}" +
       ".el-town{pointer-events:none}.el-townhit,.el-lmhit{fill:transparent;cursor:pointer}" +
@@ -93,9 +93,17 @@
       ".el-legend span{display:inline-flex;align-items:center;gap:6px}" +
       ".el-band{cursor:pointer;transition:filter .1s ease}.el-band:hover{filter:brightness(1.07)}" +
       ".el-back{position:absolute;top:8px;left:8px;z-index:5;background:#fff;border:1px solid #e2e0d4;border-radius:8px;padding:4px 10px;font:600 11.5px Inter,system-ui,sans-serif;color:#3e6b46;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}.el-back:hover{background:#f4f2ea}" +
-      ".el-expand{position:absolute;top:8px;right:8px;z-index:6;width:30px;height:30px;border:1px solid #e2e0d4;border-radius:9px;background:rgba(255,255,255,.92);color:#3e6b46;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.08)}.el-expand:hover{background:#fff}" +
+      ".el-headright{display:flex;align-items:center;gap:10px}.el-expand{width:28px;height:28px;border:1px solid #e2e0d4;border-radius:8px;background:#fff;color:#3e6b46;font-size:14px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;box-shadow:0 1px 2px rgba(0,0,0,.06)}.el-expand:hover{background:#f4f2ea}" +
       ".el-card.el-full{position:fixed;inset:12px;z-index:60;margin:0;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.32)}.el-card.el-full .el-prof{min-height:70vh;display:flex;flex-direction:column;justify-content:center}body.el-full-open{overflow:hidden}";
     document.head.appendChild(s);
+  }
+
+  function localMax(S, center, win) {
+    var bk = center, bm = -1e9;
+    for (var i = 0; i < S.length; i++) {
+      if (Math.abs(S[i][0] - center) <= win && S[i][1] > bm) { bm = S[i][1]; bk = S[i][0]; }
+    }
+    return { km: bk, m: bm };
   }
 
   var CUR = null, TOTAL_KM = NOMINAL;
@@ -287,33 +295,43 @@
         if (t === "pass") return '<circle cx="' + ix + '" cy="' + iy + '" r="2.8" fill="#fff" stroke="' + col + '" stroke-width="1.6"/>';
         return '<path d="M' + (ix - 3.6) + ' ' + (iy + 2.4) + ' L' + ix + ' ' + (iy - 4.8) + ' L' + (ix + 3.6) + ' ' + (iy + 2.4) + ' Z" fill="' + col + '"/>';
       }
-      function icoBot(t, ix, iy, col, op) {
-        if (t === "water") return '<circle cx="' + ix + '" cy="' + iy + '" r="2.4" fill="' + col + '" opacity="' + op + '"/>';
-        if (t === "park") return '<rect x="' + (ix - 2.3) + '" y="' + (iy - 2.3) + '" width="4.6" height="4.6" fill="' + col + '" opacity="' + op + '" transform="rotate(45 ' + ix + ' ' + iy + ')"/>';
-        if (t === "term") return '<path d="M' + ix + ' ' + (iy + 3) + ' L' + ix + ' ' + (iy - 8) + ' L' + (ix + 7) + ' ' + (iy - 6) + ' L' + ix + ' ' + (iy - 4) + ' Z" fill="' + col + '"/>';
-        return '<circle cx="' + ix + '" cy="' + iy + '" r="2.2" fill="' + col + '" opacity="' + op + '"/>';
-      }
-      var lmData = [], top = [], bot = "";
+      var lmData = [], top = [], bot = "", land = "";
       LM.forEach(function (m) {
-        var km = m[0] * MI2KM * F, lx = x(km), tier = m[3], t = m[2], done = inWalked(km);
-        if (!((tier <= 2) || (z >= 2.2))) return;
-        var showLabel = (tier === 1) || (tier === 2 && z >= 2.2);
-        var col = TYPECOL[t] || "#6b7280";
-        var di = lmData.push({ x: lx, name: m[1], type: t, mi: m[0] }) - 1;
-        if (t === "peak" || t === "pass") {
-          top.push({ lx: lx, py: y(Math.min(lineM(km), maxM)), t: t, name: m[1], col: col, label: showLabel, di: di });
-        } else {
-          var op = done ? 1 : (tier === 1 ? 0.9 : 0.55);
-          bot += icoBot(t, lx, baseY, col, op);
+        var mi = m[0], t = m[2], tier = m[3], kmRaw = mi * MI2KM * F, done = inWalked(kmRaw), col = TYPECOL[t] || "#6b7280";
+        var isTop = (t === "peak" || t === "pass" || t === "side"), isLand = (t === "park" || t === "desert");
+        var vis, showLabel;
+        if (t === "term") { vis = true; showLabel = true; }
+        else if (isLand) { vis = (tier <= 2) || (z >= 2.2); showLabel = vis; }
+        else { vis = (tier <= 2) || (z >= 2.2); showLabel = (tier === 1) || (tier === 2 && z >= 2.2); }
+        if (!vis) return;
+        if (isTop) {
+          var pk = localMax(S, kmRaw, 32), lx = x(pk.km), py = y(Math.min(pk.m, maxM));
+          var di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1;
+          top.push({ lx: lx, py: py, t: t, name: m[1], col: col, label: showLabel, di: di });
+        } else if (t === "term") {
+          var lx = x(kmRaw), di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1, pf = done ? 1 : 0.78, post = baseY - 15;
+          bot += '<line x1="' + lx + '" y1="' + baseY + '" x2="' + lx + '" y2="' + post + '" stroke="' + col + '" stroke-width="1.4" opacity="' + pf + '"/>';
+          bot += '<path d="M' + lx + ' ' + post + ' L' + (lx + 8) + ' ' + (post + 2.5) + ' L' + lx + ' ' + (post + 5) + ' Z" fill="' + col + '" opacity="' + pf + '"/>';
+          var lft = lx < W / 2;
+          bot += '<text x="' + (lft ? lx + 3 : lx - 3) + '" y="' + (baseY - 4) + '" text-anchor="' + (lft ? "start" : "end") + '" font-size="' + (9 * fs).toFixed(1) + '" font-weight="700" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" fill="' + (done ? "#20301c" : "#6b6f60") + '">' + m[1] + '</text>';
+          bot += '<rect class="el-lmhit" data-i="' + di + '" x="' + (lx - 6) + '" y="' + (post - 4) + '" width="12" height="' + (baseY - post + 8) + '"/>';
+        } else if (isLand) {
+          var lx = x(kmRaw), di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1, op = done ? 1 : 0.5;
+          land += '<line x1="' + lx + '" y1="' + (bY + bH + 2) + '" x2="' + lx + '" y2="' + (lY - 3) + '" stroke="' + col + '" stroke-width="1.2" ' + (t === "desert" ? 'stroke-dasharray="2 2"' : "") + ' opacity="' + (done ? 0.8 : 0.4) + '"/>';
+          land += (t === "desert")
+            ? '<rect x="' + (lx - 2) + '" y="' + (lY - 2) + '" width="4" height="4" fill="' + col + '" opacity="' + op + '" transform="rotate(45 ' + lx + ' ' + lY + ')"/>'
+            : '<circle cx="' + lx + '" cy="' + lY + '" r="2.6" fill="' + col + '" opacity="' + op + '"/>';
           if (showLabel) {
-            var tcol = done ? "#20301c" : "#5f6656";
-            if (t === "term") {
-              var lft = lx < W / 2, tx = lft ? lx + 4 : lx - 4, anc = lft ? "start" : "end";
-              bot += '<text x="' + tx + '" y="' + (baseY - 6) + '" text-anchor="' + anc + '" font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="700" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" fill="' + tcol + '">' + m[1] + '</text>';
-            } else {
-              var ty = baseY - 6;
-              bot += '<text class="el-town" x="' + (lx + 3) + '" y="' + ty + '" transform="rotate(-90 ' + (lx + 3) + ' ' + ty + ')" text-anchor="start" font-size="' + ((tier === 1 ? 8.5 : 7.6) * fs).toFixed(1) + '" font-family="Inter" font-weight="' + (tier === 1 ? "700" : "500") + '" paint-order="stroke" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" fill="' + (done ? "#20301c" : "#7f8472") + '">' + m[1] + '</text>';
-            }
+            var edge = lx > W - 95;
+            land += '<text x="' + (edge ? lx : (lx + 4)) + '" y="' + (edge ? (lY + 13) : (lY + 5)) + '" text-anchor="' + (edge ? "middle" : "start") + '"' + (edge ? "" : ' transform="rotate(26 ' + lx + ' ' + lY + ')"') + ' font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="600" font-family="Inter" fill="' + (t === "desert" ? "#b5842e" : "#2f7a3e") + '" opacity="' + (done ? 1 : 0.72) + '">' + m[1] + '</text>';
+          }
+          land += '<rect class="el-lmhit" data-i="' + di + '" x="' + (lx - 6) + '" y="' + (bY + bH) + '" width="12" height="' + (lY + 6 - (bY + bH)) + '"/>';
+        } else {
+          var lx = x(kmRaw), di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1, op = done ? 1 : (tier === 1 ? 0.9 : 0.55);
+          bot += '<circle cx="' + lx + '" cy="' + baseY + '" r="' + (t === "water" ? 2.4 : 2.2) + '" fill="' + col + '" opacity="' + op + '"/>';
+          if (showLabel) {
+            var ty = baseY - 6;
+            bot += '<text class="el-town" x="' + (lx + 3) + '" y="' + ty + '" transform="rotate(-90 ' + (lx + 3) + ' ' + ty + ')" text-anchor="start" font-size="' + ((tier === 1 ? 8.5 : 7.6) * fs).toFixed(1) + '" font-family="Inter" font-weight="' + (tier === 1 ? "700" : "500") + '" paint-order="stroke" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" fill="' + (done ? "#20301c" : "#7f8472") + '">' + m[1] + '</text>';
           }
           bot += '<rect class="el-lmhit" data-i="' + di + '" x="' + (lx - 6) + '" y="' + (baseY - 8) + '" width="12" height="46"/>';
         }
@@ -331,13 +349,13 @@
         topSvg += icoTop(o.t, o.lx, o.py, o.col);
         var hitTop = o.py - 8;
         if (o.label) {
-          topSvg += '<line x1="' + o.lx + '" y1="' + (o.py - 4) + '" x2="' + o.lx + '" y2="' + (o.ly + 2) + '" stroke="' + o.col + '" stroke-width="1" opacity=".5"/>';
-          topSvg += '<text x="' + o.lx + '" y="' + o.ly + '" text-anchor="middle" font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="700" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" fill="' + o.col + '">' + o.name + '</text>';
+          topSvg += '<line x1="' + o.lx + '" y1="' + (o.py - 4) + '" x2="' + o.lx + '" y2="' + (o.ly + 2) + '" stroke="' + o.col + '" stroke-width="1" ' + (o.t === "side" ? 'stroke-dasharray="3 2"' : "") + ' opacity=".5"/>';
+          topSvg += '<text x="' + o.lx + '" y="' + o.ly + '" text-anchor="middle" font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="700" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" fill="' + o.col + '">' + (o.t === "side" ? "\u25B2 " : "") + o.name + '</text>';
           hitTop = o.ly - 8;
         }
         topSvg += '<rect class="el-lmhit" data-i="' + o.di + '" x="' + (o.lx - 6) + '" y="' + hitTop + '" width="12" height="' + (baseY - hitTop) + '"/>';
       });
-      var lm = bot + topSvg;
+      var lm = land + bot + topSvg;
 
       var marker = markerInView
         ? ('<line x1="' + markX + '" y1="' + markY + '" x2="' + markX + '" y2="' + (bY + bH) + '" stroke="#cf7440" stroke-width="1.6" stroke-dasharray="4 3"/>' +
@@ -360,10 +378,10 @@
 
       container.innerHTML =
         '<div class="el-card"><div class="el-head"><h2>' + STR.climb + '</h2>' +
-        '<div class="el-now">' + STR.nowAt + EARR + ' <b>' + elevStr(cur.m) + '</b> \u00B7 ' + regName(reg) + '</div></div>' +
+        '<div class="el-headright"><span class="el-now">' + STR.nowAt + EARR + ' <b>' + elevStr(cur.m) + '</b> \u00B7 ' + regName(reg) + '</span>' +
+        '<button class="el-expand" type="button" aria-label="' + (DE ? "Vollbild" : "Fullscreen") + '">\u2921</button></div></div>' +
         '<div class="el-prof" id="elProf">' +
         (full ? '' : '<button class="el-back" type="button">\u2039 ' + (DE ? "\u00dcbersicht" : "Overview") + '</button>') +
-        '<button class="el-expand" type="button" aria-label="' + (DE ? "Vollbild" : "Fullscreen") + '">\u2921</button>' +
         svg + '</div>' +
         '<div class="el-legend">' +
         '<span><svg width="12" height="12"><path d="M6 1 L11 11 L1 11 Z" fill="#b5651d"/></svg> ' + (DE ? "Gipfel" : "Peak") + '</span>' +
@@ -377,7 +395,7 @@
 
       var prof = container.querySelector("#elProf");
       var elCard = container.querySelector(".el-card");
-      var expBtn = prof.querySelector(".el-expand");
+      var expBtn = elCard.querySelector(".el-expand");
       if (expBtn) {
         if (isFull) { elCard.classList.add("el-full"); document.body.classList.add("el-full-open"); expBtn.innerHTML = "\u2715"; }
         expBtn.addEventListener("click", function () {
