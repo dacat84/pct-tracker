@@ -10,7 +10,7 @@ nav: updates
 <p class="muted" style="margin:-4px 2px 16px;font-size:13.5px" data-en="The journey begins long before the first step." data-de="Die Reise beginnt lange vor dem ersten Schritt.">The journey begins long before the first step.</p>
 {% assign items = site.updates | sort: "date" | reverse %}
 {% assign months_de = "Januar,Februar,März,April,Mai,Juni,Juli,August,September,Oktober,November,Dezember" | split: "," %}
-{% for u in items %}{% assign mi = u.date | date: "%-m" | minus: 1 %}{% assign date_en = u.date | date: "%B %-d, %Y" %}{% capture date_de %}{{ u.date | date: "%-d" }}. {{ months_de[mi] }} {{ u.date | date: "%Y" }}{% endcapture %}{% assign t_en = u.title_en | default: u.title %}{% assign t_de = u.title | default: u.title_en %}
+{% for u in items %}{% assign mi = u.date | date: "%-m" | minus: 1 %}{% assign date_en = u.date | date: "%B %-d, %Y, %-I:%M %p" %}{% capture date_de %}{{ u.date | date: "%-d" }}. {{ months_de[mi] }} {{ u.date | date: "%Y, %H:%M" }} Uhr{% endcapture %}{% assign t_en = u.title_en | default: u.title %}{% assign t_de = u.title | default: u.title_en %}
 <div class="update-card">
 {% if t_en %}<div class="update-title" data-en="{{ t_en | escape }}" data-de="{{ t_de | escape }}">{{ t_en }}</div>{% endif %}
 <div class="update-date" data-en="{{ date_en }}" data-de="{{ date_de }}">{{ date_en }}</div>
