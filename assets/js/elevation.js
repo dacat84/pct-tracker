@@ -313,7 +313,7 @@
           var lx = x(kmRaw), di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1, pf = done ? 1 : 0.78, post = baseY - 14, flip = lx > W - 40;
           bot += '<line x1="' + lx + '" y1="' + baseY + '" x2="' + lx + '" y2="' + post + '" stroke="' + col + '" stroke-width="1.4" opacity="' + pf + '"/>';
           bot += '<path d="M' + lx + ' ' + post + ' L' + (flip ? lx - 8 : lx + 8) + ' ' + (post + 2.5) + ' L' + lx + ' ' + (post + 5) + ' Z" fill="' + col + '" opacity="' + pf + '"/>';
-          var anc = lx < 55 ? "start" : (lx > W - 55 ? "end" : "middle");
+          var tw = m[1].length * (5.4 * fs), anc = (lx - tw / 2 < PADL + 2) ? "start" : ((lx + tw / 2 > W - PADR - 2) ? "end" : "middle");
           bot += '<text x="' + lx + '" y="' + (post - 4) + '" text-anchor="' + anc + '" font-size="' + (9 * fs).toFixed(1) + '" font-weight="700" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2.6" stroke-linejoin="round" fill="' + (done ? "#20301c" : "#5f6656") + '">' + m[1] + '</text>';
           bot += '<rect class="el-lmhit" data-i="' + di + '" x="' + (lx - 6) + '" y="' + (post - 12) + '" width="12" height="' + (baseY - post + 16) + '"/>';
         } else if (isLand) {
