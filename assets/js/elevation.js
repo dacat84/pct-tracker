@@ -93,6 +93,7 @@
       ".el-legend span{display:inline-flex;align-items:center;gap:6px}" +
       ".el-band{cursor:pointer;transition:filter .1s ease}.el-band:hover{filter:brightness(1.07)}" +
       ".el-back{position:absolute;top:8px;left:8px;z-index:5;background:#fff;border:1px solid #e2e0d4;border-radius:8px;padding:4px 10px;font:600 11.5px Inter,system-ui,sans-serif;color:#3e6b46;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}.el-back:hover{background:#f4f2ea}" +
+      ".el-fsclose{display:none;position:absolute;top:8px;right:8px;z-index:7;background:#fff;border:1px solid #e2e0d4;border-radius:8px;padding:5px 11px;font:600 12px Inter,system-ui,sans-serif;color:#3e6b46;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.14)}.el-card.el-full .el-fsclose{display:inline-flex;align-items:center;gap:5px}.el-fsclose:hover{background:#f4f2ea}" +
       ".el-headright{display:flex;align-items:center;gap:10px}.el-expand{width:28px;height:28px;border:1px solid #e2e0d4;border-radius:8px;background:#fff;color:#3e6b46;font-size:14px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;box-shadow:0 1px 2px rgba(0,0,0,.06)}.el-expand:hover{background:#f4f2ea}" +
       ".el-card.el-full{position:fixed;inset:12px;z-index:60;margin:0;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.32)}.el-card.el-full .el-prof{min-height:70vh;display:flex;flex-direction:column;justify-content:center}body.el-full-open{overflow:hidden}";
     document.head.appendChild(s);
@@ -395,6 +396,7 @@
         '<button class="el-expand" type="button" aria-label="' + (DE ? "Vollbild" : "Fullscreen") + '">\u2921</button></div></div>' +
         '<div class="el-prof" id="elProf">' +
         (full ? '' : '<button class="el-back" type="button">\u2039 ' + (DE ? "\u00dcbersicht" : "Overview") + '</button>') +
+        '<button class="el-fsclose" type="button" aria-label="' + (DE ? "Schlie\u00dfen" : "Close") + '">\u2715 ' + (DE ? "Schlie\u00dfen" : "Close") + '</button>' +
         svg + '</div>' +
         '<div class="el-legend">' +
         '<span><svg width="12" height="12"><path d="M6 1 L11 11 L1 11 Z" fill="#b5651d"/></svg> ' + (DE ? "Gipfel" : "Peak") + '</span>' +
@@ -416,15 +418,23 @@
           elCard.classList.toggle("el-full", isFull);
           document.body.classList.toggle("el-full-open", isFull);
           expBtn.innerHTML = isFull ? "\u2715" : "\u2921";
-          setTimeout(function () { if (prof._placeChip) prof._placeChip(); }, 80);
+          setTimeout(function () { if (prof._placeChip) prof._placeChip(); }, 90);
         });
       }
+      var fsClose = prof.querySelector(".el-fsclose");
+      if (fsClose) fsClose.addEventListener("click", function () {
+        isFull = false;
+        elCard.classList.remove("el-full");
+        document.body.classList.remove("el-full-open");
+        if (expBtn) expBtn.innerHTML = "\u2921";
+        setTimeout(function () { if (prof._placeChip) prof._placeChip(); }, 90);
+      });
       if (markerInView) {
         var chip = document.createElement("div");
         chip.className = "el-chip";
         chip.innerHTML = DARR + ' <span class="k">' + distStr(cur.km * (NOMINAL / TOTAL)) + '</span> \u00B7 ' + EARR + ' <span class="k">' + elevStr(cur.m) + '</span>';
         prof.appendChild(chip);
-        var placeChip = function () { var s2 = prof.querySelector("svg"); if (!s2) return; var r = s2.getBoundingClientRect(); chip.style.left = (markX * r.width / W) + "px"; chip.style.top = (markY * r.height / H - 26) + "px"; };
+        var placeChip = function () { var s2 = prof.querySelector("svg"); if (!s2) return; var r = s2.getBoundingClientRect(), pr = prof.getBoundingClientRect(); chip.style.left = ((r.left - pr.left) + markX * r.width / W) + "px"; chip.style.top = ((r.top - pr.top) + markY * r.height / H - 26) + "px"; };
         placeChip();
         prof._placeChip = placeChip;
       } else { prof._placeChip = null; }
@@ -475,6 +485,7 @@
         var c = container.querySelector(".el-card"); if (c) c.classList.remove("el-full");
         document.body.classList.remove("el-full-open");
         var b = container.querySelector(".el-expand"); if (b) b.innerHTML = "\u2921";
+        var p = container.querySelector("#elProf"); if (p && p._placeChip) setTimeout(p._placeChip, 90);
       }
     });
     window.addEventListener("resize", function () {
