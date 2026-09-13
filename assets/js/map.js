@@ -335,10 +335,9 @@ function findLatestFeature(track) {
         injectUICSSOnce();
         map.addControl(new BasemapToggle(), "top-right");
         map.addSource("track", { type: "geojson", data: track });
-        const colorExpr = ["case", ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#f0a03a", "#cf5a2a"];
-        map.addLayer({ id: "track-glow", type: "line", source: "track", paint: { "line-color": colorExpr, "line-width": 12, "line-opacity": 0.28, "line-blur": 6 } });
-        map.addLayer({ id: "track-main", type: "line", source: "track", paint: { "line-color": colorExpr, "line-width": 5, "line-opacity": 0.92 } });
-        map.addLayer({ id: "track-highlight", type: "line", source: "track", paint: { "line-color": "rgba(255,255,255,0.65)", "line-width": 1.6, "line-opacity": 0.55 } });
+        const colorExpr = ["case", ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#f59418", "#d4451a"];
+        map.addLayer({ id: "track-casing", type: "line", source: "track", paint: { "line-color": "rgba(28,18,10,0.55)", "line-width": 9, "line-opacity": 0.85, "line-blur": 0.4 } });
+        map.addLayer({ id: "track-main", type: "line", source: "track", paint: { "line-color": colorExpr, "line-width": 6, "line-opacity": 1 } });
         map.addLayer({ id: "track-hover", type: "line", source: "track", paint: { "line-color": "rgba(255,255,255,0.92)", "line-width": 7, "line-opacity": 0.75, "line-blur": 0.6 }, filter: ["==", ["get", "strava_id"], -1] });
         map.addSource("latest-progress", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] } } });
         map.addLayer({ id: "latest-progress-glow", type: "line", source: "latest-progress", paint: { "line-color": "rgba(255,255,255,0.40)", "line-width": 18, "line-opacity": 0.22, "line-blur": 10 } });
@@ -387,7 +386,7 @@ function findLatestFeature(track) {
       map.addLayer({
         id: 'pct-bg-line', type: 'line', source: 'pct-bg',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#ffffff', 'line-width': 2.5, 'line-opacity': 0.85 }
+        paint: { 'line-color': '#ffffff', 'line-width': 2, 'line-opacity': 0.68 }
       });
       if (map.getLayer('track')) map.moveLayer('pct-bg-line', 'track');
     } catch(e) { console.log('PCT bg:', e.message); }
