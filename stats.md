@@ -117,9 +117,11 @@ permalink: /stats.html
       var bars = last7.map(function (d) {
         var h = Math.max(8, d.distM / maxD * 100), isLast = d.date === lastKey;
         var dl = new Date(d.date + "T12:00:00").toLocaleDateString(LOC, { weekday: "short" });
-        return '<div class="bar"><div class="bk">' + n(d.distM / 1000, 0) + '</div><div class="btrack"><div class="bi' + (isLast ? ' last' : '') + '" style="height:' + h.toFixed(0) + '%"></div></div><div class="bd">' + dl + '</div></div>';
+        return '<div class="bar"><div class="bk">' + n(d.distM / 1000, 0) + ' km</div><div class="btrack"><div class="bi' + (isLast ? ' last' : '') + '" style="height:' + h.toFixed(0) + '%"></div></div><div class="bd">' + dl + '</div></div>';
       }).join("");
-      recent = '<div class="dash-sec"><h3>' + T("Letzte Tage", "Recent days") + '</h3><div class="bars">' + bars + '</div></div>';
+      var sumKm = last7.reduce(function (a, x) { return a + x.distM; }, 0) / 1000, ndays = last7.length;
+      var capTxt = T("Zusammen " + n(sumKm, 0) + " km an " + ndays + " Tag" + (ndays === 1 ? "" : "en"), n(sumKm, 0) + " km over " + ndays + " day" + (ndays === 1 ? "" : "s"));
+      recent = '<div class="dash-sec"><h3>' + T("Letzte Tage", "Recent days") + '</h3><div class="bars">' + bars + '</div><div class="dash-cap">' + capTxt + '</div></div>';
     }
 
     var timeline = '<div class="dash-sec"><h3>' + T("Zeitachse", "Timeline") + '</h3>'

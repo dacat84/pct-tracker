@@ -20,7 +20,7 @@ body_extra: |
     }
     fetch('/pct-tracker/data/latest.json',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
       var el=document.getElementById('heroUpdated'); if(!el||!j||!j.ts) return;
-      el.textContent=(de?'Zuletzt gesehen \u00b7 ':'Last seen \u00b7 ')+rel(j.ts);
+      el.textContent=(de?'Letzte Aktivität \u00b7 ':'Last activity \u00b7 ')+rel(j.ts);
     }).catch(function(){});
   })();
   </script>
@@ -56,7 +56,7 @@ body_extra: |
 
 <div class="card about-card" style="margin-top:12px">
   <div class="about-title" data-en="About the hike" data-de="Über die Wanderung">About the hike</div>
-  <p class="about-text" data-en="The Pacific Crest Trail runs 4,265 km (2,650 mi) from the Mexican border to Canada — across the deserts of Southern California, the High Sierra and the Cascades. I'm thru-hiking it northbound in one continuous push. This page follows along in near real time from my GPS, with photos and short journal notes from the trail." data-de="Der Pacific Crest Trail führt 4.265 km von der mexikanischen Grenze bis nach Kanada – durch die Wüsten Südkaliforniens, die High Sierra und die Kaskaden. Ich laufe ihn von Süd nach Nord am Stück. Diese Seite verfolgt meinen Weg nahezu in Echtzeit per GPS, mit Fotos und kurzen Journal-Notizen von unterwegs."></p>
+  <p class="about-text" data-en="The Pacific Crest Trail is one of the most beautiful and best-known long-distance trails in the world. A single path runs 2,650 miles (4,265 km) from the Mexican border to Canada: through the deserts of Southern California, up into the rugged High Sierra and on across the volcanoes of the Cascades, all the way to the grand finale in the North Cascades of Washington. I'm hiking it in one continuous push, from south to north (NOBO). This page shows where I am right now, almost in real time from my GPS, together with photos and short diary notes from the trail." data-de="Der Pacific Crest Trail zählt zu den schönsten und bekanntesten Fernwanderwegen der Welt. Ein einziger Pfad zieht sich über 4.265 km von der mexikanischen Grenze bis nach Kanada: durch die Wüsten Südkaliforniens, hinauf in die schroffe High Sierra und weiter über die Vulkane der Kaskaden, bis zum großen Finale in den North Cascades in Washington. Ich laufe ihn am Stück von Süd nach Nord (NOBO). Diese Seite zeigt fast in Echtzeit per GPS, wo ich gerade bin, dazu Fotos und kurze Tagebuchnotizen von unterwegs."></p>
 </div>
 
 <div class="mapbackdrop" id="mapBackdrop"></div>
