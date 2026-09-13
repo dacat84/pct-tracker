@@ -5,8 +5,8 @@ nav: photos
 ---
 
 <div class="card">
-  <div class="card-title">Photos</div>
-  <div class="muted small">Auto-synced from Flickr album</div>
+  <div class="card-title" data-en="Photos" data-de="Fotos">Photos</div>
+  <div class="card-sub" data-en="Snapshots from the trail — newest first." data-de="Schnappschüsse von unterwegs — neueste zuerst.">Snapshots from the trail — newest first.</div>
 
   <div id="photoGrid" class="photo-grid" aria-live="polite"></div>
   <div id="photoError" class="muted small" style="display:none; margin-top:10px;">
@@ -17,55 +17,30 @@ nav: photos
 <style>
   .photo-grid{
     display:grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-flow: dense;
     gap: 12px;
     margin-top: 14px;
   }
-  @media (max-width: 520px){
-    .photo-grid{ grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-  }
+  @media (max-width: 720px){ .photo-grid{ grid-template-columns: repeat(2, 1fr); } }
   .photo-item{
+    position:relative;
+    aspect-ratio: 1 / 1;
     border-radius: 14px;
     overflow: hidden;
-    border: 1px solid rgba(255,255,255,.10);
-    background: rgba(255,255,255,.04);
+    border: 1px solid var(--line);
+    background: #f0f2ec;
     display:block;
+    box-shadow: var(--shadow);
   }
-  .photo-item img{
-    width:100%;
-    height:100%;
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
-    display:block;
-    transform: scale(1.01);
-  }
-  /* Lightbox */
-  .lightbox{
-    position:fixed;
-    inset:0;
-    background: rgba(0,0,0,.85);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index: 9999;
-    padding: 18px;
-  }
+  .photo-item img{ width:100%; height:100%; object-fit: cover; display:block; transition: transform .35s ease; }
+  .photo-item:hover img{ transform: scale(1.04); }
+  .photo-item.feat{ grid-column: span 2; grid-row: span 2; }
+  .photo-badge{ position:absolute; top:10px; left:10px; z-index:2; background:rgba(30,36,28,.62); color:#fff; backdrop-filter:blur(4px); font:600 11px Inter,system-ui,sans-serif; padding:4px 9px; border-radius:999px; }
+  .lightbox{ position:fixed; inset:0; background: rgba(20,24,20,.88); display:none; align-items:center; justify-content:center; z-index: 9999; padding: 18px; }
   .lightbox.open{ display:flex; }
-  .lightbox img{
-    max-width: min(1200px, 96vw);
-    max-height: 92vh;
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,.18);
-    background: rgba(0,0,0,.2);
-  }
-  .lightbox .hint{
-    position:fixed;
-    bottom: 14px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 12px;
-    opacity: .75;
-  }
+  .lightbox img{ max-width: min(1200px, 96vw); max-height: 92vh; border-radius: 14px; border: 1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.2); }
+  .lightbox .hint{ position:fixed; bottom: 14px; left: 50%; transform: translateX(-50%); font-size: 12px; opacity: .75; color:#fff; }
 </style>
 
 <div id="lightbox" class="lightbox" role="dialog" aria-modal="true">
@@ -75,6 +50,7 @@ nav: photos
 
 <script>
   // --- CONFIG (only these 3 values matter) ---
+  const LANG = (function(){var L=localStorage.getItem('pctLang'); if(L!=='de'&&L!=='en'){L=((navigator.language||'en').slice(0,2)==='de')?'de':'en';} return L;})();
   const FLICKR_API_KEY = "a8b28521e8527042f868d9b98b567ff3";
   const USER_ID = "35469735@N03";
   const PHOTOSET_ID = "72177720331905792"; // your album id
@@ -156,7 +132,13 @@ nav: photos
         if (!thumb) continue;
 
         const a = document.createElement("a");
-        a.className = "photo-item";
+        a.className = "photo-item" + (grid.children.length === 0 ? " feat" : "");
+        if (grid.children.length === 0) {
+          const badge = document.createElement("div");
+          badge.className = "photo-badge";
+          badge.textContent = (LANG === "de") ? "Neuestes" : "Newest";
+          a.appendChild(badge);
+        }
         a.href = "https://www.flickr.com/photos/" + USER_ID + "/" + p.id;
         a.target = "_blank";
         a.rel = "noopener";
