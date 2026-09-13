@@ -120,23 +120,17 @@ permalink: /stats.html
 
     var two = '<div class="two">' + dayTile(T("Längster Tag", "Longest day"), longest) + dayTile(T("Kürzester Tag", "Shortest day"), shortest) + '</div>';
 
-    var recent = "";
-    if (last7.length > 1) {
-      var maxD = Math.max.apply(null, last7.map(function (x) { return x.distM; })) || 1;
-      var bars = last7.map(function (d) {
-        var h = Math.max(8, d.distM / maxD * 100), isLast = d.date === lastKey;
-        var dl = new Date(d.date + "T12:00:00").toLocaleDateString(LOC, { weekday: "short" });
-        return '<div class="bar"><div class="bk">' + n(d.distM / 1000, 0) + ' km</div><div class="btrack"><div class="bi' + (isLast ? ' last' : '') + '" style="height:' + h.toFixed(0) + '%"></div></div><div class="bd">' + dl + '</div></div>';
-      }).join("");
-      var sumKm = last7.reduce(function (a, x) { return a + x.distM; }, 0) / 1000, ndays = last7.length;
-      var capTxt = T("Zusammen " + n(sumKm, 0) + " km an " + ndays + " Tag" + (ndays === 1 ? "" : "en"), n(sumKm, 0) + " km over " + ndays + " day" + (ndays === 1 ? "" : "s"));
-      var list = last7.map(function (d) {
+    var allDays = sorted.map(function (k) { return { date: k, distM: byDay[k].distM }; });
+    var maxAll = Math.max.apply(null, allDays.map(function (x) { return x.distM; })) || 1;
+    var dayLog = "";
+    if (allDays.length) {
+      var rows = allDays.slice().reverse().map(function (d) {
         var isLast = d.date === lastKey, dd = new Date(d.date + "T12:00:00");
         var lab = dd.toLocaleDateString(LOC, { weekday: "short", day: "numeric", month: "short" });
-        var w = Math.max(4, d.distM / maxD * 100);
+        var w = Math.max(4, d.distM / maxAll * 100);
         return '<div class="dl-row' + (isLast ? ' last' : '') + '"><div class="dl-day">' + lab + '</div><div class="dl-bar"><div class="dl-fill" style="width:' + w.toFixed(0) + '%"></div></div><div class="dl-km">' + n(d.distM / 1000, 0) + ' km</div></div>';
       }).join("");
-      recent = '<div class="dash-sec"><h3>' + T("Letzte Tage", "Recent days") + '</h3><div class="daylist">' + list + '</div><div class="dash-cap">' + capTxt + '</div></div>';
+      dayLog = '<div class="dash-sec"><h3>' + T("Tag für Tag", "Day by day") + '</h3><div class="daylist">' + rows + '</div></div>';
     }
 
     var timeline = '<div class="dash-sec"><h3>' + T("Zeitachse", "Timeline") + '</h3>'
@@ -145,7 +139,7 @@ permalink: /stats.html
       + '<div class="drow"><span>' + T("Tage", "Days") + '</span><b>' + activeDays + ' ' + T("aktiv", "active") + ' · ' + restDays + ' ' + T("Zero", "zero") + '</b></div>'
       + '</div>';
 
-    document.getElementById("dash").innerHTML = hero + grid + two + recent + timeline;
+    document.getElementById("dash").innerHTML = hero + grid + two + timeline + dayLog;
   }
 })();
 </script>
