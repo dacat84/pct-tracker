@@ -6,7 +6,7 @@ permalink: /gear/
 ---
 <div class="card">
   <div class="card-title" style="font-size:24px;margin-bottom:6px" data-en="Gear" data-de="Ausrüstung">Gear</div>
-  <div class="card-sub" data-en="What I carry: a 3-season ultralight kit for the PCT." data-de="Was ich mittrage: ein 3-Jahreszeiten-Ultralight-Setup für den PCT.">What I carry: a 3-season ultralight kit for the PCT.</div>
+  <div class="card-sub" data-en="What I carry: an ultralight kit for three seasons on the PCT." data-de="Was ich mittrage: ein ultraleichtes Setup für drei Jahreszeiten auf dem PCT.">What I carry: an ultralight kit for three seasons on the PCT.</div>
 
   <div class="gg">
     <div class="gg-base">
