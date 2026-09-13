@@ -16,16 +16,16 @@ nav: photos
 
 <style>
   .photo-grid{
-    display:grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-auto-flow: dense;
-    gap: 12px;
+    column-count: 3;
+    column-gap: 12px;
     margin-top: 14px;
   }
-  @media (max-width: 720px){ .photo-grid{ grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 720px){ .photo-grid{ column-count: 2; } }
+  @media (max-width: 440px){ .photo-grid{ column-count: 1; } }
   .photo-item{
     position:relative;
-    aspect-ratio: 1 / 1;
+    break-inside: avoid;
+    margin: 0 0 12px;
     border-radius: 14px;
     overflow: hidden;
     border: 1px solid var(--line);
@@ -33,9 +33,8 @@ nav: photos
     display:block;
     box-shadow: var(--shadow);
   }
-  .photo-item img{ width:100%; height:100%; object-fit: cover; display:block; transition: transform .35s ease; }
-  .photo-item:hover img{ transform: scale(1.04); }
-  .photo-item.feat{ grid-column: span 2; grid-row: span 2; }
+  .photo-item img{ width:100%; height:auto; display:block; transition: transform .35s ease; }
+  .photo-item:hover img{ transform: scale(1.03); }
   .photo-badge{ position:absolute; top:10px; left:10px; z-index:2; background:rgba(30,36,28,.62); color:#fff; backdrop-filter:blur(4px); font:600 11px Inter,system-ui,sans-serif; padding:4px 9px; border-radius:999px; }
   .lightbox{ position:fixed; inset:0; background: rgba(20,24,20,.88); display:none; align-items:center; justify-content:center; z-index: 9999; padding: 18px; }
   .lightbox.open{ display:flex; }
@@ -132,7 +131,7 @@ nav: photos
         if (!thumb) continue;
 
         const a = document.createElement("a");
-        a.className = "photo-item" + (grid.children.length === 0 ? " feat" : "");
+        a.className = "photo-item";
         if (grid.children.length === 0) {
           const badge = document.createElement("div");
           badge.className = "photo-badge";
@@ -145,7 +144,7 @@ nav: photos
 
         const img = document.createElement("img");
         img.loading = (grid.children.length === 0) ? "eager" : "lazy";
-        img.src = (grid.children.length === 0) ? (p.url_l || p.url_c || p.url_z || thumb) : thumb;
+        img.src = p.url_z || p.url_c || p.url_m || thumb;
         img.alt = p.title || "Photo";
 
         // Click opens lightbox (and prevents leaving the site)
