@@ -7,6 +7,14 @@
   <title>{{ page.title }} · {{ site.title }}</title>
   <meta name="description" content="{{ site.description }}" />
 
+  <meta property="og:title" content="{{ site.title }} · {{ page.title }}" />
+  <meta property="og:description" content="{{ site.description }}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="{{ page.url | absolute_url }}" />
+  <meta name="twitter:card" content="summary" />
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233e9a51'/><path d='M5 25 L13 10 L17.5 18 L20.5 13 L27 25 Z' fill='white'/></svg>" />
+
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
   {{ page.head_extra }}
 </head>
@@ -15,14 +23,14 @@
   <header class="site-header">
     <div class="wrap">
       <div class="brand">        <div class="brand-title">{{ site.title }}</div>
-          <div class="brand-sub">{{ site.description }}</div>
+          <div class="brand-sub" data-en="On foot from Mexico to Canada" data-de="Zu Fuß von Mexiko nach Kanada">On foot from Mexico to Canada</div>
       </div>
 
       <nav class="tabs">
         <a class="tab {% if page.nav == 'map' %}active{% endif %}" href="{{ '/' | relative_url }}" data-en="Map" data-de="Karte">Map</a>
         <a class="tab {% if page.nav == 'stats' %}active{% endif %}" href="{{ '/stats.html' | relative_url }}" data-en="Stats" data-de="Statistik">Stats</a>
         <a class="tab {% if page.nav == 'photos' %}active{% endif %}" href="{{ '/photos' | relative_url }}" data-en="Photos" data-de="Fotos">Photos</a>
-        <a class="tab {% if page.nav == 'updates' %}active{% endif %}" href="{{ '/updates' | relative_url }}" data-en="Updates" data-de="Updates">Updates</a>
+        <a class="tab {% if page.nav == 'updates' %}active{% endif %}" href="{{ '/updates' | relative_url }}" data-en="Diary" data-de="Tagebuch">Diary</a>
         <a class="tab {% if page.nav == 'gear' %}active{% endif %}" href="{{ '/gear' | relative_url }}" data-en="Gear" data-de="Ausrüstung">Gear</a>
         <button class="tab langtoggle" id="langToggle" type="button" aria-label="Language / Sprache">DE · EN</button>
       </nav>
