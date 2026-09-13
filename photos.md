@@ -144,8 +144,8 @@ nav: photos
         a.rel = "noopener";
 
         const img = document.createElement("img");
-        img.loading = "lazy";
-        img.src = thumb;
+        img.loading = (grid.children.length === 0) ? "eager" : "lazy";
+        img.src = (grid.children.length === 0) ? (p.url_l || p.url_c || p.url_z || thumb) : thumb;
         img.alt = p.title || "Photo";
 
         // Click opens lightbox (and prevents leaving the site)
