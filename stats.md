@@ -38,6 +38,15 @@ permalink: /stats.html
 .bars .bi.last{background:linear-gradient(180deg,#4fae62,#2c7a3d)}
 .bars .bd{font:700 10.5px Inter,system-ui,sans-serif;color:#9aa08f}
 .dash-cap{text-align:center;font:600 12px Inter,system-ui,sans-serif;color:#9aa08f;margin-top:2px}
+.daylist{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.dl-row{display:grid;grid-template-columns:104px 1fr auto;align-items:center;gap:12px}
+.dl-day{font:600 12.5px Inter,system-ui,sans-serif;color:#6c7365;white-space:nowrap}
+.dl-bar{height:8px;border-radius:999px;background:#eceadd;overflow:hidden}
+.dl-fill{height:100%;border-radius:999px;background:#bcd0be}
+.dl-row.last .dl-fill{background:linear-gradient(90deg,#4fae62,#2c7a3d)}
+.dl-km{font:700 13px Inter,system-ui,sans-serif;color:#1e241c;white-space:nowrap;min-width:54px;text-align:right}
+.dl-row.last .dl-km{color:#2c7a3d}
+@media(max-width:520px){.dl-row{grid-template-columns:92px 1fr auto;gap:9px}.dl-day{font-size:12px}}
 </style>
 
 <div class="dash" id="dash">
@@ -121,7 +130,14 @@ permalink: /stats.html
       }).join("");
       var sumKm = last7.reduce(function (a, x) { return a + x.distM; }, 0) / 1000, ndays = last7.length;
       var capTxt = T("Zusammen " + n(sumKm, 0) + " km an " + ndays + " Tag" + (ndays === 1 ? "" : "en"), n(sumKm, 0) + " km over " + ndays + " day" + (ndays === 1 ? "" : "s"));
-      recent = '<div class="dash-sec"><h3>' + T("Letzte Tage", "Recent days") + '</h3><div class="bars">' + bars + '</div><div class="dash-cap">' + capTxt + '</div></div>';
+      var list = last7.map(function (d) {
+        var isLast = d.date === lastKey, dd = new Date(d.date + "T12:00:00");
+        var lab = dd.toLocaleDateString(LOC, { weekday: "short", day: "numeric", month: "short" });
+        var w = Math.max(4, d.distM / maxD * 100);
+        return '<div class="dl-row' + (isLast ? ' last' : '') + '"><div class="dl-day">' + lab + '</div><div class="dl-bar"><div class="dl-fill" style="width:' + w.toFixed(0) + '%"></div></div><div class="dl-km">' + n(d.distM / 1000, 0) + ' km</div></div>';
+      }).join("");
+      recent = '<div class="dash-sec"><h3>' + T("Letzte Tage \u00b7 Balken", "Recent days \u00b7 bars") + '</h3><div class="bars">' + bars + '</div><div class="dash-cap">' + capTxt + '</div></div>'
+             + '<div class="dash-sec"><h3>' + T("Letzte Tage \u00b7 Liste", "Recent days \u00b7 list") + '</h3><div class="daylist">' + list + '</div></div>';
     }
 
     var timeline = '<div class="dash-sec"><h3>' + T("Zeitachse", "Timeline") + '</h3>'
