@@ -6,7 +6,7 @@ nav: updates
 
 <div class="updates">
 
-<h2 class="updates-title" data-en="Trail Updates" data-de="Trail-Updates">Trail Updates</h2>
+<h2 class="updates-title" data-en="Diary" data-de="Tagebuch">Diary</h2>
 {% assign items = site.updates | sort: "date" | reverse %}
 {% assign months_de = "Januar,Februar,März,April,Mai,Juni,Juli,August,September,Oktober,November,Dezember" | split: "," %}
 {% for u in items %}{% assign mi = u.date | date: "%-m" | minus: 1 %}{% assign date_en = u.date | date: "%B %-d, %Y, %-I:%M %p" %}{% capture date_de %}{{ u.date | date: "%-d" }}. {{ months_de[mi] }} {{ u.date | date: "%Y, %H:%M" }} Uhr{% endcapture %}
@@ -18,6 +18,6 @@ nav: updates
 </div>
 </div>  
 {% endfor %}
-<div class="update-note" data-en="(Older updates at the bottom)" data-de="(Ältere Updates unten)">(Older updates at the bottom)</div>
+<div class="update-note" data-en="(Older entries at the bottom)" data-de="(Ältere Einträge unten)">(Older entries at the bottom)</div>
 
 </div>
