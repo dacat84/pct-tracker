@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Updates
+title: Diary
 nav: updates
 ---
 
