@@ -295,7 +295,7 @@
         if (t === "pass") return '<circle cx="' + ix + '" cy="' + iy + '" r="2.8" fill="#fff" stroke="' + col + '" stroke-width="1.6"/>';
         return '<path d="M' + (ix - 3.6) + ' ' + (iy + 2.4) + ' L' + ix + ' ' + (iy - 4.8) + ' L' + (ix + 3.6) + ' ' + (iy + 2.4) + ' Z" fill="' + col + '"/>';
       }
-      var lmData = [], top = [], bot = "", land = "", landLabeled = [];
+      var lmData = [], top = [], bot = "", land = "", landLabeled = [], baseLabeled = [];
       LM.forEach(function (m) {
         var mi = m[0], t = m[2], tier = m[3], kmRaw = mi * MI2KM * F, done = inWalked(kmRaw), col = TYPECOL[t] || "#6b7280";
         var isTop = (t === "peak" || t === "pass" || t === "side"), isLand = (t === "park" || t === "desert");
@@ -309,12 +309,12 @@
           var di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1;
           top.push({ lx: lx, py: py, t: t, name: m[1], col: col, label: showLabel, di: di });
         } else if (t === "term") {
-          var lx = x(kmRaw), di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1, pf = done ? 1 : 0.78, post = baseY - 15;
+          var lx = x(kmRaw), di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1, pf = done ? 1 : 0.78, post = baseY - 14, flip = lx > W - 40;
           bot += '<line x1="' + lx + '" y1="' + baseY + '" x2="' + lx + '" y2="' + post + '" stroke="' + col + '" stroke-width="1.4" opacity="' + pf + '"/>';
-          bot += '<path d="M' + lx + ' ' + post + ' L' + (lx + 8) + ' ' + (post + 2.5) + ' L' + lx + ' ' + (post + 5) + ' Z" fill="' + col + '" opacity="' + pf + '"/>';
-          var lft = lx < W / 2;
-          bot += '<text x="' + (lft ? lx + 3 : lx - 3) + '" y="' + (baseY - 4) + '" text-anchor="' + (lft ? "start" : "end") + '" font-size="' + (9 * fs).toFixed(1) + '" font-weight="700" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" fill="' + (done ? "#20301c" : "#6b6f60") + '">' + m[1] + '</text>';
-          bot += '<rect class="el-lmhit" data-i="' + di + '" x="' + (lx - 6) + '" y="' + (post - 4) + '" width="12" height="' + (baseY - post + 8) + '"/>';
+          bot += '<path d="M' + lx + ' ' + post + ' L' + (flip ? lx - 8 : lx + 8) + ' ' + (post + 2.5) + ' L' + lx + ' ' + (post + 5) + ' Z" fill="' + col + '" opacity="' + pf + '"/>';
+          var anc = lx < 55 ? "start" : (lx > W - 55 ? "end" : "middle");
+          bot += '<text x="' + lx + '" y="' + (post - 4) + '" text-anchor="' + anc + '" font-size="' + (9 * fs).toFixed(1) + '" font-weight="700" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2.6" stroke-linejoin="round" fill="' + (done ? "#20301c" : "#5f6656") + '">' + m[1] + '</text>';
+          bot += '<rect class="el-lmhit" data-i="' + di + '" x="' + (lx - 6) + '" y="' + (post - 12) + '" width="12" height="' + (baseY - post + 16) + '"/>';
         } else if (isLand) {
           var lx = x(kmRaw), di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1, op = done ? 1 : 0.5;
           land += '<line x1="' + lx + '" y1="' + (bY + bH + 2) + '" x2="' + lx + '" y2="' + (lY - 3) + '" stroke="' + col + '" stroke-width="1.2" ' + (t === "desert" ? 'stroke-dasharray="2 2"' : "") + ' opacity="' + (done ? 0.8 : 0.4) + '"/>';
@@ -326,10 +326,7 @@
         } else {
           var lx = x(kmRaw), di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1, op = done ? 1 : (tier === 1 ? 0.9 : 0.55);
           bot += '<circle cx="' + lx + '" cy="' + baseY + '" r="' + (t === "water" ? 2.4 : 2.2) + '" fill="' + col + '" opacity="' + op + '"/>';
-          if (showLabel) {
-            var ty = baseY - 6;
-            bot += '<text class="el-town" x="' + (lx + 3) + '" y="' + ty + '" transform="rotate(-90 ' + (lx + 3) + ' ' + ty + ')" text-anchor="start" font-size="' + ((tier === 1 ? 8.5 : 7.6) * fs).toFixed(1) + '" font-family="Inter" font-weight="' + (tier === 1 ? "700" : "500") + '" paint-order="stroke" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" fill="' + (done ? "#20301c" : "#7f8472") + '">' + m[1] + '</text>';
-          }
+          if (showLabel) baseLabeled.push({ lx: lx, name: m[1], fw: (tier === 1 ? "700" : "500"), fsz: ((tier === 1 ? 8.5 : 7.6) * fs), col: (done ? "#20301c" : "#7f8472"), tier: tier });
           bot += '<rect class="el-lmhit" data-i="' + di + '" x="' + (lx - 6) + '" y="' + (baseY - 8) + '" width="12" height="46"/>';
         }
       });
@@ -339,7 +336,7 @@
         var w = o.name.length * (5.2 * fs) + 8, L = o.lx - w / 2, lev = 0;
         while (levelEnds[lev] != null && levelEnds[lev] > L - 4) lev++;
         levelEnds[lev] = o.lx + w / 2;
-        o.ly = 47 - lev * 12;
+        o.ly = Math.max(9, 47 - lev * 12);
       });
       var topSvg = "";
       top.forEach(function (o) {
@@ -353,19 +350,25 @@
         topSvg += '<rect class="el-lmhit" data-i="' + o.di + '" x="' + (o.lx - 6) + '" y="' + hitTop + '" width="12" height="' + (baseY - hitTop) + '"/>';
       });
       landLabeled.sort(function (a, b) { return a.lx - b.lx; });
-      var landLevelEnds = [];
+      var landRows = [];
       landLabeled.forEach(function (o) {
-        if (o.lx > W - 120) {
-          land += '<text x="' + o.lx + '" y="' + (lY + 11) + '" text-anchor="end" font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="600" font-family="Inter" fill="' + o.col + '" opacity="' + o.op + '">' + o.name + '</text>';
-          return;
-        }
-        var ext = o.name.length * (4.6 * fs) + 6, lev = 0;
-        while (landLevelEnds[lev] != null && landLevelEnds[lev] > o.lx - 2) lev++;
-        landLevelEnds[lev] = o.lx + ext;
-        var ay = lY + lev * 13;
-        land += '<text x="' + (o.lx + 4) + '" y="' + (ay + 5) + '" transform="rotate(26 ' + o.lx + ' ' + ay + ')" text-anchor="start" font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="600" font-family="Inter" fill="' + o.col + '" opacity="' + o.op + '">' + o.name + '</text>';
+        var w = o.name.length * (4.9 * fs) + 6, rightEdge = (o.lx + w > W - 4);
+        var ax0 = rightEdge ? o.lx - w : o.lx, ax1 = rightEdge ? o.lx : o.lx + w, row = 0;
+        while (landRows[row] != null && landRows[row] > ax0 - 4) row++;
+        landRows[row] = ax1;
+        var ly2 = lY + 9 + row * 11;
+        if (row > 0) land += '<line x1="' + o.lx + '" y1="' + (lY + 2) + '" x2="' + o.lx + '" y2="' + (ly2 - 7) + '" stroke="' + o.col + '" stroke-width=".8" opacity=".3"/>';
+        land += '<text x="' + (rightEdge ? o.lx - 3 : o.lx + 3) + '" y="' + ly2 + '" text-anchor="' + (rightEdge ? "end" : "start") + '" font-size="' + (8.5 * fs).toFixed(1) + '" font-weight="600" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2" stroke-linejoin="round" fill="' + o.col + '" opacity="' + o.op + '">' + o.name + '</text>';
       });
-      var lm = land + bot + topSvg;
+      baseLabeled.sort(function (a, b) { return (a.tier - b.tier) || (a.lx - b.lx); });
+      var basePlaced = [], baseLabelSvg = "";
+      baseLabeled.forEach(function (o) {
+        for (var i = 0; i < basePlaced.length; i++) { if (Math.abs(basePlaced[i] - o.lx) < 9) return; }
+        basePlaced.push(o.lx);
+        var ty = baseY - 6;
+        baseLabelSvg += '<text class="el-town" x="' + (o.lx + 3) + '" y="' + ty + '" transform="rotate(-90 ' + (o.lx + 3) + ' ' + ty + ')" text-anchor="start" font-size="' + o.fsz.toFixed(1) + '" font-family="Inter" font-weight="' + o.fw + '" paint-order="stroke" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" fill="' + o.col + '">' + o.name + '</text>';
+      });
+      var lm = land + bot + baseLabelSvg + topSvg;
 
       var marker = markerInView
         ? ('<line x1="' + markX + '" y1="' + markY + '" x2="' + markX + '" y2="' + (bY + bH) + '" stroke="#cf7440" stroke-width="1.6" stroke-dasharray="4 3"/>' +
