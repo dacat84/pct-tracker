@@ -295,7 +295,7 @@
         if (t === "pass") return '<circle cx="' + ix + '" cy="' + iy + '" r="2.8" fill="#fff" stroke="' + col + '" stroke-width="1.6"/>';
         return '<path d="M' + (ix - 3.6) + ' ' + (iy + 2.4) + ' L' + ix + ' ' + (iy - 4.8) + ' L' + (ix + 3.6) + ' ' + (iy + 2.4) + ' Z" fill="' + col + '"/>';
       }
-      var lmData = [], top = [], bot = "", land = "";
+      var lmData = [], top = [], bot = "", land = "", landLabeled = [];
       LM.forEach(function (m) {
         var mi = m[0], t = m[2], tier = m[3], kmRaw = mi * MI2KM * F, done = inWalked(kmRaw), col = TYPECOL[t] || "#6b7280";
         var isTop = (t === "peak" || t === "pass" || t === "side"), isLand = (t === "park" || t === "desert");
@@ -321,10 +321,7 @@
           land += (t === "desert")
             ? '<rect x="' + (lx - 2) + '" y="' + (lY - 2) + '" width="4" height="4" fill="' + col + '" opacity="' + op + '" transform="rotate(45 ' + lx + ' ' + lY + ')"/>'
             : '<circle cx="' + lx + '" cy="' + lY + '" r="2.6" fill="' + col + '" opacity="' + op + '"/>';
-          if (showLabel) {
-            var edge = lx > W - 95;
-            land += '<text x="' + (edge ? lx : (lx + 4)) + '" y="' + (edge ? (lY + 13) : (lY + 5)) + '" text-anchor="' + (edge ? "middle" : "start") + '"' + (edge ? "" : ' transform="rotate(26 ' + lx + ' ' + lY + ')"') + ' font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="600" font-family="Inter" fill="' + (t === "desert" ? "#b5842e" : "#2f7a3e") + '" opacity="' + (done ? 1 : 0.72) + '">' + m[1] + '</text>';
-          }
+          if (showLabel) landLabeled.push({ lx: lx, name: m[1], col: (t === "desert" ? "#b5842e" : "#2f7a3e"), op: (done ? 1 : 0.72) });
           land += '<rect class="el-lmhit" data-i="' + di + '" x="' + (lx - 6) + '" y="' + (bY + bH) + '" width="12" height="' + (lY + 6 - (bY + bH)) + '"/>';
         } else {
           var lx = x(kmRaw), di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1, op = done ? 1 : (tier === 1 ? 0.9 : 0.55);
@@ -354,6 +351,19 @@
           hitTop = o.ly - 8;
         }
         topSvg += '<rect class="el-lmhit" data-i="' + o.di + '" x="' + (o.lx - 6) + '" y="' + hitTop + '" width="12" height="' + (baseY - hitTop) + '"/>';
+      });
+      landLabeled.sort(function (a, b) { return a.lx - b.lx; });
+      var landLevelEnds = [];
+      landLabeled.forEach(function (o) {
+        if (o.lx > W - 120) {
+          land += '<text x="' + o.lx + '" y="' + (lY + 11) + '" text-anchor="end" font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="600" font-family="Inter" fill="' + o.col + '" opacity="' + o.op + '">' + o.name + '</text>';
+          return;
+        }
+        var ext = o.name.length * (4.6 * fs) + 6, lev = 0;
+        while (landLevelEnds[lev] != null && landLevelEnds[lev] > o.lx - 2) lev++;
+        landLevelEnds[lev] = o.lx + ext;
+        var ay = lY + lev * 13;
+        land += '<text x="' + (o.lx + 4) + '" y="' + (ay + 5) + '" transform="rotate(26 ' + o.lx + ' ' + ay + ')" text-anchor="start" font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="600" font-family="Inter" fill="' + o.col + '" opacity="' + o.op + '">' + o.name + '</text>';
       });
       var lm = land + bot + topSvg;
 
