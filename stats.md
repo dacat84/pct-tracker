@@ -136,8 +136,7 @@ permalink: /stats.html
         var w = Math.max(4, d.distM / maxD * 100);
         return '<div class="dl-row' + (isLast ? ' last' : '') + '"><div class="dl-day">' + lab + '</div><div class="dl-bar"><div class="dl-fill" style="width:' + w.toFixed(0) + '%"></div></div><div class="dl-km">' + n(d.distM / 1000, 0) + ' km</div></div>';
       }).join("");
-      recent = '<div class="dash-sec"><h3>' + T("Letzte Tage \u00b7 Balken", "Recent days \u00b7 bars") + '</h3><div class="bars">' + bars + '</div><div class="dash-cap">' + capTxt + '</div></div>'
-             + '<div class="dash-sec"><h3>' + T("Letzte Tage \u00b7 Liste", "Recent days \u00b7 list") + '</h3><div class="daylist">' + list + '</div></div>';
+      recent = '<div class="dash-sec"><h3>' + T("Letzte Tage", "Recent days") + '</h3><div class="daylist">' + list + '</div><div class="dash-cap">' + capTxt + '</div></div>';
     }
 
     var timeline = '<div class="dash-sec"><h3>' + T("Zeitachse", "Timeline") + '</h3>'
