@@ -9,7 +9,7 @@ nav: photos
   <div class="card-sub" data-en="Photos from the trail, newest first." data-de="Bilder von unterwegs, neueste zuerst.">Photos from the trail, newest first.</div>
 
   <div id="photoGrid" class="photo-grid" aria-live="polite"></div>
-  <div id="photoError" class="muted small" style="display:none; margin-top:10px;">
+  <div id="photoError" class="muted small" style="display:none; margin-top:10px;" data-en="Could not load photos right now." data-de="Bilder konnten gerade nicht geladen werden.">
     Could not load photos right now.
   </div>
 </div>
@@ -44,7 +44,7 @@ nav: photos
 
 <div id="lightbox" class="lightbox" role="dialog" aria-modal="true">
   <img id="lightboxImg" alt="">
-  <div class="hint muted">Click anywhere to close • ESC</div>
+  <div class="hint muted" data-en="Click anywhere to close · ESC" data-de="Zum Schließen irgendwohin klicken · ESC">Click anywhere to close · ESC</div>
 </div>
 
 <script>
