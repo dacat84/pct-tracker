@@ -1,0 +1,51 @@
+name: Garmin Sync
+
+# Manual for now (scaffold). Once the GARMIN_* secrets are set (see
+# scripts/GARMIN_SETUP.md), uncomment the schedule block below to run it
+# automatically every few hours.
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "0 */4 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install garminconnect
+
+      - name: Restore Garmin token store (if configured)
+        env:
+          GARMIN_TOKENS_B64: ${{ secrets.GARMIN_TOKENS_B64 }}
+        run: |
+          if [ -n "$GARMIN_TOKENS_B64" ]; then
+            mkdir -p ~/.garminconnect
+            echo "$GARMIN_TOKENS_B64" | base64 -d | tar -xzf - -C ~/.garminconnect
+            echo "Restored cached Garmin token store."
+          else
+            echo "No GARMIN_TOKENS_B64 secret set; will use email/password if provided."
+          fi
+
+      - name: Sync from Garmin Connect
+        env:
+          GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
+          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
+        run: python scripts/garmin_sync.py
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name "garmin-sync-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/track.geojson data/latest.json data/garmin_state.json
+          git commit -m "Auto-update track from Garmin" || exit 0
+          git push
