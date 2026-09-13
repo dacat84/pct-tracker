@@ -6,7 +6,7 @@ nav: photos
 
 <div class="card">
   <div class="card-title" data-en="Photos" data-de="Fotos">Photos</div>
-  <div class="card-sub" data-en="Snapshots from the trail, newest first." data-de="Schnappschüsse von unterwegs, neueste zuerst.">Snapshots from the trail, newest first.</div>
+  <div class="card-sub" data-en="Photos from the trail, newest first." data-de="Bilder von unterwegs, neueste zuerst.">Photos from the trail, newest first.</div>
 
   <div id="photoGrid" class="photo-grid" aria-live="polite"></div>
   <div id="photoError" class="muted small" style="display:none; margin-top:10px;">
