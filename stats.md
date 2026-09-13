@@ -47,6 +47,15 @@ permalink: /stats.html
 .dl-km{font:700 13px Inter,system-ui,sans-serif;color:#1e241c;white-space:nowrap;min-width:54px;text-align:right}
 .dl-row.last .dl-km{color:#2c7a3d}
 @media(max-width:520px){.dl-row{grid-template-columns:92px 1fr auto;gap:9px}.dl-day{font-size:12px}}
+.secprog{display:flex;flex-direction:column;gap:9px;margin-top:2px}
+.sp-row{display:grid;grid-template-columns:132px 1fr 52px;align-items:center;gap:12px}
+.sp-name{font:600 13px Inter,system-ui,sans-serif;color:#9aa08f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-row.current .sp-name,.sp-row.done .sp-name{color:#1e241c}
+.sp-bar{height:9px;border-radius:999px;background:#eceadd;overflow:hidden}
+.sp-fill{height:100%;border-radius:999px}
+.sp-tag{font:700 11.5px Inter,system-ui,sans-serif;text-align:right;color:#9aa08f}
+.sp-row.current .sp-tag,.sp-row.done .sp-tag{color:#2c7a3d}
+@media(max-width:520px){.sp-row{grid-template-columns:100px 1fr 40px;gap:9px}.sp-name{font-size:12px}}
 </style>
 
 <div class="dash" id="dash">
@@ -65,8 +74,14 @@ permalink: /stats.html
   function dur(s) { s = Math.round(s || 0); var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h > 0 ? (h + " h " + m + " min") : (m + " min"); }
   function fmtDate(ts) { return ts == null ? "—" : new Date(ts).toLocaleDateString(LOC, { day: "numeric", month: "short", year: "numeric" }); }
   function J(u) { return fetch(BASE + u, { cache: "no-store" }).then(function (r) { return r.json(); }).catch(function () { return null; }); }
+  function hav(la1, lo1, la2, lo2) {
+    var R = 6371, p1 = la1 * Math.PI / 180, p2 = la2 * Math.PI / 180;
+    var dp = (la2 - la1) * Math.PI / 180, dl = (lo2 - lo1) * Math.PI / 180;
+    var a = Math.sin(dp / 2) * Math.sin(dp / 2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) * Math.sin(dl / 2);
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
 
-  Promise.all([J("data/track.geojson"), J("data/latest.json")]).then(function (res) { render(res[0]); })
+  Promise.all([J("data/track.geojson"), J("data/latest.json"), J("data/pct_profile.json")]).then(function (res) { render(res[0], res[1], res[2]); })
     .catch(function (e) { console.error(e); });
 
   function tile(lbl, v, sub, accent) {
@@ -78,7 +93,7 @@ permalink: /stats.html
     return '<div class="tile"><div class="lbl">' + lbl + '</div><div class="v">' + n(it.distM / 1000, 1) + ' km</div><div class="sub">' + n(it.distM / 1609.344, 1) + ' mi' + (it.timeS != null ? ' · ' + dur(it.timeS) : '') + (dl ? ' · ' + dl : '') + '</div></div>';
   }
 
-  function render(track) {
+  function render(track, latest, profile) {
     var feats = (track && track.features) ? track.features : [];
     var distM = 0, timeS = 0, elevM = 0, firstTs = null, lastTs = null, longest = null, shortest = null;
     var days = {}, byDay = {};
@@ -103,7 +118,7 @@ permalink: /stats.html
     var last7 = sorted.slice(-7).map(function (k) { return { date: k, distM: byDay[k].distM }; });
 
     var hero = '<div class="dash-hero">'
-      + '<div class="lbl">' + T("Getrackt", "Tracked") + '</div>'
+      + '<div class="lbl">' + T("Gelaufen", "Hiked so far") + '</div>'
       + '<div class="big"><span class="p">' + n(totalKm, 1) + ' km</span><span class="s">' + n(totalMi, 1) + ' mi</span></div>'
       + '<div class="ptrack"><div class="pfill" style="width:' + Math.max(0.6, Math.min(100, pct)).toFixed(2) + '%"></div></div>'
       + '<div class="pmeta"><span class="accent">' + n(pct, 1) + '% ' + T("des PCT", "of the PCT") + '</span><span>' + T("noch ", "") + n(remKm, 0) + ' km' + T("", " to go") + '</span></div>'
@@ -112,7 +127,7 @@ permalink: /stats.html
     var grid = '<div class="dash-grid">'
       + tile(T("Höhenmeter", "Elevation gain"), (elevM > 0 ? n(elevM, 0) + " m" : "—"), (elevM > 0 ? n(elevFt, 0) + " ft" : ""), false)
       + tile(T("Gesamtzeit", "Total time"), dur(timeS), (feats.length ? feats.length + " " + T("Aktivitäten", "activities") : ""), false)
-      + tile(T("Ø pro Aktivität", "Avg / activity"), (feats.length ? n(totalKm / feats.length, 1) + " km" : "—"), (feats.length ? n(totalMi / feats.length, 1) + " mi" : ""), false)
+      + tile(T("Ø pro Tag", "Avg / day"), (activeDays ? n(totalKm / activeDays, 1) + " km" : "—"), (activeDays ? n(totalMi / activeDays, 1) + " mi" : ""), false)
       + tile(T("Ø Tempo", "Avg pace"), (hours > 0 ? n(totalKm / hours, 1) + " km/h" : "—"), (hours > 0 ? n(totalMi / hours, 1) + " mph" : ""), false)
       + tile(T("Tage unterwegs", "Days out"), activeDays, T("aktive Tage", "active days"), true)
       + tile(T("Zero-Tage", "Zero days"), restDays, T("Ruhetage", "rest days"), true)
@@ -133,13 +148,37 @@ permalink: /stats.html
       dayLog = '<div class="dash-sec"><h3>' + T("Tag für Tag", "Day by day") + '</h3><div class="daylist">' + rows + '</div></div>';
     }
 
-    var timeline = '<div class="dash-sec"><h3>' + T("Zeitachse", "Timeline") + '</h3>'
-      + '<div class="drow"><span>' + T("Erste Aktivität", "First activity") + '</span><b>' + fmtDate(firstTs) + '</b></div>'
-      + '<div class="drow"><span>' + T("Letzte Aktivität", "Last activity") + '</span><b>' + fmtDate(lastTs) + '</b></div>'
-      + '<div class="drow"><span>' + T("Tage", "Days") + '</span><b>' + activeDays + ' ' + T("aktiv", "active") + ' · ' + restDays + ' ' + T("Zero", "zero") + '</b></div>'
-      + '</div>';
+    var NOMINAL = 4265, pos = null;
+    if (latest && profile && profile.points && typeof latest.lat === "number") {
+      var pp = profile.points, best = null, bd = 1e18;
+      for (var k = 0; k < pp.length; k++) {
+        var dd = hav(latest.lat, latest.lon, pp[k].lat, pp[k].lon);
+        if (dd < bd) { bd = dd; best = pp[k]; }
+      }
+      if (best) pos = best.km * (NOMINAL / (profile.total_km || NOMINAL));
+    }
+    var sections = "";
+    if (pos != null) {
+      var REG = [
+        ["Südkalifornien", "Southern California", 0, 1130, "#e0a06a"],
+        ["Zentralsierra", "Central Sierra", 1130, 1637, "#9dbf78"],
+        ["Nördliche Sierra", "Northern Sierra", 1637, 2270, "#7fb08a"],
+        ["Nordkalifornien", "Northern California", 2270, 2720, "#6fae9e"],
+        ["Oregon", "Oregon", 2720, 3455, "#8aa4c0"],
+        ["Washington", "Washington", 3455, 4265, "#b39ac8"]
+      ];
+      var srows = REG.map(function (r) {
+        var p = Math.max(0, Math.min(100, (pos - r[2]) / (r[3] - r[2]) * 100));
+        var st = p >= 99.5 ? "done" : (p > 0 ? "current" : "upcoming");
+        var tag = st === "done" ? "✓" : (st === "current" ? T("hier", "here") : "");
+        return '<div class="sp-row ' + st + '"><div class="sp-name">' + T(r[0], r[1]) + '</div>'
+             + '<div class="sp-bar"><div class="sp-fill" style="width:' + p.toFixed(0) + '%;background:' + r[4] + '"></div></div>'
+             + '<div class="sp-tag">' + tag + '</div></div>';
+      }).join("");
+      sections = '<div class="dash-sec"><h3>' + T("Auf dem Trail", "On the trail") + '</h3><div class="secprog">' + srows + '</div></div>';
+    }
 
-    document.getElementById("dash").innerHTML = hero + grid + two + timeline + dayLog;
+    document.getElementById("dash").innerHTML = hero + grid + two + sections + dayLog;
   }
 })();
 </script>
