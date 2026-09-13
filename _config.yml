@@ -1,5 +1,5 @@
 title: "PCT Tracker"
-description: "Map, progress, photos & short updates from the trail"
+description: "Following a Pacific Crest Trail thru-hike — on foot from Mexico to Canada."
 url: ""  # GitHub Pages sets this
 baseurl: "/pct-tracker"  # set to "/REPO_NAME" if needed
 markdown: kramdown
