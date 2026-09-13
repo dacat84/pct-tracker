@@ -157,18 +157,10 @@
   function createBlinkMarkerEl() {
     ensurePulseKeyframes();
     const el = document.createElement("div");
-    el.style.cssText = "width:16px;height:16px;border-radius:999px;border:2px solid rgba(232,238,245,.95);box-shadow:0 10px 26px rgba(0,0,0,.45);background:#2bff88;position:relative";
+    el.style.cssText = "width:16px;height:16px;border-radius:999px;border:2px solid rgba(255,255,255,.95);box-shadow:0 8px 20px rgba(0,0,0,.40);background:#e0752b;position:relative";
     const ring = document.createElement("div");
-    ring.style.cssText = "position:absolute;left:-10px;top:-10px;width:36px;height:36px;border-radius:999px;border:2px solid rgba(43,255,136,.55);box-shadow:0 0 22px rgba(43,255,136,.40);animation:pctPulse 1.6s ease-out infinite";
+    ring.style.cssText = "position:absolute;left:-10px;top:-10px;width:36px;height:36px;border-radius:999px;border:2px solid rgba(224,117,43,.45);box-shadow:0 0 18px rgba(224,117,43,.30);animation:pctPulse 2.6s ease-out infinite";
     el.appendChild(ring);
-    let on = false;
-    setInterval(() => {
-      on = !on;
-      const c = on ? "#ff7a18" : "#2bff88";
-      el.style.background = c;
-      ring.style.borderColor = on ? "rgba(255,122,24,.55)" : "rgba(43,255,136,.55)";
-      ring.style.boxShadow = on ? "0 0 22px rgba(255,122,24,.40)" : "0 0 22px rgba(43,255,136,.40)";
-    }, 700);
     return el;
   }
 
