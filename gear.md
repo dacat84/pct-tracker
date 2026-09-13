@@ -15,7 +15,7 @@ permalink: /gear/
       <div class="gg-note" data-en="≈ 3.76 kg · everything in the pack, without food, water & worn clothing" data-de="≈ 3,76 kg · alles im Rucksack, ohne Essen, Wasser & getragene Kleidung">≈ 3.76 kg · everything in the pack, without food, water &amp; worn clothing</div>
     </div>
     <div class="gg-pills">
-      <div class="gg-pill"><div class="k" data-en="Shelter" data-de="Unterkunft">Shelter</div><div class="v">335&nbsp;g</div><div class="s">Tarp + Bivy</div></div>
+      <div class="gg-pill"><div class="k" data-en="Shelter" data-de="Nachtlager">Shelter</div><div class="v">335&nbsp;g</div><div class="s">Tarp + Bivy</div></div>
       <div class="gg-pill"><div class="k" data-en="Sleep system" data-de="Schlafsystem">Sleep system</div><div class="v">1006&nbsp;g</div><div class="s">Quilt 20°F + Pad</div></div>
       <div class="gg-pill"><div class="k" data-en="Pack" data-de="Rucksack">Pack</div><div class="v">485&nbsp;g</div><div class="s" data-en="Cutaway 30L + fanny pack" data-de="Cutaway 30L + Gürteltasche">Cutaway 30L + fanny pack</div></div>
     </div>
