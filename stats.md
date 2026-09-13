@@ -30,11 +30,11 @@ permalink: /stats.html
 .drow{display:flex;justify-content:space-between;gap:12px;font:500 13.5px Inter,system-ui,sans-serif;color:#6c7365;padding:6px 0;border-top:1px solid #f0eee3}
 .drow:first-of-type{border-top:0}
 .drow b{color:#1e241c;font-weight:700}
-.bars{display:flex;gap:8px;align-items:flex-end;height:104px;margin-top:4px}
+.bars{display:flex;gap:8px;align-items:flex-end;margin-top:6px}
 .bars .bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
 .bars .bk{font:700 10.5px Inter,system-ui,sans-serif;color:#7f8472;white-space:nowrap}
-.bars .bcol{width:100%;flex:1;display:flex;align-items:flex-end}
-.bars .bi{width:100%;border-radius:5px 5px 2px 2px;background:#c3d3c4;min-height:5px}
+.bars .btrack{width:100%;height:92px;display:flex;align-items:flex-end}
+.bars .bi{width:100%;border-radius:5px 5px 2px 2px;background:#bcd0be;min-height:6px;transition:height .3s ease}
 .bars .bi.last{background:linear-gradient(180deg,#4fae62,#2c7a3d)}
 .bars .bd{font:700 10.5px Inter,system-ui,sans-serif;color:#9aa08f}
 .dash-cap{text-align:center;font:600 12px Inter,system-ui,sans-serif;color:#9aa08f;margin-top:2px}
@@ -117,7 +117,7 @@ permalink: /stats.html
       var bars = last7.map(function (d) {
         var h = Math.max(8, d.distM / maxD * 100), isLast = d.date === lastKey;
         var dl = new Date(d.date + "T12:00:00").toLocaleDateString(LOC, { weekday: "short" });
-        return '<div class="bar"><div class="bk">' + n(d.distM / 1000, 0) + '</div><div class="bcol"><div class="bi' + (isLast ? ' last' : '') + '" style="height:' + h.toFixed(0) + '%"></div></div><div class="bd">' + dl + '</div></div>';
+        return '<div class="bar"><div class="bk">' + n(d.distM / 1000, 0) + '</div><div class="btrack"><div class="bi' + (isLast ? ' last' : '') + '" style="height:' + h.toFixed(0) + '%"></div></div><div class="bd">' + dl + '</div></div>';
       }).join("");
       recent = '<div class="dash-sec"><h3>' + T("Letzte Tage", "Recent days") + '</h3><div class="bars">' + bars + '</div></div>';
     }
