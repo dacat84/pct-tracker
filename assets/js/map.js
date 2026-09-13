@@ -335,7 +335,7 @@ function findLatestFeature(track) {
         injectUICSSOnce();
         map.addControl(new BasemapToggle(), "top-right");
         map.addSource("track", { type: "geojson", data: track });
-        const colorExpr = ["case", ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#46f3ff", "#ff4bd8"];
+        const colorExpr = ["case", ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#f0a03a", "#cf5a2a"];
         map.addLayer({ id: "track-glow", type: "line", source: "track", paint: { "line-color": colorExpr, "line-width": 12, "line-opacity": 0.28, "line-blur": 6 } });
         map.addLayer({ id: "track-main", type: "line", source: "track", paint: { "line-color": colorExpr, "line-width": 5, "line-opacity": 0.92 } });
         map.addLayer({ id: "track-highlight", type: "line", source: "track", paint: { "line-color": "rgba(255,255,255,0.65)", "line-width": 1.6, "line-opacity": 0.55 } });
