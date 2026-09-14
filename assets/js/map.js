@@ -157,10 +157,18 @@
   function createBlinkMarkerEl() {
     ensurePulseKeyframes();
     const el = document.createElement("div");
-    el.style.cssText = "width:16px;height:16px;border-radius:999px;border:2px solid rgba(255,255,255,.95);box-shadow:0 8px 20px rgba(0,0,0,.40);background:#e0752b;position:relative";
+    el.style.cssText = "width:16px;height:16px;border-radius:999px;border:2px solid rgba(232,238,245,.95);box-shadow:0 10px 26px rgba(0,0,0,.45);background:#2bff88;position:relative";
     const ring = document.createElement("div");
-    ring.style.cssText = "position:absolute;left:-10px;top:-10px;width:36px;height:36px;border-radius:999px;border:2px solid rgba(224,117,43,.45);box-shadow:0 0 18px rgba(224,117,43,.30);animation:pctPulse 2.6s ease-out infinite";
+    ring.style.cssText = "position:absolute;left:-10px;top:-10px;width:36px;height:36px;border-radius:999px;border:2px solid rgba(43,255,136,.55);box-shadow:0 0 22px rgba(43,255,136,.40);animation:pctPulse 1.6s ease-out infinite";
     el.appendChild(ring);
+    let on = false;
+    setInterval(() => {
+      on = !on;
+      const c = on ? "#ff7a18" : "#2bff88";
+      el.style.background = c;
+      ring.style.borderColor = on ? "rgba(255,122,24,.55)" : "rgba(43,255,136,.55)";
+      ring.style.boxShadow = on ? "0 0 22px rgba(255,122,24,.40)" : "0 0 22px rgba(43,255,136,.40)";
+    }, 700);
     return el;
   }
 
@@ -327,9 +335,10 @@ function findLatestFeature(track) {
         injectUICSSOnce();
         map.addControl(new BasemapToggle(), "top-right");
         map.addSource("track", { type: "geojson", data: track });
-        const colorExpr = ["case", ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#f59418", "#d4451a"];
-        map.addLayer({ id: "track-casing", type: "line", source: "track", paint: { "line-color": "rgba(28,18,10,0.55)", "line-width": 9, "line-opacity": 0.85, "line-blur": 0.4 } });
-        map.addLayer({ id: "track-main", type: "line", source: "track", paint: { "line-color": colorExpr, "line-width": 6, "line-opacity": 1 } });
+        const colorExpr = ["case", ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#46f3ff", "#ff4bd8"];
+        map.addLayer({ id: "track-glow", type: "line", source: "track", paint: { "line-color": colorExpr, "line-width": 12, "line-opacity": 0.28, "line-blur": 6 } });
+        map.addLayer({ id: "track-main", type: "line", source: "track", paint: { "line-color": colorExpr, "line-width": 5, "line-opacity": 0.92 } });
+        map.addLayer({ id: "track-highlight", type: "line", source: "track", paint: { "line-color": "rgba(255,255,255,0.65)", "line-width": 1.6, "line-opacity": 0.55 } });
         map.addLayer({ id: "track-hover", type: "line", source: "track", paint: { "line-color": "rgba(255,255,255,0.92)", "line-width": 7, "line-opacity": 0.75, "line-blur": 0.6 }, filter: ["==", ["get", "strava_id"], -1] });
         map.addSource("latest-progress", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] } } });
         map.addLayer({ id: "latest-progress-glow", type: "line", source: "latest-progress", paint: { "line-color": "rgba(255,255,255,0.40)", "line-width": 18, "line-opacity": 0.22, "line-blur": 10 } });
@@ -378,7 +387,7 @@ function findLatestFeature(track) {
       map.addLayer({
         id: 'pct-bg-line', type: 'line', source: 'pct-bg',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#ffffff', 'line-width': 2, 'line-opacity': 0.68 }
+        paint: { 'line-color': '#ffffff', 'line-width': 2.5, 'line-opacity': 0.85 }
       });
       if (map.getLayer('track')) map.moveLayer('pct-bg-line', 'track');
     } catch(e) { console.log('PCT bg:', e.message); }
