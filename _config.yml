@@ -4,6 +4,10 @@ url: ""  # GitHub Pages sets this
 baseurl: "/pct-tracker"  # set to "/REPO_NAME" if needed
 markdown: kramdown
 theme: null
+
+# LighterPack list shown on the Gear page (lighterpack.com/r/<id>).
+# The gear cards sync from it automatically (scripts/gear_sync.py).
+lighterpack_id: qr1evs
 permalink: pretty
 
 collections:
