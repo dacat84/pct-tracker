@@ -16,7 +16,7 @@ Live: https://dacat84.github.io/pct-tracker/
   - Hero: where I am right now, distance from Campo, next waypoint, distance to the Northern Terminus.
   - An honest freshness pill ("Letzte Aktivität / Last activity, vor X Tagen") instead of a fake "live" label.
   - Interactive **elevation profile** of the whole PCT (`assets/js/elevation.js`): peaks, passes, towns, water, parks and terminals as tiered landmarks, six section bands, tap to zoom into a section, fullscreen view, and a marker showing the current position. Tracked sections are drawn solid, the rest stays faded.
-  - MapLibre map with the full PCT route as a thin white baseline and the walked days in warm amber/terracotta.
+  - MapLibre map with the full PCT route as a thin white baseline and the walked days in bright cyan/magenta (Strava style), plus a pulsing position marker.
   - Short "Über die Wanderung / About the hike" intro for people who do not know the PCT.
 
 - **Statistik / Stats** (`stats.md`, self-contained)
@@ -34,6 +34,7 @@ Live: https://dacat84.github.io/pct-tracker/
 
 - **Ausrüstung / Gear** (`gear.md`)
   - At-a-glance cards: base weight plus shelter, sleep system and pack, so non-hikers get it at a glance.
+  - The cards sync automatically from the LighterPack list (daily), so they always match it.
   - Full itemised list embedded from [lighterpack.com](https://lighterpack.com), always current.
 
 ---
@@ -53,6 +54,7 @@ Live: https://dacat84.github.io/pct-tracker/
 - **Data sync**: recent hiking activities are pulled from **Garmin Connect** by a scheduled GitHub Action and written into `data/track.geojson` and `data/latest.json`. The front end reads those files unchanged. See `scripts/GARMIN_SETUP.md` to activate it. (The older Strava sync is kept for reference and can be removed once Garmin is verified.)
 - **Elevation profile** data is precomputed into `data/pct_profile.json` (total_km 4196.7) by `scripts/build_elevation.py`.
 - **Photos** load client-side from the Flickr API; **gear** is an embedded LighterPack list.
+- **Gear cards** are generated from the public LighterPack list (`lighterpack_id` in `_config.yml`) by `scripts/gear_sync.py`, run daily by a GitHub Action into `_data/gear.json`. Edit the list in LighterPack (phone is fine); no CSV export needed. To switch lists, change `lighterpack_id` in one place.
 - A **keep-alive** workflow runs twice a month so GitHub does not disable scheduled jobs on an inactive repo.
 - Track coordinates are **downsampled** (max ~300 points per activity) to keep the map fast and the repo small.
 - The PCT centerline is `data/Full_PCT_Simplified.geojson` (PCTA data, CC BY 4.0).
@@ -78,8 +80,11 @@ The sync is append-only and self-healing: it only downloads activities it has no
 ├── .github/workflows/
 │   ├── garmin-sync.yml        # Pull activities from Garmin Connect (scaffold)
 │   ├── strava-sync.yml        # Legacy Strava sync (kept for reference)
+│   ├── gear-sync.yml          # Sync gear cards from LighterPack (daily)
 │   ├── build-elevation.yml    # Build the PCT elevation profile data
 │   └── keep-alive.yml         # Keep scheduled workflows alive
+├── _data/
+│   └── gear.json              # Gear card numbers (auto-updated from LighterPack)
 ├── _layouts/                  # Jekyll page layouts (default, post)
 ├── _updates/                  # Diary entries (Markdown, one file each)
 ├── assets/
@@ -98,6 +103,7 @@ The sync is append-only and self-healing: it only downloads activities it has no
 ├── scripts/
 │   ├── garmin_sync.py         # Garmin Connect -> data files
 │   ├── GARMIN_SETUP.md        # How to activate the Garmin sync
+│   ├── gear_sync.py           # LighterPack list -> _data/gear.json
 │   ├── build_elevation.py     # Build data/pct_profile.json
 │   └── strava_sync.py         # Legacy Strava sync
 ├── index.md                   # Karte / Map
