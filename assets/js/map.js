@@ -153,6 +153,31 @@
     onRemove() { this._container?.parentNode?.removeChild(this._container); this._map = undefined; }
   }
 
+  // "Where am I" button: flies the map to the current position marker.
+  class LocateControl {
+    onAdd(map) {
+      this._map = map;
+      const de = (document.documentElement.lang || "").toLowerCase().startsWith("de");
+      const label = de ? "Zu meiner Position" : "Where am I";
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = "pct-toggle-btn";
+      btn.title = label; btn.setAttribute("aria-label", label);
+      btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="display:block;margin:auto"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>';
+      btn.style.color = "#1f2328";
+      btn.addEventListener("click", () => {
+        if (!marker) return;
+        const z = Math.max(map.getZoom(), 12);
+        map.flyTo({ center: marker.getLngLat(), zoom: z, speed: 1.4, curve: 1.5, essential: true });
+      });
+      const wrap = document.createElement("div");
+      wrap.className = "maplibregl-ctrl maplibregl-ctrl-group";
+      wrap.style.marginTop = "6px"; wrap.style.overflow = "hidden";
+      wrap.appendChild(btn);
+      this._container = wrap; return wrap;
+    }
+    onRemove() { this._container?.parentNode?.removeChild(this._container); this._map = undefined; }
+  }
+
   let marker;
   function createBlinkMarkerEl() {
     ensurePulseKeyframes();
@@ -334,6 +359,7 @@ function findLatestFeature(track) {
       if (!map.getSource("track")) {
         injectUICSSOnce();
         map.addControl(new BasemapToggle(), "top-right");
+        map.addControl(new LocateControl(), "top-right");
         map.addSource("track", { type: "geojson", data: track });
         const colorExpr = ["case", ["==", ["%", ["to-number", ["get", "i"]], 2], 0], "#46f3ff", "#ff4bd8"];
         map.addLayer({ id: "track-glow", type: "line", source: "track", paint: { "line-color": colorExpr, "line-width": 12, "line-opacity": 0.28, "line-blur": 6 } });
