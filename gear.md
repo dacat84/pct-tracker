@@ -7,7 +7,7 @@ permalink: /gear/
 {% assign gear = site.data.gear %}{% assign lp = site.lighterpack_id | default: "qr1evs" %}
 <div class="card">
   <div class="card-title" style="font-size:24px;margin-bottom:6px" data-en="Gear" data-de="Ausrüstung">Gear</div>
-  <div class="card-sub" data-en="What I carry: an ultralight kit for three seasons on the PCT." data-de="Was ich mittrage: ein ultraleichtes Setup für drei Jahreszeiten auf dem PCT.">What I carry: an ultralight kit for three seasons on the PCT.</div>
+  <div class="card-sub" data-en="What I carry on my back from Mexico to Canada." data-de="Das trage ich von Mexiko bis Kanada auf dem Rücken.">What I carry on my back from Mexico to Canada.</div>
 
   <div class="gg">
     <div class="gg-base">
