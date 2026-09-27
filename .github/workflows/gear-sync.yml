@@ -1,0 +1,37 @@
+name: Gear Sync
+
+# Keeps the gear summary cards (base weight, shelter, sleep, pack) in sync
+# with the public LighterPack list set in _config.yml (lighterpack_id).
+# Edit the list in LighterPack; this picks it up automatically.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * *"   # daily
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install beautifulsoup4
+
+      - name: Sync gear summary from LighterPack
+        run: python scripts/gear_sync.py
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name "gear-sync-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add _data/gear.json
+          git commit -m "Auto-update gear summary from LighterPack" || exit 0
+          git pull --rebase
+          git push
