@@ -4,6 +4,7 @@ title: Gear
 nav: gear
 permalink: /gear/
 ---
+{% assign gear = site.data.gear %}{% assign lp = site.lighterpack_id | default: "qr1evs" %}
 <div class="card">
   <div class="card-title" style="font-size:24px;margin-bottom:6px" data-en="Gear" data-de="Ausrüstung">Gear</div>
   <div class="card-sub" data-en="What I carry: an ultralight kit for three seasons on the PCT." data-de="Was ich mittrage: ein ultraleichtes Setup für drei Jahreszeiten auf dem PCT.">What I carry: an ultralight kit for three seasons on the PCT.</div>
@@ -11,13 +12,13 @@ permalink: /gear/
   <div class="gg">
     <div class="gg-base">
       <div class="gg-k" data-en="Base weight" data-de="Base Weight">Base weight</div>
-      <div class="gg-v">3761&nbsp;<span>g</span></div>
-      <div class="gg-note" data-en="≈ 3.76 kg · everything in the pack, without food, water & worn clothing" data-de="≈ 3,76 kg · alles im Rucksack, ohne Essen, Wasser & getragene Kleidung">≈ 3.76 kg · everything in the pack, without food, water &amp; worn clothing</div>
+      <div class="gg-v">{{ gear.base_g }}&nbsp;<span>g</span></div>
+      <div class="gg-note" data-en="≈ {{ gear.base_kg_en }} kg · everything in the pack, without food, water & worn clothing" data-de="≈ {{ gear.base_kg_de }} kg · alles im Rucksack, ohne Essen, Wasser & getragene Kleidung">≈ {{ gear.base_kg_en }} kg · everything in the pack, without food, water &amp; worn clothing</div>
     </div>
     <div class="gg-pills">
-      <div class="gg-pill"><div class="k" data-en="Shelter" data-de="Nachtlager">Shelter</div><div class="v">335&nbsp;g</div><div class="s">Tarp + Bivy</div></div>
-      <div class="gg-pill"><div class="k" data-en="Sleep system" data-de="Schlafsystem">Sleep system</div><div class="v">1006&nbsp;g</div><div class="s">Quilt 20°F + Pad</div></div>
-      <div class="gg-pill"><div class="k" data-en="Pack" data-de="Rucksack">Pack</div><div class="v">485&nbsp;g</div><div class="s" data-en="Cutaway 30L + fanny pack" data-de="Cutaway 30L + Gürteltasche">Cutaway 30L + fanny pack</div></div>
+      <div class="gg-pill"><div class="k" data-en="Shelter" data-de="Nachtlager">Shelter</div><div class="v">{{ gear.shelter_g }}&nbsp;g</div><div class="s" data-en="Tarp, bivy & stakes" data-de="Tarp, Bivy & Heringe">Tarp, bivy &amp; stakes</div></div>
+      <div class="gg-pill"><div class="k" data-en="Sleep system" data-de="Schlafsystem">Sleep system</div><div class="v">{{ gear.sleep_g }}&nbsp;g</div><div class="s" data-en="Quilt 20°F + pad" data-de="Quilt 20°F + Isomatte">Quilt 20°F + pad</div></div>
+      <div class="gg-pill"><div class="k" data-en="Pack" data-de="Rucksack">Pack</div><div class="v">{{ gear.pack_g }}&nbsp;g</div><div class="s">Cutaway 30L</div></div>
     </div>
   </div>
 </div>
@@ -25,8 +26,8 @@ permalink: /gear/
 <div class="card lp-card">
   <div class="lp-shell">
     <div class="lp-frame">
-      <script src="https://lighterpack.com/e/bv8lr0"></script>
-      <div id="bv8lr0"></div>
+      <script src="https://lighterpack.com/e/{{ lp }}"></script>
+      <div id="{{ lp }}" class="lp-embed"></div>
     </div>
   </div>
 </div>
@@ -35,7 +36,7 @@ permalink: /gear/
   (function () {
     let tries = 0;
     const timer = setInterval(() => {
-      const iframe = document.querySelector('#bv8lr0 iframe');
+      const iframe = document.querySelector('.lp-embed iframe');
       tries++;
       if (iframe) {
         iframe.setAttribute('title', 'Lighterpack gear list');
@@ -64,6 +65,6 @@ permalink: /gear/
   .gg-pill .s{ font-size:12px; color:var(--muted); }
   .lp-shell{ max-width:980px; margin:0 auto; padding:0; background:transparent; border-radius:16px; }
   .lp-frame{ background:#fff; border-radius:14px; padding:0; overflow:hidden; }
-  #bv8lr0 iframe{ width:100% !important; height:72vh !important; max-height:900px !important; border-radius:12px !important; display:block; }
-  @media (max-width:520px){ #bv8lr0 iframe{ height:78vh !important; } .lp-shell{ padding:10px; } .lp-frame{ padding:10px; } }
+  .lp-embed iframe{ width:100% !important; height:72vh !important; max-height:900px !important; border-radius:12px !important; display:block; }
+  @media (max-width:520px){ .lp-embed iframe{ height:78vh !important; } .lp-shell{ padding:10px; } .lp-frame{ padding:10px; } }
 </style>
