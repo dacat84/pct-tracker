@@ -6,7 +6,7 @@ name: Gear Sync
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 4 * * *"   # daily
+    - cron: "17 */3 * * *"   # every 3 hours
 
 permissions:
   contents: write
