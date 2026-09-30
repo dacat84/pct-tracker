@@ -29,6 +29,9 @@ body_extra: |
 <style>
   .about-card .about-title{ font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:16px; margin-bottom:7px; }
   .about-card .about-text{ margin:0; color:var(--muted); line-height:1.6; font-size:14.5px; max-width:70ch; }
+  .about-card .about-quote{ margin:0 0 10px; padding:2px 0 2px 14px; border-left:3px solid #cf7440; max-width:70ch; }
+  .about-card .about-quote p{ margin:0; font-family:'Fraunces',Georgia,serif; font-style:italic; color:var(--text); line-height:1.6; font-size:15px; }
+  .about-card .about-quote cite{ display:block; margin-top:6px; font-style:normal; font-size:12.5px; color:var(--muted); }
 </style>
 
 <section class="home-hero">
@@ -56,7 +59,11 @@ body_extra: |
 
 <div class="card about-card" style="margin-top:12px">
   <div class="about-title" data-en="About the hike" data-de="Über die Wanderung">About the hike</div>
-  <p class="about-text" data-en="As if nature had composed it on purpose, the Pacific Crest Trail builds a perfect dramatic arc all on its own: a stunning opening act in the deserts of Southern California, the great climax in the Sierra Nevada, then the smoke break in the green tunnel of Northern California, and finally the grand finale in Washington. 2,650 miles (4,265 km) from Mexico to Canada." data-de="Als hätte die Natur ihn eigens komponiert, ergibt der Pacific Crest Trail eine perfekte Dramaturgie, ganz von allein: fulminanter Auftakt in den Wüsten Südkaliforniens, der große Höhepunkt in der Sierra Nevada, dann die Raucherpause im grünen Tunnel Nordkaliforniens, und zum Schluss das furiose Finale in Washington. 4.265 km von Mexiko nach Kanada."></p>
+  <blockquote class="about-quote">
+    <p data-en="“As if nature had composed it on purpose, the Pacific Crest Trail builds a perfect dramatic arc all on its own: a stunning opening act in the deserts of Southern California, the great climax in the Sierra Nevada, then the smoke break in the green tunnel of Northern California, and finally the grand finale in Washington.”" data-de="„Als hätte die Natur ihn eigens komponiert, ergibt der Pacific Crest Trail eine perfekte Dramaturgie, ganz von allein: fulminanter Auftakt in den Wüsten Südkaliforniens, der große Höhepunkt in der Sierra Nevada, dann die Raucherpause im grünen Tunnel Nordkaliforniens, und zum Schluss das furiose Finale in Washington.“"></p>
+    <cite data-en="loosely after an unknown hiker" data-de="frei nach einem unbekannten Hiker"></cite>
+  </blockquote>
+  <p class="about-text" data-en="2,650 miles (4,265 km) from Mexico to Canada." data-de="4.265 km von Mexiko nach Kanada."></p>
 </div>
 
 <div class="mapbackdrop" id="mapBackdrop"></div>
