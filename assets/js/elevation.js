@@ -443,18 +443,21 @@
       pop.className = "el-townpop";
       prof.appendChild(pop);
       function svgRect() { var s2 = prof.querySelector("svg"); return s2 ? s2.getBoundingClientRect() : null; }
-      function lmShow(d) {
+      // Show the popup just above the pointer (on the landmark's line), so it
+      // appears where the mouse or finger is, not down at the baseline.
+      function lmShow(d, e) {
         var r = svgRect(); if (!r) return;
+        var pr = prof.getBoundingClientRect();
         var tn = DE ? TYPEDE[d.type] : TYPEEN[d.type];
         pop.innerHTML = d.name + "<small>" + tn + " \u00B7 " + (DE ? "Meile " : "Mile ") + d.mi + " \u00B7 " + nfmt(d.mi * MI2KM, 0) + " km</small>";
-        pop.style.left = (d.x * r.width / W) + "px";
-        pop.style.top = ((baseY - 12) * r.height / H) + "px";
+        pop.style.left = ((r.left - pr.left) + d.x * r.width / W) + "px";
+        var y = (e && e.clientY != null) ? (e.clientY - pr.top - 14) : ((r.top - pr.top) + (baseY - 12) * r.height / H);
+        pop.style.top = Math.max(44, y) + "px";
         pop.classList.add("show");
       }
-      prof.addEventListener("mouseover", function (e) {
-        var t = e.target;
-        if (t && t.classList && t.classList.contains("el-lmhit")) { var d = lmData[+t.getAttribute("data-i")]; if (d) lmShow(d); }
-      });
+      function lmHit(t) { return t && t.classList && t.classList.contains("el-lmhit") ? lmData[+t.getAttribute("data-i")] : null; }
+      prof.addEventListener("mouseover", function (e) { var d = lmHit(e.target); if (d) lmShow(d, e); });
+      prof.addEventListener("mousemove", function (e) { var d = lmHit(e.target); if (d && pop.classList.contains("show")) lmShow(d, e); });
       prof.addEventListener("mouseout", function (e) {
         var t = e.target;
         if (t && t.classList && t.classList.contains("el-lmhit")) pop.classList.remove("show");
@@ -463,7 +466,7 @@
         var t = e.target;
         if (t && t.classList && t.classList.contains("el-lmhit")) {
           var d = lmData[+t.getAttribute("data-i")]; if (!d) return;
-          lmShow(d); clearTimeout(prof._popT); prof._popT = setTimeout(function () { pop.classList.remove("show"); }, 2800);
+          lmShow(d, e); clearTimeout(prof._popT); prof._popT = setTimeout(function () { pop.classList.remove("show"); }, 2800);
         } else { pop.classList.remove("show"); }
       });
       [].slice.call(prof.querySelectorAll(".el-band")).forEach(function (b) {
