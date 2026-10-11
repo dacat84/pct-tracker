@@ -47,6 +47,30 @@
   ];
   var MI2KM = 1.60934;
   var TYPECOL = { peak: "#b5651d", pass: "#2c7a3d", town: "#6b7280", water: "#2f7fae", park: "#3e9a51", term: "#cf7440", side: "#cf7440", desert: "#d19a3a" };
+  // Colour palettes: original look and the "Neo" (neobrutalist) test look.
+  // The active one is picked on every draw, so switching designs recolours the profile.
+  var PAL = {
+    original: {
+      reg: ["#e0a06a", "#9dbf78", "#7fb08a", "#6fae9e", "#8aa4c0", "#b39ac8"],
+      regRx: 5, regStroke: "none", regText: "#2c3327", regW: "600", aheadOp: 0.34, aheadTextOp: 0.5,
+      grid: "#00000010", axis: "#9aa08f", halo: "#fff",
+      area: "#9db8a4", areaOp: ".26", walk: "#4fae62", line: "#2f7a3e", lineW: 1.4, lineOp: ".7",
+      type: TYPECOL, labelDone: "#20301c", labelTodo: "#5f6656", baseTodo: "#7f8472",
+      landDesert: "#b5842e", landPark: "#2f7a3e", passFill: "#fff",
+      mark: "#cf7440", markStroke: "none", font: "Inter"
+    },
+    neo: {
+      reg: ["#f5b301", "#ff8a5b", "#9fb3ff", "#7ed6a5", "#ffe49c", "#c9a7ff"],
+      regRx: 0, regStroke: "#141414", regText: "#141414", regW: "700", aheadOp: 0.45, aheadTextOp: 0.7,
+      grid: "#14141418", axis: "#3b382f", halo: "#fbf9f0",
+      area: "#141414", areaOp: ".08", walk: "#2235d6", line: "#141414", lineW: 1.6, lineOp: ".9",
+      type: { peak: "#141414", pass: "#2235d6", town: "#5c584d", water: "#0a8fb0", park: "#1e8a50", term: "#ff4d2e", side: "#ff4d2e", desert: "#d99a00" },
+      labelDone: "#141414", labelTodo: "#5c584d", baseTodo: "#6b675c",
+      landDesert: "#a87600", landPark: "#1e7a47", passFill: "#fbf9f0",
+      mark: "#ff4d2e", markStroke: "#141414", font: "Space Grotesk"
+    }
+  };
+  function pal() { return document.documentElement.classList.contains("neo") ? PAL.neo : PAL.original; }
   var TYPEDE = { peak: "Gipfel", pass: "Pass", town: "Ort", water: "Wasser / Feature", park: "Park / Wildnis", term: "Terminus", side: "Abstecher", desert: "W\u00fcste" };
   var TYPEEN = { peak: "Peak", pass: "Pass", town: "Resupply", water: "Water / feature", park: "Park / wilderness", term: "Terminus", side: "Side trip", desert: "Desert" };
   // [mile, name, type, tier]  tier 1 = headline (always), 2 = star (on zoom), 3 = rest (tap)
@@ -265,6 +289,7 @@
     var viewA = 0, viewB = TOTAL, isFull = false;
 
     function draw() {
+      var K = pal();
       var full = viewA <= 0.5 && viewB >= TOTAL - 0.5;
       var fs = full ? 1 : 1.45;
       function x(km) { return PADL + ((km - viewA) / (viewB - viewA)) * (W - PADL - PADR); }
@@ -277,28 +302,28 @@
       var walkedClip = "";
       walked.forEach(function (r) { walkedClip += '<rect x="' + x(r[0]) + '" y="0" width="' + (x(r[1]) - x(r[0])) + '" height="' + baseY + '"/>'; });
 
-      var grid = '<line x1="' + PADL + '" y1="' + baseY + '" x2="' + (W - PADR) + '" y2="' + baseY + '" stroke="#00000010"/>';
+      var grid = '<line x1="' + PADL + '" y1="' + baseY + '" x2="' + (W - PADR) + '" y2="' + baseY + '" stroke="' + K.grid + '"/>';
       GRID.forEach(function (g) {
         var gy = y(g[0]);
-        grid += '<line x1="' + PADL + '" y1="' + gy + '" x2="' + (W - PADR) + '" y2="' + gy + '" stroke="#00000010"/>' +
-                '<text x="' + (PADL - 6) + '" y="' + (gy + 3) + '" text-anchor="end" font-size="10" fill="#9aa08f" font-family="Inter">' + g[1] + '</text>';
+        grid += '<line x1="' + PADL + '" y1="' + gy + '" x2="' + (W - PADR) + '" y2="' + gy + '" stroke="' + K.grid + '"/>' +
+                '<text x="' + (PADL - 6) + '" y="' + (gy + 3) + '" text-anchor="end" font-size="10" fill="' + K.axis + '" font-family="' + K.font + '">' + g[1] + '</text>';
       });
 
       var bands = "";
       REGIONS.forEach(function (r, ri) {
         var rx = x(r.a * F), rw = x(r.b * F) - x(r.a * F), ahead = r.a * F >= cur.km;
-        bands += '<rect class="el-band" data-r="' + ri + '" x="' + (rx + 1) + '" y="' + bY + '" width="' + (rw - 2) + '" height="' + bH + '" rx="5" fill="' + r.c + '" opacity="' + (ahead ? 0.34 : 0.9) + '"/>';
-        if (rw > 74) bands += '<text x="' + (rx + rw / 2) + '" y="' + (bY + bH / 2 + 3.5) + '" text-anchor="middle" font-size="' + (10 * fs).toFixed(1) + '" font-family="Inter" font-weight="600" fill="#2c3327" opacity="' + (ahead ? 0.5 : 0.92) + '" pointer-events="none">' + regName(r) + '</text>';
+        bands += '<rect class="el-band" data-r="' + ri + '" x="' + (rx + 1) + '" y="' + bY + '" width="' + (rw - 2) + '" height="' + bH + '" rx="' + K.regRx + '" fill="' + K.reg[ri] + '" stroke="' + K.regStroke + '" stroke-width="1.5" opacity="' + (ahead ? K.aheadOp : 0.9) + '"/>';
+        if (rw > 74) bands += '<text x="' + (rx + rw / 2) + '" y="' + (bY + bH / 2 + 3.5) + '" text-anchor="middle" font-size="' + (10 * fs).toFixed(1) + '" font-family="' + K.font + '" font-weight="' + K.regW + '" fill="' + K.regText + '" opacity="' + (ahead ? K.aheadTextOp : 0.92) + '" pointer-events="none">' + regName(r) + '</text>';
       });
 
       var z = TOTAL / Math.max(1, (viewB - viewA));
       function icoTop(t, ix, iy, col) {
-        if (t === "pass") return '<circle cx="' + ix + '" cy="' + iy + '" r="2.8" fill="#fff" stroke="' + col + '" stroke-width="1.6"/>';
+        if (t === "pass") return '<circle cx="' + ix + '" cy="' + iy + '" r="2.8" fill="' + K.passFill + '" stroke="' + col + '" stroke-width="1.6"/>';
         return '<path d="M' + (ix - 3.6) + ' ' + (iy + 2.4) + ' L' + ix + ' ' + (iy - 4.8) + ' L' + (ix + 3.6) + ' ' + (iy + 2.4) + ' Z" fill="' + col + '"/>';
       }
       var lmData = [], top = [], bot = "", land = "", landLabeled = [], baseLabeled = [];
       LM.forEach(function (m) {
-        var mi = m[0], t = m[2], tier = m[3], kmRaw = mi * MI2KM * F, done = inWalked(kmRaw), col = TYPECOL[t] || "#6b7280";
+        var mi = m[0], t = m[2], tier = m[3], kmRaw = mi * MI2KM * F, done = inWalked(kmRaw), col = K.type[t] || K.type.town;
         var isTop = (t === "peak" || t === "pass" || t === "side"), isLand = (t === "park" || t === "desert");
         var vis, showLabel;
         if (t === "term") { vis = true; showLabel = true; }
@@ -314,7 +339,7 @@
           bot += '<line x1="' + lx + '" y1="' + baseY + '" x2="' + lx + '" y2="' + post + '" stroke="' + col + '" stroke-width="1.4" opacity="' + pf + '"/>';
           bot += '<path d="M' + lx + ' ' + post + ' L' + (flip ? lx - 8 : lx + 8) + ' ' + (post + 2.5) + ' L' + lx + ' ' + (post + 5) + ' Z" fill="' + col + '" opacity="' + pf + '"/>';
           var tw = m[1].length * (5.4 * fs), anc = (lx - tw / 2 < PADL + 2) ? "start" : ((lx + tw / 2 > W - PADR - 2) ? "end" : "middle");
-          bot += '<text x="' + lx + '" y="' + (post - 4) + '" text-anchor="' + anc + '" font-size="' + (9 * fs).toFixed(1) + '" font-weight="700" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2.6" stroke-linejoin="round" fill="' + (done ? "#20301c" : "#5f6656") + '">' + m[1] + '</text>';
+          bot += '<text x="' + lx + '" y="' + (post - 4) + '" text-anchor="' + anc + '" font-size="' + (9 * fs).toFixed(1) + '" font-weight="700" font-family="' + K.font + '" paint-order="stroke" stroke="' + K.halo + '" stroke-width="2.6" stroke-linejoin="round" fill="' + (done ? K.labelDone : K.labelTodo) + '">' + m[1] + '</text>';
           bot += '<rect class="el-lmhit" data-i="' + di + '" x="' + (lx - 6) + '" y="' + (post - 12) + '" width="12" height="' + (baseY - post + 16) + '"/>';
         } else if (isLand) {
           var lx = x(kmRaw), di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1, op = done ? 1 : 0.5;
@@ -322,12 +347,12 @@
           land += (t === "desert")
             ? '<rect x="' + (lx - 2) + '" y="' + (lY - 2) + '" width="4" height="4" fill="' + col + '" opacity="' + op + '" transform="rotate(45 ' + lx + ' ' + lY + ')"/>'
             : '<circle cx="' + lx + '" cy="' + lY + '" r="2.6" fill="' + col + '" opacity="' + op + '"/>';
-          if (showLabel) landLabeled.push({ lx: lx, name: m[1], col: (t === "desert" ? "#b5842e" : "#2f7a3e"), op: (done ? 1 : 0.72) });
+          if (showLabel) landLabeled.push({ lx: lx, name: m[1], col: (t === "desert" ? K.landDesert : K.landPark), op: (done ? 1 : 0.72) });
           land += '<rect class="el-lmhit" data-i="' + di + '" x="' + (lx - 6) + '" y="' + (bY + bH) + '" width="12" height="' + (lY + 6 - (bY + bH)) + '"/>';
         } else {
           var lx = x(kmRaw), di = lmData.push({ x: lx, name: m[1], type: t, mi: mi }) - 1, op = done ? 1 : (tier === 1 ? 0.9 : 0.55);
           bot += '<circle cx="' + lx + '" cy="' + baseY + '" r="' + (t === "water" ? 2.4 : 2.2) + '" fill="' + col + '" opacity="' + op + '"/>';
-          if (showLabel) baseLabeled.push({ lx: lx, name: m[1], fw: (tier === 1 ? "700" : "500"), fsz: ((tier === 1 ? 8.5 : 7.6) * fs), col: (done ? "#20301c" : "#7f8472"), tier: tier });
+          if (showLabel) baseLabeled.push({ lx: lx, name: m[1], fw: (tier === 1 ? "700" : "500"), fsz: ((tier === 1 ? 8.5 : 7.6) * fs), col: (done ? K.labelDone : K.baseTodo), tier: tier });
           bot += '<rect class="el-lmhit" data-i="' + di + '" x="' + (lx - 6) + '" y="' + (baseY - 8) + '" width="12" height="46"/>';
         }
       });
@@ -345,7 +370,7 @@
         var hitTop = o.py - 8;
         if (o.label) {
           topSvg += '<line x1="' + o.lx + '" y1="' + (o.py - 4) + '" x2="' + o.lx + '" y2="' + (o.ly + 2) + '" stroke="' + o.col + '" stroke-width="1" ' + (o.t === "side" ? 'stroke-dasharray="3 2"' : "") + ' opacity=".5"/>';
-          topSvg += '<text x="' + o.lx + '" y="' + o.ly + '" text-anchor="middle" font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="700" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" fill="' + o.col + '">' + (o.t === "side" ? "\u25B2 " : "") + o.name + '</text>';
+          topSvg += '<text x="' + o.lx + '" y="' + o.ly + '" text-anchor="middle" font-size="' + (9.5 * fs).toFixed(1) + '" font-weight="700" font-family="' + K.font + '" paint-order="stroke" stroke="' + K.halo + '" stroke-width="2.4" stroke-linejoin="round" fill="' + o.col + '">' + (o.t === "side" ? "\u25B2 " : "") + o.name + '</text>';
           hitTop = o.ly - 8;
         }
         topSvg += '<rect class="el-lmhit" data-i="' + o.di + '" x="' + (o.lx - 6) + '" y="' + hitTop + '" width="12" height="' + (baseY - hitTop) + '"/>';
@@ -359,7 +384,7 @@
         landRows[row] = ax1;
         var ly2 = lY + 9 + row * 11;
         if (row > 0) land += '<line x1="' + o.lx + '" y1="' + (lY + 2) + '" x2="' + o.lx + '" y2="' + (ly2 - 7) + '" stroke="' + o.col + '" stroke-width=".8" opacity=".3"/>';
-        land += '<text x="' + (rightEdge ? o.lx - 3 : o.lx + 3) + '" y="' + ly2 + '" text-anchor="' + (rightEdge ? "end" : "start") + '" font-size="' + (8.5 * fs).toFixed(1) + '" font-weight="600" font-family="Inter" paint-order="stroke" stroke="#fff" stroke-width="2" stroke-linejoin="round" fill="' + o.col + '" opacity="' + o.op + '">' + o.name + '</text>';
+        land += '<text x="' + (rightEdge ? o.lx - 3 : o.lx + 3) + '" y="' + ly2 + '" text-anchor="' + (rightEdge ? "end" : "start") + '" font-size="' + (8.5 * fs).toFixed(1) + '" font-weight="600" font-family="' + K.font + '" paint-order="stroke" stroke="' + K.halo + '" stroke-width="2" stroke-linejoin="round" fill="' + o.col + '" opacity="' + o.op + '">' + o.name + '</text>';
       });
       baseLabeled.sort(function (a, b) { return (a.tier - b.tier) || (a.lx - b.lx); });
       var basePlaced = [], baseLabelSvg = "";
@@ -367,25 +392,25 @@
         for (var i = 0; i < basePlaced.length; i++) { if (Math.abs(basePlaced[i] - o.lx) < 9) return; }
         basePlaced.push(o.lx);
         var ty = baseY - 6;
-        baseLabelSvg += '<text class="el-town" x="' + (o.lx + 3) + '" y="' + ty + '" transform="rotate(-90 ' + (o.lx + 3) + ' ' + ty + ')" text-anchor="start" font-size="' + o.fsz.toFixed(1) + '" font-family="Inter" font-weight="' + o.fw + '" paint-order="stroke" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" fill="' + o.col + '">' + o.name + '</text>';
+        baseLabelSvg += '<text class="el-town" x="' + (o.lx + 3) + '" y="' + ty + '" transform="rotate(-90 ' + (o.lx + 3) + ' ' + ty + ')" text-anchor="start" font-size="' + o.fsz.toFixed(1) + '" font-family="' + K.font + '" font-weight="' + o.fw + '" paint-order="stroke" stroke="' + K.halo + '" stroke-width="2.2" stroke-linejoin="round" fill="' + o.col + '">' + o.name + '</text>';
       });
       var lm = land + bot + baseLabelSvg + topSvg;
 
       var marker = markerInView
-        ? ('<line x1="' + markX + '" y1="' + markY + '" x2="' + markX + '" y2="' + (bY + bH) + '" stroke="#cf7440" stroke-width="1.6" stroke-dasharray="4 3"/>' +
-           '<circle cx="' + markX + '" cy="' + markY + '" r="10" fill="none" stroke="#cf7440" stroke-width="1.6" opacity=".4"/>' +
-           '<circle cx="' + markX + '" cy="' + markY + '" r="6.5" fill="#cf7440"/><circle cx="' + markX + '" cy="' + markY + '" r="2.4" fill="#fff"/>')
+        ? ('<line x1="' + markX + '" y1="' + markY + '" x2="' + markX + '" y2="' + (bY + bH) + '" stroke="' + K.mark + '" stroke-width="1.6" stroke-dasharray="4 3"/>' +
+           '<circle cx="' + markX + '" cy="' + markY + '" r="10" fill="none" stroke="' + K.mark + '" stroke-width="1.6" opacity=".4"/>' +
+           '<circle cx="' + markX + '" cy="' + markY + '" r="6.5" fill="' + K.mark + '" stroke="' + K.markStroke + '" stroke-width="2"/><circle cx="' + markX + '" cy="' + markY + '" r="2.4" fill="#fff"/>')
         : "";
 
       var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="PCT elevation profile">' +
         '<defs><clipPath id="elWalked">' + walkedClip + '</clipPath>' +
         '<clipPath id="plotClip"><rect x="' + PADL + '" y="0" width="' + (W - PADL - PADR) + '" height="' + H + '"/></clipPath>' +
-        '<linearGradient id="elG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4fae62" stop-opacity=".9"/><stop offset="1" stop-color="#4fae62" stop-opacity=".35"/></linearGradient></defs>' +
+        '<linearGradient id="elG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + K.walk + '" stop-opacity=".9"/><stop offset="1" stop-color="' + K.walk + '" stop-opacity=".35"/></linearGradient></defs>' +
         grid +
         '<g clip-path="url(#plotClip)">' +
-        '<path d="' + area + '" fill="#9db8a4" opacity=".26"/>' +
+        '<path d="' + area + '" fill="' + K.area + '" opacity="' + K.areaOp + '"/>' +
         '<path d="' + area + '" clip-path="url(#elWalked)" fill="url(#elG)"/>' +
-        '<path d="' + line + '" fill="none" stroke="#2f7a3e" stroke-width="1.4" opacity=".7"/>' +
+        '<path d="' + line + '" fill="none" stroke="' + K.line + '" stroke-width="' + K.lineW + '" opacity="' + K.lineOp + '"/>' +
         bands + lm + marker +
         '</g>' +
         '</svg>';
@@ -399,11 +424,11 @@
         '<button class="el-fsclose" type="button" aria-label="' + (DE ? "Schlie\u00dfen" : "Close") + '">\u2715 ' + (DE ? "Schlie\u00dfen" : "Close") + '</button>' +
         svg + '</div>' +
         '<div class="el-legend">' +
-        '<span><svg width="12" height="12"><path d="M6 1 L11 11 L1 11 Z" fill="#b5651d"/></svg> ' + (DE ? "Gipfel" : "Peak") + '</span>' +
-        '<span><svg width="12" height="12"><circle cx="6" cy="6" r="4" fill="none" stroke="#2c7a3d" stroke-width="1.6"/></svg> Pass</span>' +
-        '<span><svg width="12" height="12"><circle cx="6" cy="6" r="3" fill="#6b7280"/></svg> ' + (DE ? "Ort" : "Town") + '</span>' +
-        '<span><svg width="12" height="12"><circle cx="6" cy="6" r="3" fill="#2f7fae"/></svg> ' + (DE ? "Wasser" : "Water") + '</span>' +
-        '<span><svg width="12" height="12"><rect x="3" y="3" width="6" height="6" fill="#3e9a51" transform="rotate(45 6 6)"/></svg> Park</span>' +
+        '<span><svg width="12" height="12"><path d="M6 1 L11 11 L1 11 Z" fill="' + K.type.peak + '"/></svg> ' + (DE ? "Gipfel" : "Peak") + '</span>' +
+        '<span><svg width="12" height="12"><circle cx="6" cy="6" r="4" fill="none" stroke="' + K.type.pass + '" stroke-width="1.6"/></svg> Pass</span>' +
+        '<span><svg width="12" height="12"><circle cx="6" cy="6" r="3" fill="' + K.type.town + '"/></svg> ' + (DE ? "Ort" : "Town") + '</span>' +
+        '<span><svg width="12" height="12"><circle cx="6" cy="6" r="3" fill="' + K.type.water + '"/></svg> ' + (DE ? "Wasser" : "Water") + '</span>' +
+        '<span><svg width="12" height="12"><rect x="3" y="3" width="6" height="6" fill="' + K.type.park + '" transform="rotate(45 6 6)"/></svg> Park</span>' +
         '<span>' + STR.legState + '</span>' +
         '<span>\u2921 ' + STR.zoomHint + '</span>' +
         '</div></div>';
@@ -495,6 +520,14 @@
       var prof = container.querySelector("#elProf");
       if (prof && prof._placeChip) prof._placeChip();
     });
+    // Design switch (Original / Neo) toggles a class on <html>: redraw in the new colours.
+    if (window.MutationObserver) {
+      var lastNeo = document.documentElement.classList.contains("neo");
+      new MutationObserver(function () {
+        var neo = document.documentElement.classList.contains("neo");
+        if (neo !== lastNeo) { lastNeo = neo; draw(); }
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    }
   }
 
   function init() {
