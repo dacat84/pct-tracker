@@ -1,8 +1,7 @@
 /* =====================================================================
-   NEO look (neobrutalist skin), test version.
-   Only active when <html> has the class "neo" (design switch bottom right).
-   The original design is untouched. To drop the experiment: delete this
-   file, its <link> and the switch in _layouts/default.html.
+   NEO look (neobrutalist skin), the site's design.
+   Active because <html> has the class "neo" (_layouts/default.html).
+   Removing that class brings back the original look from style.css.
    ===================================================================== */
 
 html.neo{
@@ -150,21 +149,3 @@ html.neo .update-note{ color:var(--muted); }
 
 /* ---------- footer ---------- */
 html.neo .site-footer{ border-top:3px solid var(--neo-ink); color:var(--muted); }
-
-/* ---------- design switch (shown in both looks) ---------- */
-.looksw{
-  position:fixed; right:14px; bottom:14px; z-index:5000;
-  display:inline-flex; align-items:center; gap:8px;
-  font:600 12.5px/1 Inter,system-ui,sans-serif; cursor:pointer;
-  padding:9px 13px; border-radius:999px; border:1px solid rgba(255,255,255,.15);
-  background:rgba(30,36,28,.88); color:#fff; box-shadow:0 8px 24px rgba(20,32,28,.25);
-}
-.looksw .opt{ opacity:.5; }
-.looksw .opt.on{ opacity:1; font-weight:800; }
-.looksw .sep{ opacity:.4; }
-html.neo .looksw{
-  background:var(--neo-gold); color:var(--neo-ink); border:2px solid var(--neo-ink);
-  box-shadow:3px 3px 0 var(--neo-ink); font-weight:700;
-}
-@media (max-width:520px){ .looksw{ right:10px; bottom:10px; padding:7px 10px; font-size:11.5px; gap:6px; } }
-@media print{ .looksw{ display:none; } }
