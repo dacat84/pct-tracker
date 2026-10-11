@@ -1,0 +1,170 @@
+/* =====================================================================
+   NEO look (neobrutalist skin), test version.
+   Only active when <html> has the class "neo" (design switch bottom right).
+   The original design is untouched. To drop the experiment: delete this
+   file, its <link> and the switch in _layouts/default.html.
+   ===================================================================== */
+
+html.neo{
+  --bg:#e8e5da;
+  --card:#fbf9f0;
+  --text:#141414;
+  --muted:#3b382f;
+  --line:#141414;
+  --accent:#2235d6;
+  --accent-d:#2235d6;
+  --neo-ink:#141414;
+  --neo-gold:#f5b301;
+  --neo-butter:#ffe49c;
+  --neo-blue:#2235d6;
+  --neo-band:#e1dccb;
+  --shadow:5px 5px 0 #141414;
+  --radius:0px;
+}
+
+/* ---------- type: Space Grotesk everywhere, Space Mono for small numbers ---------- */
+html.neo body,
+html.neo body *:not(.maplibregl-ctrl-attrib):not(.maplibregl-ctrl-attrib *){
+  font-family:'Space Grotesk',system-ui,sans-serif !important;
+}
+html.neo .dl-km, html.neo .bars .bk, html.neo .bars .bd, html.neo .gg-pill .v,
+html.neo .qstat .n small, html.neo .el-townpop small{
+  font-family:'Space Mono',ui-monospace,monospace !important;
+}
+html.neo body{ background:var(--bg); color:var(--text); }
+html.neo a, html.neo a:visited{ color:var(--neo-blue); }
+
+/* hard corners everywhere, except things that must stay round */
+html.neo *, html.neo *::before, html.neo *::after{ border-radius:0 !important; }
+html.neo .maplibregl-marker, html.neo .maplibregl-marker *,
+html.neo .beat, html.neo .beat::after, html.neo .status-dot{ border-radius:50% !important; }
+
+/* ---------- header: marigold bar, thick black rule ---------- */
+html.neo .site-header{
+  background:var(--neo-gold); border-bottom:3px solid var(--neo-ink);
+  backdrop-filter:none; box-shadow:none;
+}
+html.neo .brand-title{ font-weight:700; font-size:18px; letter-spacing:-.02em; color:var(--neo-ink); }
+html.neo .brand-sub{ color:var(--neo-ink); font-weight:600; }
+html.neo .tab{
+  border:2px solid var(--neo-ink); background:var(--card); color:var(--neo-ink);
+  box-shadow:3px 3px 0 var(--neo-ink); font-weight:600; transition:transform .08s, box-shadow .08s;
+}
+html.neo .tab:hover{ background:#fff; color:var(--neo-ink); border-color:var(--neo-ink); transform:translate(1px,1px); box-shadow:2px 2px 0 var(--neo-ink); text-decoration:none; }
+html.neo .tab.active{ background:var(--neo-ink); color:var(--neo-gold); border-color:var(--neo-ink); box-shadow:none; }
+
+/* ---------- cards & containers ---------- */
+html.neo .card, html.neo .dash-hero, html.neo .tile, html.neo .dash-sec,
+html.neo .el-card, html.neo .update-card, html.neo .updates-title,
+html.neo .post-card, html.neo .photo-item, html.neo .gg-pill{
+  background:var(--card); border:2px solid var(--neo-ink); box-shadow:var(--shadow);
+}
+html.neo .card-title, html.neo .about-title, html.neo .dash-sec h3, html.neo .el-head h2,
+html.neo .update-date, html.neo .updates-title, html.neo .post-card-title, html.neo .post-title{
+  font-weight:700; letter-spacing:-.02em; color:var(--neo-ink);
+}
+html.neo .muted, html.neo .small{ color:var(--muted); }
+html.neo code{ background:var(--neo-band); border:2px solid var(--neo-ink); }
+
+/* ---------- home hero ---------- */
+html.neo .livepill{ background:var(--neo-butter); color:var(--neo-ink); border:2px solid var(--neo-ink); box-shadow:3px 3px 0 var(--neo-ink); }
+html.neo .beat{ background:var(--neo-blue); }
+html.neo .beat::after{ border-color:var(--neo-blue); }
+html.neo .home-hero h1{ font-weight:700; letter-spacing:-.04em; color:var(--neo-ink); }
+html.neo .home-hero h1 em{
+  font-style:normal; color:var(--neo-ink);
+  background:linear-gradient(transparent 58%, var(--neo-gold) 58%, var(--neo-gold) 92%, transparent 92%);
+}
+html.neo .home-hero .sub{ color:var(--muted); }
+html.neo .home-hero .sub b{ color:var(--neo-ink); font-weight:700; }
+html.neo .qstats{ border-top:3px solid var(--neo-ink); }
+html.neo .qstat .n{ font-weight:700; letter-spacing:-.03em; }
+html.neo .qstat .l{ color:var(--muted); font-weight:500; }
+
+/* map card */
+html.neo .hero-map{ border:3px solid var(--neo-ink); box-shadow:6px 6px 0 var(--neo-ink); }
+html.neo .hero-map .mapcallout{ background:var(--card); border:2px solid var(--neo-ink); box-shadow:3px 3px 0 var(--neo-ink); backdrop-filter:none; }
+html.neo .hero-map .mapcallout .place{ font-weight:700; letter-spacing:-.02em; }
+html.neo .hero-map .mapcallout .meta{ color:var(--muted); }
+html.neo .hero-map .mapcallout .meta b{ color:var(--neo-blue); }
+html.neo .mapexpand{ background:var(--card); border:2px solid var(--neo-ink); color:var(--neo-ink); box-shadow:2px 2px 0 var(--neo-ink); }
+html.neo .hero-map.expanded{ box-shadow:8px 8px 0 var(--neo-ink); }
+html.neo .maplibregl-ctrl-group{ border:2px solid var(--neo-ink) !important; box-shadow:2px 2px 0 var(--neo-ink) !important; }
+
+/* about the hike */
+html.neo .about-card .about-quote{ border-left:5px solid var(--neo-gold); }
+html.neo .about-card .about-quote p{ font-style:normal; font-weight:500; color:var(--neo-ink); }
+html.neo .about-card .about-quote cite{ color:var(--muted); font-weight:600; }
+html.neo .about-card .about-text{ color:var(--neo-ink); font-weight:600; }
+
+/* ---------- elevation profile ---------- */
+html.neo .el-now{ color:var(--muted); }
+html.neo .el-now b{ color:var(--neo-ink); }
+html.neo .el-back, html.neo .el-expand, html.neo .el-fsclose{
+  background:var(--card); border:2px solid var(--neo-ink); color:var(--neo-ink); box-shadow:2px 2px 0 var(--neo-ink);
+}
+html.neo .el-townpop, html.neo .el-chip{ background:var(--neo-ink); border:2px solid var(--neo-gold); box-shadow:3px 3px 0 rgba(0,0,0,.35); }
+html.neo .el-townpop small{ color:var(--neo-gold); }
+html.neo .el-townpop::after{ border-top-color:var(--neo-ink); }
+html.neo .el-chip::after{ border-top-color:var(--neo-ink); }
+html.neo .el-legend{ color:var(--muted); }
+html.neo .el-card.el-full{ box-shadow:8px 8px 0 var(--neo-ink); }
+
+/* ---------- stats page ---------- */
+html.neo .dash-hero .lbl, html.neo .tile .lbl{ color:var(--muted); }
+html.neo .dash-hero .big .p, html.neo .tile .v{ font-weight:700; color:var(--neo-ink); letter-spacing:-.03em; }
+html.neo .dash-hero .big .s, html.neo .tile .sub, html.neo .dash-hero .pmeta{ color:var(--muted); }
+html.neo .dash-hero .pmeta .accent, html.neo .tile.accent .v{ color:var(--neo-blue); }
+html.neo .dash-hero{ background:var(--neo-butter); }
+html.neo .dash-hero .ptrack, html.neo .ptrack, html.neo .dl-bar{ background:var(--card); border:2px solid var(--neo-ink); }
+html.neo .dash-hero .ptrack{ height:16px; }
+html.neo .dash-hero .pfill, html.neo .pfill{ background:var(--neo-blue); }
+html.neo .dl-bar{ height:12px; }
+html.neo .dl-fill{ background:var(--neo-ink); }
+html.neo .dl-row.last .dl-fill{ background:var(--neo-gold); }
+html.neo .dl-day{ color:var(--muted); }
+html.neo .dl-km{ color:var(--neo-ink); }
+html.neo .dl-row.last .dl-km{ color:var(--neo-blue); }
+html.neo .drow{ color:var(--muted); border-top:1px solid var(--neo-ink); }
+html.neo .drow b{ color:var(--neo-ink); }
+html.neo .bars .bi{ background:var(--neo-band); border:2px solid var(--neo-ink); }
+html.neo .bars .bi.last{ background:var(--neo-gold); }
+
+/* ---------- photos ---------- */
+html.neo .photo-item{ background:var(--neo-band); }
+html.neo .photo-badge{ background:var(--neo-gold); color:var(--neo-ink); border:2px solid var(--neo-ink); backdrop-filter:none; font-weight:700; }
+html.neo .lightbox img{ border:3px solid var(--neo-gold); }
+
+/* ---------- gear ---------- */
+html.neo .gg-base{ background:var(--neo-butter); border:2px solid var(--neo-ink); box-shadow:var(--shadow); }
+html.neo .gg-base .gg-k, html.neo .gg-pill .k{ color:var(--neo-ink); }
+html.neo .gg-base .gg-v{ color:var(--neo-ink); font-weight:700; letter-spacing:-.03em; }
+html.neo .gg-base .gg-v span, html.neo .gg-base .gg-note, html.neo .gg-pill .s{ color:var(--muted); }
+html.neo .gg-pill .v{ color:var(--neo-ink); font-weight:700; }
+html.neo .lp-frame{ border:2px solid var(--neo-ink); }
+
+/* ---------- diary ---------- */
+html.neo .updates-title{ background:var(--neo-gold); }
+html.neo .update-text{ color:var(--neo-ink); }
+html.neo .update-note{ color:var(--muted); }
+
+/* ---------- footer ---------- */
+html.neo .site-footer{ border-top:3px solid var(--neo-ink); color:var(--muted); }
+
+/* ---------- design switch (shown in both looks) ---------- */
+.looksw{
+  position:fixed; right:14px; bottom:14px; z-index:5000;
+  display:inline-flex; align-items:center; gap:8px;
+  font:600 12.5px/1 Inter,system-ui,sans-serif; cursor:pointer;
+  padding:9px 13px; border-radius:999px; border:1px solid rgba(255,255,255,.15);
+  background:rgba(30,36,28,.88); color:#fff; box-shadow:0 8px 24px rgba(20,32,28,.25);
+}
+.looksw .opt{ opacity:.5; }
+.looksw .opt.on{ opacity:1; font-weight:800; }
+.looksw .sep{ opacity:.4; }
+html.neo .looksw{
+  background:var(--neo-gold); color:var(--neo-ink); border:2px solid var(--neo-ink);
+  box-shadow:3px 3px 0 var(--neo-ink); font-weight:700;
+}
+@media (max-width:520px){ .looksw{ right:10px; bottom:10px; padding:7px 10px; font-size:11.5px; gap:6px; } }
+@media print{ .looksw{ display:none; } }
