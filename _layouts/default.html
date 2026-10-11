@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="neo">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -16,20 +16,9 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233e9a51'/><path d='M5 25 L13 10 L17.5 18 L20.5 13 L27 25 Z' fill='white'/></svg>" />
 
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
-  <!-- Design test: original vs. neo (switch bottom right). -->
+  <!-- Design: "Neo" (neobrutalist), styles in assets/css/neo.css -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
   <link rel="stylesheet" href="{{ '/assets/css/neo.css' | relative_url }}">
-  <script>
-    (function(){
-      var t = null;
-      try {
-        var q = new URLSearchParams(location.search).get('look');
-        if (q === 'neo' || q === 'original') localStorage.setItem('pctLook', q);
-        t = localStorage.getItem('pctLook');
-      } catch (e) {}
-      if (t === 'neo') document.documentElement.classList.add('neo');
-    })();
-  </script>
   {{ page.head_extra }}
 </head>
 
@@ -74,30 +63,6 @@
       b.innerHTML=(L==='de')?'<b>DE</b>\u00a0\u00b7\u00a0<span style="opacity:.4">EN</span>':'<span style="opacity:.4">DE</span>\u00a0\u00b7\u00a0<b>EN</b>';
       b.addEventListener('click',function(){ localStorage.setItem('pctLang', L==='de'?'en':'de'); location.reload(); });
     }
-  })();
-  </script>
-  <button class="looksw" id="lookSwitch" type="button" aria-label="Design umschalten / Switch design">
-    <span class="opt" data-look="original">Original</span><span class="sep">·</span><span class="opt" data-look="neo">Neo</span>
-  </button>
-  <script>
-  (function(){
-    var root = document.documentElement, btn = document.getElementById('lookSwitch');
-    if (!btn) return;
-    function paint(){
-      var neo = root.classList.contains('neo');
-      [].forEach.call(btn.querySelectorAll('.opt'), function(o){
-        o.classList.toggle('on', (o.getAttribute('data-look') === 'neo') === neo);
-      });
-    }
-    btn.addEventListener('click', function(){
-      var neo = !root.classList.contains('neo');
-      root.classList.toggle('neo', neo);
-      try { localStorage.setItem('pctLook', neo ? 'neo' : 'original'); } catch (e) {}
-      paint();
-      // let the map and the elevation profile re-measure after the font change
-      setTimeout(function(){ window.dispatchEvent(new Event('resize')); }, 60);
-    });
-    paint();
   })();
   </script>
   {{ page.body_extra }}
