@@ -5,11 +5,6 @@ name: Garmin Sync
 # automatically every few hours.
 on:
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: "Dry run: only test the Garmin login and list activities, write nothing"
-        type: boolean
-        default: true
   # schedule:
   #   - cron: "0 */4 * * *"
 
@@ -27,7 +22,8 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install garminconnect
+        # Pinned to the versions the token store was created with (see GARMIN_SETUP.md).
+        run: pip install "garminconnect==0.2.8" "garth==0.4.47"
 
       - name: Restore Garmin token store (if configured)
         env:
@@ -45,7 +41,6 @@ jobs:
         env:
           GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
           GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
-          GARMIN_DRY_RUN: ${{ inputs.dry_run }}
         run: python scripts/garmin_sync.py
 
       - name: Commit & push if changed
