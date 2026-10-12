@@ -218,6 +218,10 @@ def build_feature(api, act):
 # ---------------------------------------------------------------- main
 def main():
     api = init_api()
+    if api is None and os.path.isdir(TOKENSTORE) and os.listdir(TOKENSTORE):
+        print("::error::A Garmin token store is configured but login failed. "
+              "Re-create GARMIN_TOKENS_B64 (see scripts/GARMIN_SETUP.md).")
+        return 1
     if api is None:
         print("No Garmin credentials configured yet (scaffold mode). "
               "Set GARMIN_TOKENS_B64 or GARMIN_EMAIL/GARMIN_PASSWORD secrets to activate. "
@@ -234,6 +238,19 @@ def main():
     except Exception as e:
         print(f"::error::Could not fetch activities: {e}")
         return 1
+
+    # Dry run: prove the connection works and show what would be imported,
+    # without touching any data file. (Manual runs default to this.)
+    if os.environ.get("GARMIN_DRY_RUN", "").lower() in ("1", "true", "yes"):
+        print(f"DRY RUN: connected to Garmin Connect, {len(activities)} recent activity(ies) found.")
+        for act in activities:
+            tk = ((act.get("activityType") or {}).get("typeKey") or "").lower()
+            ok = (not ALLOWED_TYPES) or (tk in ALLOWED_TYPES)
+            print(f"  {act.get('startTimeLocal', '?')}  {tk or '?':<16} "
+                  f"{float(act.get('distance') or 0) / 1000:6.1f} km  "
+                  f"{'would import' if ok and str(act.get('activityId')) not in known else 'skip'}")
+        print("DRY RUN: nothing written.")
+        return 0
 
     added = 0
     for act in activities:
