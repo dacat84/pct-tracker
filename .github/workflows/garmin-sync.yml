@@ -5,6 +5,11 @@ name: Garmin Sync
 # automatically every few hours.
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: only test the Garmin login and list activities, write nothing"
+        type: boolean
+        default: true
   # schedule:
   #   - cron: "0 */4 * * *"
 
@@ -41,6 +46,7 @@ jobs:
         env:
           GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
           GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
+          GARMIN_DRY_RUN: ${{ inputs.dry_run }}
         run: python scripts/garmin_sync.py
 
       - name: Commit & push if changed
