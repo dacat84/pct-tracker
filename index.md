@@ -18,7 +18,8 @@ body_extra: |
       if(d<day){var h=Math.round(d/3600000); return de?('vor '+h+' Std'):(h+' h ago');}
       var days=Math.round(d/day); return de?('vor '+days+' Tag'+(days===1?'':'en')):(days+' day'+(days===1?'':'s')+' ago');
     }
-    fetch('/pct-tracker/data/latest.json',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
+    if(window.PCT&&PCT.waiting) return;
+    fetch('/pct-tracker/'+((window.PCT&&PCT.data)||'data/')+'latest.json',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
       var el=document.getElementById('heroUpdated'); if(!el||!j||!j.ts) return;
       el.textContent=(de?'Letzte Aktivität \u00b7 ':'Last activity \u00b7 ')+rel(j.ts);
     }).catch(function(){});

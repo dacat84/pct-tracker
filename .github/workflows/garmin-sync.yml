@@ -1,8 +1,8 @@
 name: Garmin Sync
 
-# Manual for now (scaffold). Once the GARMIN_* secrets are set (see
-# scripts/GARMIN_SETUP.md), uncomment the schedule block below to run it
-# automatically every few hours.
+# Runs every 4 hours. Where the data goes depends on `tracker.mode` in
+# _config.yml: "waiting" -> data/test/ (test view at /pct-tracker/?test),
+# "live" -> data/ (the public tracker). Manual runs default to a dry run.
 on:
   workflow_dispatch:
     inputs:
@@ -10,8 +10,8 @@ on:
         description: "Dry run: only test the Garmin login and list activities, write nothing"
         type: boolean
         default: true
-  # schedule:
-  #   - cron: "0 */4 * * *"
+  schedule:
+    - cron: "41 */4 * * *"   # every 4 hours
 
 permissions:
   contents: write
@@ -54,7 +54,8 @@ jobs:
         run: |
           git config user.name "garmin-sync-bot"
           git config user.email "actions@users.noreply.github.com"
-          for f in data/track.geojson data/latest.json data/garmin_state.json; do
+          for f in data/track.geojson data/latest.json data/garmin_state.json \
+                   data/test/track.geojson data/test/latest.json data/test/garmin_state.json; do
             if [ -f "$f" ]; then git add "$f"; fi
           done
           git commit -m "Auto-update track from Garmin" || exit 0

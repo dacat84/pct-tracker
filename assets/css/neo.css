@@ -149,3 +149,6 @@ html.neo .update-note{ color:var(--muted); }
 
 /* ---------- footer ---------- */
 html.neo .site-footer{ border-top:3px solid var(--neo-ink); color:var(--muted); }
+
+/* ---------- test view (?test) ---------- */
+.testbar{ background:#ff4d2e; color:#fff; font:700 13px/1 'Space Mono',monospace !important; text-align:center; padding:8px 12px; border-bottom:3px solid #141414; letter-spacing:.04em; }
