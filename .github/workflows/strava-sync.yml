@@ -1,9 +1,11 @@
 name: Strava Sync
 
+# Replaced by Garmin Sync (garmin-sync.yml). Schedule switched off so it
+# can't write into data/ any more; still runnable by hand if ever needed.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 */6 * * *"
+  # schedule:
+  #   - cron: "0 */6 * * *"
 
 permissions:
   contents: write

@@ -25,9 +25,32 @@ Setup: see scripts/GARMIN_SETUP.md
 import os, sys, json, math, base64, io, datetime
 import xml.etree.ElementTree as ET
 
-TRACK_PATH = "data/track.geojson"
-LATEST_PATH = "data/latest.json"
-STATE_PATH = "data/garmin_state.json"
+import re
+
+
+def tracker_settings(path="_config.yml"):
+    """Read `tracker: mode / start` from _config.yml (tiny parser, no PyYAML needed)."""
+    mode, start = "live", ""
+    try:
+        txt = open(path, encoding="utf-8").read()
+        block = re.search(r"^tracker:\s*\n((?:[ \t]+.*\n?)*)", txt, re.M)
+        if block:
+            m = re.search(r"^\s+mode:\s*\"?(\w+)", block.group(1), re.M)
+            s = re.search(r"^\s+start:\s*\"?([0-9-]+)", block.group(1), re.M)
+            mode = m.group(1) if m else mode
+            start = s.group(1) if s else start
+    except OSError:
+        pass
+    return mode, start
+
+
+# waiting: before the hike, everything goes to data/test/ (seen only at ?test)
+# live:    on trail, data/ and only activities from the start date on
+MODE, START_DATE = tracker_settings()
+DATA_DIR = "data/test" if MODE == "waiting" else "data"
+TRACK_PATH = f"{DATA_DIR}/track.geojson"
+LATEST_PATH = f"{DATA_DIR}/latest.json"
+STATE_PATH = f"{DATA_DIR}/garmin_state.json"
 
 # How many recent activities to scan per run, and how far to simplify tracks.
 SCAN_COUNT = int(os.environ.get("GARMIN_SCAN_COUNT", "30"))
@@ -228,6 +251,8 @@ def main():
               "See scripts/GARMIN_SETUP.md. Nothing to do.")
         return 0
 
+    print(f"Mode: {MODE} -> writing to {DATA_DIR}/"
+          + (f", only activities from {START_DATE} on" if MODE == "live" and START_DATE else ""))
     track = load_json(TRACK_PATH, {"type": "FeatureCollection", "features": []})
     if not isinstance(track, dict) or "features" not in track:
         track = {"type": "FeatureCollection", "features": []}
@@ -259,6 +284,8 @@ def main():
         if type_key and ALLOWED_TYPES and type_key not in ALLOWED_TYPES:
             continue
         if str(act_id) in known:
+            continue
+        if MODE == "live" and START_DATE and str(act.get("startTimeLocal") or "")[:10] < START_DATE:
             continue
         feat = build_feature(api, act)
         if feat:

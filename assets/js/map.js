@@ -9,8 +9,10 @@
   const statsListEl = document.getElementById("statsList");
   const insightsListEl = document.getElementById("insightsList");
 
-  const trackUrl = new URL("./data/track.geojson", window.location.href).toString();
-  const latestUrl = new URL("./data/latest.json", window.location.href).toString();
+  // Data folder: data/ normally, data/test/ in the test view (?test), see _layouts/default.html
+  const DATA_DIR = (window.PCT && window.PCT.data) || "data/";
+  const trackUrl = new URL("/pct-tracker/" + DATA_DIR + "track.geojson", window.location.href).toString();
+  const latestUrl = new URL("/pct-tracker/" + DATA_DIR + "latest.json", window.location.href).toString();
 
   const KM_PER_M = 0.001;
   const MI_PER_M = 0.000621371;
@@ -351,11 +353,13 @@ function findLatestFeature(track) {
       if (metaEl) metaEl.textContent = "";
       if (statusExtraEl) statusExtraEl.textContent = "";
       showLoading();
-      const [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
-      if (!track || !track.features || track.features.length === 0) {
-        showError("No track data available", "The sync has run but no GPS activities were found. Check Strava privacy settings or trigger a manual sync.");
+      let [track, latest] = await Promise.all([loadJson(trackUrl), loadJson(latestUrl)]);
+      // An empty track is fine (before the start): we still show the marker.
+      if (!latest || typeof latest.lat !== "number") {
+        showError("No position available", "No GPS position has been synced yet.");
         return;
       }
+      if (!track || !track.features) track = { type: "FeatureCollection", features: [] };
       if (!map.getSource("track")) {
         injectUICSSOnce();
         map.addControl(new BasemapToggle(), "top-right");
@@ -384,7 +388,7 @@ function findLatestFeature(track) {
       if (!didFitOnce) {
         const bbox = geojsonBbox(track);
         if (bbox) map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, duration: 800 });
-        else map.easeTo({ center: lngLat, zoom: 13, duration: 800 });
+        else map.easeTo({ center: lngLat, zoom: track.features.length ? 13 : 11, duration: 800 });
         didFitOnce = true;
       }
       const latestFeat = findLatestFeature(track);
@@ -403,7 +407,7 @@ function findLatestFeature(track) {
   // PCT Background Route (official PCTA centerline)
   async function loadPCTRoute() {
     try {
-      const url = new URL('./data/Full_PCT_Simplified.geojson', window.location.href).toString();
+      const url = new URL('/pct-tracker/data/Full_PCT_Simplified.geojson', window.location.href).toString();
       const resp = await fetch(url);
       if (!resp.ok) return;
       const geojson = await resp.json();

@@ -5,7 +5,7 @@ nav: photos
 ---
 
 <div class="card">
-  <div class="card-title" data-en="Photos" data-de="Fotos">Photos</div>
+  <div class="card-title" data-en="Photos (placeholders for now)" data-de="Fotos (momentan Platzhalter)">Photos (placeholders for now)</div>
 
   <div id="photoGrid" class="photo-grid" aria-live="polite"></div>
   <div id="photoError" class="muted small" style="display:none; margin-top:10px;" data-en="Could not load photos right now." data-de="Bilder konnten gerade nicht geladen werden.">

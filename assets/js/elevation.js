@@ -7,6 +7,7 @@
 (function () {
   "use strict";
   var BASE = "/pct-tracker/";
+  var DATA = (window.PCT && window.PCT.data) || "data/";
   var NOMINAL = 4265;
 
   var LANG = localStorage.getItem("pctLang");
@@ -225,6 +226,30 @@
     }
   }
 
+  // Before the hike (tracker.mode = waiting in _config.yml): countdown instead of position.
+  function startInfo() {
+    var s = (window.PCT && PCT.start) || "";
+    var d = new Date(s + "T00:00:00");
+    if (isNaN(d)) return null;
+    var days = Math.max(0, Math.ceil((d - new Date()) / 86400000));
+    var mon = d.toLocaleDateString(DE ? "de-DE" : "en-US", { month: "long" });
+    return { days: days, label: mon + " " + d.getFullYear() };
+  }
+  function fillWaiting() {
+    var si = startInfo(); if (!si) return;
+    var n = si.days.toLocaleString(DE ? "de-DE" : "en-US");
+    setHTML("heroTitle", DE ? ("Noch <em>" + n + " Tage</em> bis zum Start.") : ("<em>" + n + " days</em> to go until the start."));
+    setHTML("heroSub", DE
+      ? ("Los geht es im " + si.label + " am Southern Terminus in Campo, dann <b>" + distStr(NOMINAL, 0) + "</b> bis nach Kanada.")
+      : ("I set off in " + si.label + " from the Southern Terminus at Campo, then <b>" + distStr(NOMINAL, 0) + "</b> to Canada."));
+    setText("heroPct", "0");
+    setText("heroDays", "0");
+    setHTML("mPlace", "Southern Terminus, CA");
+    setHTML("mMeta", (DE ? "Startlinie \u00B7 " : "Start line \u00B7 ") + si.label);
+    var pill = document.getElementById("heroUpdated");
+    if (pill) pill.textContent = (DE ? "Start " : "Start ") + si.label;
+  }
+
   function wireExpand() {
     var he = document.querySelector(".hero-map");
     var btn = document.getElementById("mapExpand");
@@ -271,6 +296,7 @@
 
     fillHero(reg, F);
     fillActivity(activityStats(track));
+    if (window.PCT && PCT.waiting) fillWaiting();
 
     if (!container) return;
 
@@ -537,7 +563,7 @@
     if (!container && !hero) return;
     injectCSS();
     function J(u) { return fetch(BASE + u, { cache: "no-store" }).then(function (r) { return r.json(); }).catch(function () { return null; }); }
-    Promise.all([J("data/pct_profile.json"), J("data/latest.json"), J("data/track.geojson")]).then(function (res) {
+    Promise.all([J("data/pct_profile.json"), J(DATA + "latest.json"), J(DATA + "track.geojson")]).then(function (res) {
       if (!res[0]) throw new Error("no profile");
       render(container, res[0], res[1], res[2]);
     }).catch(function (e) {

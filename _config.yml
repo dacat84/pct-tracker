@@ -10,6 +10,14 @@ theme: null
 lighterpack_id: qr1evs
 permalink: pretty
 
+# Tracker state.
+#   waiting = before the hike: marker at Campo, countdown, Garmin test
+#             hikes go to data/test/ (only visible at /pct-tracker/?test)
+#   live    = on trail: Garmin writes data/, only activities from start on
+tracker:
+  mode: waiting
+  start: "2027-04-15"   # countdown target; the page only says "April 2027"
+
 collections:
   updates:
     output: false

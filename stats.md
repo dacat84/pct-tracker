@@ -66,7 +66,8 @@ permalink: /stats.html
   function fmtDate(ts) { return ts == null ? "—" : new Date(ts).toLocaleDateString(LOC, { day: "numeric", month: "short", year: "numeric" }); }
   function J(u) { return fetch(BASE + u, { cache: "no-store" }).then(function (r) { return r.json(); }).catch(function () { return null; }); }
 
-  Promise.all([J("data/track.geojson"), J("data/latest.json")]).then(function (res) { render(res[0]); })
+  var DATA = (window.PCT && window.PCT.data) || "data/";
+  Promise.all([J(DATA + "track.geojson"), J(DATA + "latest.json")]).then(function (res) { render(res[0]); })
     .catch(function (e) { console.error(e); });
 
   function tile(lbl, v, sub, accent) {

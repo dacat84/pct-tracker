@@ -19,6 +19,11 @@
   <!-- Design: "Neo" (neobrutalist), styles in assets/css/neo.css -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
   <link rel="stylesheet" href="{{ '/assets/css/neo.css' | relative_url }}">
+  <script>
+    window.PCT = { mode: "{{ site.tracker.mode }}", start: "{{ site.tracker.start }}", test: /[?&]test\b/.test(location.search) };
+    PCT.data = PCT.test ? "data/test/" : "data/";
+    PCT.waiting = PCT.mode === "waiting" && !PCT.test;
+  </script>
   {{ page.head_extra }}
 </head>
 
@@ -64,6 +69,17 @@
       b.addEventListener('click',function(){ localStorage.setItem('pctLang', L==='de'?'en':'de'); location.reload(); });
     }
   })();
+  </script>
+  <script>
+  // Test view (?test): shows the Garmin test hikes from data/test/, keeps ?test on the tabs.
+  if (window.PCT && PCT.test) {
+    document.querySelectorAll('a.tab').forEach(function (a) { a.href += (a.href.indexOf('?') < 0 ? '?' : '&') + 'test'; });
+    var tb = document.createElement('div');
+    tb.className = 'testbar';
+    tb.textContent = document.documentElement.lang === 'de' ? 'TESTANSICHT · Garmin-Testdaten, nicht öffentlich verlinkt' : 'TEST VIEW · Garmin test data, not linked publicly';
+    document.body.insertBefore(tb, document.body.firstChild);
+    var m = document.createElement('meta'); m.name = 'robots'; m.content = 'noindex'; document.head.appendChild(m);
+  }
   </script>
   {{ page.body_extra }}
 </body>
