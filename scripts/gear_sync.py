@@ -29,7 +29,7 @@ OUT_PATH = "_data/gear.json"
 # Which LighterPack categories feed which card (names are matched
 # case-insensitively). Rename a category in LighterPack -> update it here.
 BOXES = {
-    "shelter_g": ["Shelter", "Shelter #2", "Stakes"],
+    "shelter_g": ["Shelter #1", "Shelter #2", "Stakes"],
     "sleep_g": ["Sleep"],
     "pack_g": ["Pack"],
 }
