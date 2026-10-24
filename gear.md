@@ -15,7 +15,7 @@ permalink: /gear/
       <div class="gg-note" data-en="≈ {{ gear.base_kg_en }} kg · everything in the pack, without food, water & worn clothing" data-de="≈ {{ gear.base_kg_de }} kg · alles im Rucksack, ohne Essen, Wasser & getragene Kleidung">≈ {{ gear.base_kg_en }} kg · everything in the pack, without food, water &amp; worn clothing</div>
     </div>
     <div class="gg-pills">
-      <div class="gg-pill"><div class="k" data-en="Shelter" data-de="Nachtlager">Shelter</div><div class="v">{{ gear.shelter_g }}&nbsp;g</div><div class="s" data-en="Tarp, bivy & stakes" data-de="Tarp, Bivy & Heringe">Tarp, bivy &amp; stakes</div></div>
+      <div class="gg-pill"><div class="k" data-en="Shelter" data-de="Nachtlager">Shelter</div><div class="v">{{ gear.shelter_g }}&nbsp;g</div><div class="s" data-en="Tent & stakes" data-de="Zelt & Heringe">Tent &amp; stakes</div></div>
       <div class="gg-pill"><div class="k" data-en="Sleep system" data-de="Schlafsystem">Sleep system</div><div class="v">{{ gear.sleep_g }}&nbsp;g</div><div class="s" data-en="Quilt 20°F + pad" data-de="Quilt 20°F + Isomatte">Quilt 20°F + pad</div></div>
       <div class="gg-pill"><div class="k" data-en="Pack" data-de="Rucksack">Pack</div><div class="v">{{ gear.pack_g }}&nbsp;g</div><div class="s">Cutaway 30L</div></div>
     </div>
