@@ -26,10 +26,11 @@ from bs4 import BeautifulSoup
 CONFIG_PATH = "_config.yml"
 OUT_PATH = "_data/gear.json"
 
-# Which LighterPack categories feed which card (names are matched
-# case-insensitively). Rename a category in LighterPack -> update it here.
+# Which LighterPack categories feed which card. Matched case-insensitively by
+# the START of the name, so "Shelter #1" or "Shelter option #2 (308g)" both
+# count as shelter. Every prefix must match at least one category.
 BOXES = {
-    "shelter_g": ["Shelter #1", "Shelter #2", "Stakes"],
+    "shelter_g": ["Shelter", "Stakes"],
     "sleep_g": ["Sleep"],
     "pack_g": ["Pack"],
 }
@@ -128,12 +129,15 @@ def main():
     out["worn_g"] = round((lp_worn or 0) / 1000)
 
     for key, names in BOXES.items():
-        missing = [n for n in names if n.lower() not in lower]
+        hits = {n: [c for c in lower if c.startswith(n.lower())] for n in names}
+        missing = [n for n, cs in hits.items() if not cs]
         if missing:
             sys.exit(f"::error::Category {missing} not found in LighterPack list "
                      f"(found: {sorted(cats)}). Rename it back or update BOXES "
                      f"in scripts/gear_sync.py. Leaving _data/gear.json untouched.")
-        out[key] = round(sum(lower[n.lower()] for n in names) / 1000)
+        used = sorted({c for cs in hits.values() for c in cs})
+        out[key] = round(sum(lower[c] for c in used) / 1000)
+        print(f"{key}: {out[key]} g from {used}")
 
     # Plausibility: an ultralight base weight, and every card > 0.
     if not (500 <= base_g <= 20000):
