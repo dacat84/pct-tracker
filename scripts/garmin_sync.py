@@ -156,7 +156,7 @@ def init_api():
             print("Logged in via cached Garmin token store.")
             return g
         except Exception as e:
-            print(f"Token resume failed ({e}); will try email/password.")
+            print(f"::warning::Token resume failed: {type(e).__name__}: {str(e)[:300]}")
 
     # 2) Fallback: email + password.
     email = os.environ.get("GARMIN_EMAIL")
