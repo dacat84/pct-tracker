@@ -148,12 +148,15 @@ def init_api():
         print("::error::garminconnect not installed (pip install garminconnect).")
         return None
 
-    # 1) Preferred: resume from a cached token store (set up once, see SETUP.md).
-    if os.path.isdir(TOKENSTORE) and os.listdir(TOKENSTORE):
+    # 1) Preferred: resume from the token store (garminconnect >= 0.3 writes
+    #    garmin_tokens.json; see scripts/GARMIN_SETUP.md). Refreshed tokens are
+    #    written back to the same folder, and the workflow carries them over to
+    #    the next run (encrypted cache).
+    if os.path.isfile(os.path.join(TOKENSTORE, "garmin_tokens.json")):
         try:
             g = Garmin()
             g.login(TOKENSTORE)
-            print("Logged in via cached Garmin token store.")
+            print("Logged in via Garmin token store.")
             return g
         except Exception as e:
             print(f"::warning::Token resume failed: {type(e).__name__}: {str(e)[:300]}")
@@ -243,13 +246,15 @@ def main():
     api = init_api()
     if api is None and os.path.isdir(TOKENSTORE) and os.listdir(TOKENSTORE):
         print("::error::A Garmin token store is configured but login failed. "
-              "Re-create GARMIN_TOKENS_B64 (see scripts/GARMIN_SETUP.md).")
+              "Log in again locally and update the GARMIN_TOKENS secret "
+              "(see scripts/GARMIN_SETUP.md).")
         return 1
     if api is None:
         print("No Garmin credentials configured yet (scaffold mode). "
-              "Set GARMIN_TOKENS_B64 or GARMIN_EMAIL/GARMIN_PASSWORD secrets to activate. "
+              "Set the GARMIN_TOKENS secret to activate. "
               "See scripts/GARMIN_SETUP.md. Nothing to do.")
         return 0
+    save_tokens(api)
 
     print(f"Mode: {MODE} -> writing to {DATA_DIR}/"
           + (f", only activities from {START_DATE} on" if MODE == "live" and START_DATE else ""))
@@ -319,6 +324,14 @@ def main():
 
     print(f"Done. {added} new activity(ies); {len(track['features'])} total on the trail.")
     return 0
+
+
+def save_tokens(api):
+    """Write the (possibly refreshed) tokens back so the next run can use them."""
+    try:
+        api.client.dump(TOKENSTORE)
+    except Exception as e:
+        print(f"::warning::Could not save refreshed Garmin tokens: {type(e).__name__}")
 
 
 if __name__ == "__main__":
