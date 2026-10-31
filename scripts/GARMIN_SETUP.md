@@ -11,48 +11,35 @@ Files:
 Until credentials are configured the script runs in **scaffold mode**: it does
 nothing and exits cleanly, so the workflow never fails.
 
-## Recommended: cached token store (most reliable, survives MFA)
+## Setup (garminconnect 0.3+, since Oct 2026)
 
-Do this once on your Mac after the watch is set up and a first hike is in
-Garmin Connect:
+Garmin changed its login in 2026 and the old garth-based tokens
+(`GARMIN_TOKENS_B64`) stopped working. The sync now uses garminconnect 0.3.20
+with its own token file `garmin_tokens.json`.
 
-```bash
-pip install garminconnect
-python - <<'PY'
-from garminconnect import Garmin
-g = Garmin(email="YOU@example.com", password="YOUR_PASSWORD")
-g.login()                       # complete MFA here if Garmin asks
-g.garth.dump("~/.garminconnect")
-print("Tokens saved.")
-PY
+1. On your Mac, log in once (needs Python 3.12+; `uv` brings its own):
 
-# Package the tokens into one line for a GitHub secret:
-tar -czf - -C ~/.garminconnect . | base64 -w0 ; echo
-```
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh     # once, if uv is missing
+   curl -fsSL https://raw.githubusercontent.com/dacat84/pct-tracker/main/scripts/garmin_login.py -o ~/garmin_login.py
+   ~/.local/bin/uv run --python 3.12 --with garminconnect==0.3.20 python ~/garmin_login.py
+   ```
 
-Copy the long base64 line and add it as a repository secret:
-GitHub -> repo -> Settings -> Secrets and variables -> Actions -> New repository secret
-- Name: `GARMIN_TOKENS_B64`
-- Value: (the base64 line)
+2. Add two repository secrets
+   (GitHub -> repo -> Settings -> Secrets and variables -> Actions):
+   - `GARMIN_TOKENS`: the content of `~/.garminconnect-pct/garmin_tokens.json`
+     (`pbcopy < ~/.garminconnect-pct/garmin_tokens.json`, then paste)
+   - `GARMIN_TOKEN_KEY`: any long random string
+     (`openssl rand -base64 32 | pbcopy`, then paste)
 
-Garth tokens are long-lived; refresh by re-running the snippet if sync ever
-starts failing on auth.
+3. Test: Actions -> "Garmin Sync" -> "Run workflow" (dry run is the default).
 
-## Simpler alternative: email + password
+Garmin refreshes the access token regularly. Each run writes the newest tokens
+back, encrypts them with `GARMIN_TOKEN_KEY` and keeps them in the Actions cache
+for the next run, so the secret only has to be set once. If the sync ever fails
+on login again, repeat step 1 and update `GARMIN_TOKENS`.
 
-Add two secrets instead:
-- `GARMIN_EMAIL`
-- `GARMIN_PASSWORD`
-
-Works, but if your Garmin account uses MFA, repeated logins from the Action may
-get challenged. Prefer the token method above for a months-long hike.
-
-## Turn it on
-
-1. Add the secret(s) above.
-2. In `.github/workflows/garmin-sync.yml`, uncomment the `schedule:` block
-   (default every 4 hours).
-3. Test once manually: Actions tab -> "Garmin Sync" -> "Run workflow".
+The old secret `GARMIN_TOKENS_B64` is no longer used and can be deleted.
 
 ## Options (optional env / repo variables)
 

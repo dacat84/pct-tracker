@@ -24,30 +24,61 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install dependencies
-        # Pinned to the versions the token store was created with (see GARMIN_SETUP.md).
-        run: pip install "garminconnect==0.2.8" "garth==0.4.47"
+        run: pip install "garminconnect==0.3.20"
 
-      - name: Restore Garmin token store (if configured)
+      # Garmin tokens: the newest (refreshed) copy is kept between runs in the
+      # Actions cache, encrypted with GARMIN_TOKEN_KEY. If there is none yet,
+      # the GARMIN_TOKENS secret (garmin_tokens.json from a local login) is used.
+      - name: Restore refreshed Garmin tokens
+        uses: actions/cache/restore@v4
+        with:
+          path: .garmin-cache
+          key: garmin-token-${{ github.run_id }}
+          restore-keys: garmin-token-
+
+      - name: Set up Garmin token store
         env:
-          GARMIN_TOKENS_B64: ${{ secrets.GARMIN_TOKENS_B64 }}
+          GARMIN_TOKENS: ${{ secrets.GARMIN_TOKENS }}
+          GARMIN_TOKEN_KEY: ${{ secrets.GARMIN_TOKEN_KEY }}
         run: |
-          if [ -n "$GARMIN_TOKENS_B64" ]; then
-            mkdir -p ~/.garminconnect
-            echo "$GARMIN_TOKENS_B64" | base64 -d | tar -xzf - -C ~/.garminconnect
-            echo "Restored cached Garmin token store."
+          mkdir -p ~/.garminconnect && chmod 700 ~/.garminconnect
+          if [ -f .garmin-cache/tokens.enc ] && [ -n "$GARMIN_TOKEN_KEY" ] && \
+             openssl enc -d -aes-256-cbc -pbkdf2 -pass env:GARMIN_TOKEN_KEY \
+               -in .garmin-cache/tokens.enc -out ~/.garminconnect/garmin_tokens.json 2>/dev/null; then
+            echo "Using refreshed tokens from the previous run."
+          elif [ -n "$GARMIN_TOKENS" ]; then
+            printf '%s' "$GARMIN_TOKENS" > ~/.garminconnect/garmin_tokens.json
+            echo "Using tokens from the GARMIN_TOKENS secret."
           else
-            echo "No GARMIN_TOKENS_B64 secret set; will use email/password if provided."
+            echo "No Garmin tokens configured."
           fi
+          [ -f ~/.garminconnect/garmin_tokens.json ] && chmod 600 ~/.garminconnect/garmin_tokens.json || true
 
       - name: Sync from Garmin Connect
         env:
-          GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
-          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
           GARMIN_DRY_RUN: ${{ inputs.dry_run }}
         run: python scripts/garmin_sync.py
+
+      - name: Encrypt refreshed tokens for the next run
+        if: ${{ always() }}
+        env:
+          GARMIN_TOKEN_KEY: ${{ secrets.GARMIN_TOKEN_KEY }}
+        run: |
+          rm -rf .garmin-cache && mkdir -p .garmin-cache
+          if [ -n "$GARMIN_TOKEN_KEY" ] && [ -f ~/.garminconnect/garmin_tokens.json ]; then
+            openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:GARMIN_TOKEN_KEY \
+              -in ~/.garminconnect/garmin_tokens.json -out .garmin-cache/tokens.enc
+          fi
+
+      - name: Save refreshed Garmin tokens
+        if: ${{ always() && hashFiles('.garmin-cache/tokens.enc') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .garmin-cache
+          key: garmin-token-${{ github.run_id }}
 
       - name: Commit & push if changed
         if: ${{ inputs.dry_run != true }}
