@@ -16,7 +16,7 @@ permalink: pretty
 #   live    = on trail: Garmin writes data/, only activities from start on
 tracker:
   mode: waiting
-  start: "2027-04-15"   # countdown target; the page only says "April 2027"
+  start: "2027-04-22"   # official start (PCTA permit); countdown + "22. April 2027"
 
 collections:
   updates:

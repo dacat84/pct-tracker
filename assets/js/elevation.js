@@ -233,15 +233,15 @@
     if (isNaN(d)) return null;
     var days = Math.max(0, Math.ceil((d - new Date()) / 86400000));
     var mon = d.toLocaleDateString(DE ? "de-DE" : "en-US", { month: "long" });
-    return { days: days, label: mon + " " + d.getFullYear() };
+    return { days: days, label: DE ? (d.getDate() + ". " + mon + " " + d.getFullYear()) : (mon + " " + d.getDate() + ", " + d.getFullYear()) };
   }
   function fillWaiting() {
     var si = startInfo(); if (!si) return;
     var n = si.days.toLocaleString(DE ? "de-DE" : "en-US");
     setHTML("heroTitle", DE ? ("Noch <em>" + n + " Tage</em> bis zum Start.") : ("<em>" + n + " days</em> to go until the start."));
     setHTML("heroSub", DE
-      ? ("Los geht es im " + si.label + " am Southern Terminus in Campo, dann <b>" + distStr(NOMINAL, 0) + "</b> bis nach Kanada.")
-      : ("I set off in " + si.label + " from the Southern Terminus at Campo, then <b>" + distStr(NOMINAL, 0) + "</b> to Canada."));
+      ? ("Los geht es am " + si.label + " am Southern Terminus in Campo, dann <b>" + distStr(NOMINAL, 0) + "</b> bis nach Kanada.")
+      : ("I set off on " + si.label + " from the Southern Terminus at Campo, then <b>" + distStr(NOMINAL, 0) + "</b> to Canada."));
     setText("heroPct", "0");
     setText("heroDays", "0");
     setHTML("mPlace", "Southern Terminus, CA");
