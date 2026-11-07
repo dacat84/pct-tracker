@@ -1,9 +1,10 @@
 {
   "source": "garmin",
-  "last_sync_utc": "2026-11-07T06:36:07.788543",
-  "activity_count": 2,
+  "last_sync_utc": "2026-11-07T15:08:45.739316",
+  "activity_count": 3,
   "known_ids": [
     24915485712,
-    24975545716
+    24975545716,
+    24997391706
   ]
 }
