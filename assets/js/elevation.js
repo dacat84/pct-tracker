@@ -196,8 +196,24 @@
     return { km: dist / 1000, days: Object.keys(dates).length };
   }
 
+  // More than this far (km) from the PCT, the trail position is meaningless
+  // (town trip, test hike at home, bad GPS fix): say "off the trail" instead.
+  var OFF_TRAIL_KM = 50;
+
+  function fillOffTrail() {
+    var off = nfmt(toDist(CUR.off), 0) + (DE ? " km" : " mi");
+    setHTML("heroTitle", DE ? "Gerade <em>abseits des Trails</em>." : "Off the <em>trail</em> right now.");
+    setHTML("heroSub", DE
+      ? ("Die letzte Position liegt rund <b>" + off + "</b> vom PCT entfernt. Sobald ich zur\u00fcck am Trail bin, geht es hier weiter.")
+      : ("The last position is about <b>" + off + "</b> from the PCT. This picks up again once I'm back on trail."));
+    setText("heroPct", "\u2014");
+    setHTML("mPlace", DE ? "Abseits des PCT" : "Off the PCT");
+    setHTML("mMeta", (DE ? "rund " : "about ") + "<b>" + off + "</b>" + (DE ? " vom Trail" : " from the trail"));
+  }
+
   function fillHero(reg, F) {
     if (!CUR) return;
+    if (CUR.off > OFF_TRAIL_KM) { fillOffTrail(); return; }
     var scale = NOMINAL / TOTAL_KM;
     var pos = CUR.km * scale;
     var toGo = Math.max(0, NOMINAL - pos);
@@ -282,7 +298,7 @@
         var d = haversine(latest.lat, latest.lon, pts[i].lat, pts[i].lon);
         if (d < bd) { bd = d; best = pts[i]; }
       }
-      if (best) cur = { km: best.km, m: best.m };
+      if (best) cur = { km: best.km, m: best.m, off: bd };
     }
     CUR = cur;
     var reg = REGIONS.find(function (r) { return cur.km >= r.a * F && cur.km < r.b * F; }) || REGIONS[REGIONS.length - 1];
