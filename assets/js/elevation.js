@@ -159,7 +159,7 @@
         var d = haversine(lat, lon, pts[i].lat, pts[i].lon);
         if (d < bd) { bd = d; best = pts[i].km; }
       }
-      return best;
+      return bd <= 50 ? best : null;            // points far from the PCT don't count
     }
     var ranges = [];
     track.features.forEach(function (f) {
@@ -170,9 +170,10 @@
       for (var k = 0; k < 12; k++) {
         var j = Math.round(k * (N - 1) / 11);
         var km = nearKm(c[j][1], c[j][0]);
+        if (km === null) continue;
         if (km < lo) lo = km; if (km > hi) hi = km;
       }
-      ranges.push([lo, hi]);
+      if (hi >= lo) ranges.push([lo, hi]);
     });
     ranges.sort(function (a, b) { return a[0] - b[0]; });
     var merged = [];
@@ -196,24 +197,8 @@
     return { km: dist / 1000, days: Object.keys(dates).length };
   }
 
-  // More than this far (km) from the PCT, the trail position is meaningless
-  // (town trip, test hike at home, bad GPS fix): say "off the trail" instead.
-  var OFF_TRAIL_KM = 50;
-
-  function fillOffTrail() {
-    var off = nfmt(toDist(CUR.off), 0) + (DE ? " km" : " mi");
-    setHTML("heroTitle", DE ? "Gerade <em>abseits des Trails</em>." : "Off the <em>trail</em> right now.");
-    setHTML("heroSub", DE
-      ? ("Die letzte Position liegt rund <b>" + off + "</b> vom PCT entfernt. Sobald ich zur\u00fcck am Trail bin, geht es hier weiter.")
-      : ("The last position is about <b>" + off + "</b> from the PCT. This picks up again once I'm back on trail."));
-    setText("heroPct", "\u2014");
-    setHTML("mPlace", DE ? "Abseits des PCT" : "Off the PCT");
-    setHTML("mMeta", (DE ? "rund " : "about ") + "<b>" + off + "</b>" + (DE ? " vom Trail" : " from the trail"));
-  }
-
   function fillHero(reg, F) {
     if (!CUR) return;
-    if (CUR.off > OFF_TRAIL_KM) { fillOffTrail(); return; }
     var scale = NOMINAL / TOTAL_KM;
     var pos = CUR.km * scale;
     var toGo = Math.max(0, NOMINAL - pos);
@@ -291,14 +276,40 @@
     var S = pts.map(function (p) { return [p.km, p.m]; });
     var F = TOTAL / NOMINAL;
 
-    var cur = { km: 0, m: S[0][1] };
-    if (latest && typeof latest.lat === "number") {
+    // Current trail position: nearest PCT point to the latest position. If that
+    // is far from the trail (> OFF_TRAIL_KM, e.g. a ride into town or a bad fix),
+    // keep the last tracked point that was near the trail instead. Towns close
+    // to the trail still show as they are.
+    var OFF_TRAIL_KM = 50;
+    function snap(lat, lon) {
       var best = null, bd = 1e18;
       for (var i = 0; i < pts.length; i++) {
-        var d = haversine(latest.lat, latest.lon, pts[i].lat, pts[i].lon);
+        var d = haversine(lat, lon, pts[i].lat, pts[i].lon);
         if (d < bd) { bd = d; best = pts[i]; }
       }
-      if (best) cur = { km: best.km, m: best.m, off: bd };
+      return best ? { km: best.km, m: best.m, off: bd } : null;
+    }
+    function lastNearTrail() {
+      var feats = ((track && track.features) || []).filter(function (f) {
+        return f.geometry && f.geometry.type === "LineString" && f.geometry.coordinates.length;
+      }).sort(function (a, b) {
+        return String((b.properties || {}).start_date || "").localeCompare(String((a.properties || {}).start_date || ""));
+      });
+      for (var fi = 0; fi < feats.length; fi++) {
+        var c = feats[fi].geometry.coordinates, N = c.length, steps = Math.min(N, 24);
+        for (var k = 0; k < steps; k++) {           // from the end of the activity backwards
+          var j = N - 1 - Math.round(k * (N - 1) / Math.max(1, steps - 1));
+          var s = snap(c[j][1], c[j][0]);
+          if (s && s.off <= OFF_TRAIL_KM) return s;
+        }
+      }
+      return null;
+    }
+    var cur = { km: 0, m: S[0][1] };
+    if (latest && typeof latest.lat === "number") {
+      var here = snap(latest.lat, latest.lon);
+      if (here && here.off <= OFF_TRAIL_KM) cur = here;
+      else cur = lastNearTrail() || cur;
     }
     CUR = cur;
     var reg = REGIONS.find(function (r) { return cur.km >= r.a * F && cur.km < r.b * F; }) || REGIONS[REGIONS.length - 1];
