@@ -1,7 +1,10 @@
 name: Garmin Sync
 
-# Runs every 4 hours. Where the data goes depends on `tracker.mode` in
-# _config.yml: "waiting" -> data/test/ (test view at /pct-tracker/?test),
+# Runs every hour (GitHub often delays or skips scheduled runs, so more
+# slots = fresher data) and whenever a diary entry is pushed (the iOS
+# shortcut), so the map is current at the moment I post something.
+# Where the data goes depends on `tracker.mode` in _config.yml:
+# "waiting" -> data/test/ (test view at /pct-tracker/?test),
 # "live" -> data/ (the public tracker). Manual runs default to a dry run.
 on:
   workflow_dispatch:
@@ -11,10 +14,18 @@ on:
         type: boolean
         default: true
   schedule:
-    - cron: "41 */4 * * *"   # every 4 hours
+    - cron: "41 * * * *"   # every hour
+  push:
+    branches: [main]
+    paths: ["_updates/**"]
 
 permissions:
   contents: write
+
+# Never two syncs at once (they would both try to commit the same files).
+concurrency:
+  group: garmin-sync
+  cancel-in-progress: false
 
 jobs:
   sync:
@@ -90,4 +101,5 @@ jobs:
             if [ -f "$f" ]; then git add "$f"; fi
           done
           git commit -m "Auto-update track from Garmin" || exit 0
+          git pull --rebase origin main   # another commit may have landed meanwhile
           git push
