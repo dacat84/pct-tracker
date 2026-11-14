@@ -130,7 +130,7 @@ permalink: /stats.html
         var isLast = d.date === lastKey, dd = new Date(d.date + "T12:00:00");
         var lab = dd.toLocaleDateString(LOC, { weekday: "short", day: "numeric", month: "short" });
         var w = Math.max(4, d.distM / maxAll * 100);
-        return '<div class="dl-row' + (isLast ? ' last' : '') + '"><div class="dl-day">' + lab + '</div><div class="dl-bar"><div class="dl-fill" style="width:' + w.toFixed(0) + '%"></div></div><div class="dl-km">' + n(d.distM / 1000, 0) + ' km<span class="dl-up"> \u00B7 \u2191 ' + n(d.elevM || 0, 0) + ' m</span></div></div>';
+        return '<div class="dl-row' + (isLast ? ' last' : '') + '"><div class="dl-day">' + lab + '</div><div class="dl-bar"><div class="dl-fill" style="width:' + w.toFixed(0) + '%"></div></div><div class="dl-km">' + (DE ? n(d.distM / 1000, 0) + ' km' : n(d.distM / 1609.344, 0) + ' mi') + '<span class="dl-up"> \u00B7 \u2191 ' + (DE ? n(d.elevM || 0, 0) + ' m' : n((d.elevM || 0) * 3.28084, 0) + ' ft') + '</span></div></div>';
       }).join("");
       dayLog = '<div class="dash-sec"><h3>' + T("Tag für Tag", "Day by day") + '</h3><div class="daylist">' + rows + '</div></div>';
     }
