@@ -46,6 +46,7 @@ permalink: /stats.html
 .dl-row.last .dl-fill{background:linear-gradient(90deg,#4fae62,#2c7a3d)}
 .dl-km{font:700 13px Inter,system-ui,sans-serif;color:#1e241c;white-space:nowrap;min-width:54px;text-align:right}
 .dl-row.last .dl-km{color:#2c7a3d}
+.dl-up{font-weight:500;opacity:.7}
 @media(max-width:520px){.dl-row{grid-template-columns:92px 1fr auto;gap:9px}.dl-day{font-size:12px}}
 </style>
 
@@ -121,7 +122,7 @@ permalink: /stats.html
 
     var two = '<div class="two">' + dayTile(T("Längster Tag", "Longest day"), longest) + dayTile(T("Kürzester Tag", "Shortest day"), shortest) + '</div>';
 
-    var allDays = sorted.map(function (k) { return { date: k, distM: byDay[k].distM }; });
+    var allDays = sorted.map(function (k) { return { date: k, distM: byDay[k].distM, elevM: byDay[k].elevM }; });
     var maxAll = Math.max.apply(null, allDays.map(function (x) { return x.distM; })) || 1;
     var dayLog = "";
     if (allDays.length) {
@@ -129,7 +130,7 @@ permalink: /stats.html
         var isLast = d.date === lastKey, dd = new Date(d.date + "T12:00:00");
         var lab = dd.toLocaleDateString(LOC, { weekday: "short", day: "numeric", month: "short" });
         var w = Math.max(4, d.distM / maxAll * 100);
-        return '<div class="dl-row' + (isLast ? ' last' : '') + '"><div class="dl-day">' + lab + '</div><div class="dl-bar"><div class="dl-fill" style="width:' + w.toFixed(0) + '%"></div></div><div class="dl-km">' + n(d.distM / 1000, 0) + ' km</div></div>';
+        return '<div class="dl-row' + (isLast ? ' last' : '') + '"><div class="dl-day">' + lab + '</div><div class="dl-bar"><div class="dl-fill" style="width:' + w.toFixed(0) + '%"></div></div><div class="dl-km">' + n(d.distM / 1000, 0) + ' km<span class="dl-up"> \u00B7 \u2191 ' + n(d.elevM || 0, 0) + ' m</span></div></div>';
       }).join("");
       dayLog = '<div class="dash-sec"><h3>' + T("Tag für Tag", "Day by day") + '</h3><div class="daylist">' + rows + '</div></div>';
     }
