@@ -38,8 +38,8 @@ permalink: /stats.html
 .bars .bi.last{background:linear-gradient(180deg,#4fae62,#2c7a3d)}
 .bars .bd{font:700 10.5px Inter,system-ui,sans-serif;color:#9aa08f}
 .dash-cap{text-align:center;font:600 12px Inter,system-ui,sans-serif;color:#9aa08f;margin-top:2px}
-.daylist{display:flex;flex-direction:column;gap:8px;margin-top:6px}
-.dl-row{display:grid;grid-template-columns:104px 1fr 172px;align-items:center;gap:12px}
+.daylist{display:grid;grid-template-columns:104px 1fr max-content;align-items:center;gap:8px 12px;margin-top:6px}
+.dl-row{display:contents}
 .dl-day{font:600 12.5px Inter,system-ui,sans-serif;color:#6c7365;white-space:nowrap}
 .dl-bar{height:8px;border-radius:999px;background:#eceadd;overflow:hidden}
 .dl-fill{height:100%;border-radius:999px;background:#bcd0be}
@@ -47,7 +47,7 @@ permalink: /stats.html
 .dl-km{font:700 13px Inter,system-ui,sans-serif;color:#1e241c;white-space:nowrap;min-width:54px;text-align:right}
 .dl-row.last .dl-km{color:#2c7a3d}
 .dl-up{font-weight:500;opacity:.7}
-@media(max-width:520px){.dl-row{grid-template-columns:92px 1fr 84px;gap:9px}.dl-day{font-size:12px}.dl-up{display:block;font-size:11px}.dl-up .sep{display:none}}
+@media(max-width:520px){.daylist{grid-template-columns:92px 1fr max-content;gap:8px 9px}.dl-day{font-size:12px}.dl-up{display:block;font-size:11px}.dl-up .sep{display:none}}
 </style>
 
 <div class="dash" id="dash">
