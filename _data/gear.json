@@ -1,11 +1,11 @@
 {
   "list_id": "qr1evs",
-  "base_g": 3725,
-  "base_kg_en": "3.73",
-  "base_kg_de": "3,73",
+  "base_g": 3735,
+  "base_kg_en": "3.74",
+  "base_kg_de": "3,74",
   "worn_g": 1565,
   "shelter_g": 355,
   "sleep_g": 981,
-  "pack_g": 437,
-  "updated": "2026-11-10"
+  "pack_g": 432,
+  "updated": "2026-11-15"
 }
