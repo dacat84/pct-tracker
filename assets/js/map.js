@@ -386,8 +386,19 @@ function findLatestFeature(track) {
       setStatsUI(s);
       setInsightsUI(s);
       if (!didFitOnce) {
-        const bbox = geojsonBbox(track);
-        if (bbox) map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, duration: 800 });
+        // Start view: the last day on trail. Take the newest activity plus any
+        // that started up to 18 h before it (a day can be split into several
+        // recordings), and the current position. The whole route stays
+        // visible when zooming out.
+        const newest = findLatestFeature(track);
+        const newestTs = newest ? Date.parse(newest.properties.start_date) : NaN;
+        const lastDay = Number.isFinite(newestTs) ? track.features.filter(f => {
+          const ts = Date.parse(f.properties?.start_date || "");
+          return Number.isFinite(ts) && ts >= newestTs - 18 * 3600 * 1000;
+        }) : [];
+        lastDay.push({ type: "Feature", geometry: { type: "Point", coordinates: lngLat } });
+        const bbox = lastDay.length > 1 ? geojsonBbox({ type: "FeatureCollection", features: lastDay }) : null;
+        if (bbox) map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, maxZoom: 15, duration: 800 });
         else map.easeTo({ center: lngLat, zoom: track.features.length ? 13 : 11, duration: 800 });
         didFitOnce = true;
       }
