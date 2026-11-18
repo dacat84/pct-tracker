@@ -119,7 +119,7 @@ Built once by `scripts/build_elevation.py`: it walks the PCTA centerline, takes 
 
 ## How this was built
 
-I'm not a programmer. It started with copy and paste from ChatGPT and a lot of "I have no idea, explain it step by step". These days the AI is wired into GitHub directly, so I mostly just chat and it makes the changes itself.
+Inspired by Karel Sabbe's tracker (https://pct.karelsabbe.com/). I'm not a programmer. It started with asking ChatGPT "can you build me something like this for free?", then copy and paste and a lot of "I have no idea, explain it step by step". These days the AI is wired into GitHub directly, so I mostly just chat and it makes the changes itself.
 
 ## Build your own
 
