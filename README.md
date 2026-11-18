@@ -125,4 +125,6 @@ I'm not a programmer. It started with copy and paste from ChatGPT and a lot of "
 
 Fork the repo, turn on GitHub Pages, put your own Flickr album, LighterPack id and start date in, and follow `scripts/GARMIN_SETUP.md`. Works with any Garmin that syncs to Garmin Connect.
 
+Not tied to the PCT either: swap `data/Full_PCT_Simplified.geojson` for the route of any other trail (a GPX/GeoJSON line is enough), rebuild the profile with `scripts/build_elevation.py`, adjust the landmarks in `assets/js/elevation.js` and the texts, and it works for the CDT, AT, GR20, a Te Araroa or a two-week hike in the Alps.
+
 Easiest way if you don't code: give an AI assistant the link to this repo and ask something like *"Have a look at this tracker. Can you build the same for me? I'd like to change a few things. Tell me what you need from me and how to start."*
