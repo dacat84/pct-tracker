@@ -66,9 +66,12 @@ An iOS Shortcut takes a (dictated) note, creates a file `_updates/YYYY-MM-DD-HHM
 
 `scripts/gear_sync.py` reads the public LighterPack list every 3 hours and writes the card numbers to `_data/gear.json`. Categories are matched by the start of their name (`Shelter…`, `Stakes`, `Sleep…`, `Pack…`), so renaming e.g. "Shelter #1" doesn't break it.
 
+### Elevation profile
+
+Built once by `scripts/build_elevation.py`: it walks the PCTA centerline, takes ~2000 evenly spaced points and looks up their elevation in the free SRTM 30 m elevation model (OpenTopoData). Result: `data/pct_profile.json`. Passes, peaks, towns and water along the profile are hand-picked in `assets/js/elevation.js`.
+
 ### Other
 
-- `scripts/build_elevation.py` builds the elevation profile `data/pct_profile.json` once.
 - PCT centerline: `data/Full_PCT_Simplified.geojson` (PCTA, CC BY 4.0).
 - `keep-alive.yml` makes sure GitHub doesn't switch off scheduled jobs.
 
@@ -114,6 +117,12 @@ An iOS Shortcut takes a (dictated) note, creates a file `_updates/YYYY-MM-DD-HHM
 
 ---
 
+## How this was built
+
+I'm not a programmer. It started with copy and paste from ChatGPT and a lot of "I have no idea, explain it step by step". These days the AI is wired into GitHub directly, so I mostly just chat and it makes the changes itself.
+
 ## Build your own
 
 Fork the repo, turn on GitHub Pages, put your own Flickr album, LighterPack id and start date in, and follow `scripts/GARMIN_SETUP.md`. Works with any Garmin that syncs to Garmin Connect.
+
+Easiest way if you don't code: give an AI assistant the link to this repo and ask something like *"Have a look at this tracker. Can you build the same for me? I'd like to change a few things. Tell me what you need from me and how to start."*
