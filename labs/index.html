@@ -67,7 +67,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .me i{position:absolute;inset:0;border-radius:50%;background:#e0452f;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)}
 .me i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid #e0452f;animation:mePulse 2s ease-out infinite}
 @keyframes mePulse{from{transform:scale(1);opacity:.9}to{transform:scale(3);opacity:0}}
-.me-bub{position:absolute;left:0;top:0;z-index:4;will-change:transform}
+.me-bub{position:absolute;left:0;top:0;z-index:4;will-change:transform;transition:opacity .35s}.me-bub.away{opacity:0}
 .me-bub .bub{white-space:nowrap;font:600 12px/1 Inter,system-ui,sans-serif;background:#fff;color:#14202a;padding:5px 9px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
 .me-bub .bub b{color:#e0452f}.me-bub .bub .up{color:#56636d;font-weight:500}.me-bub{pointer-events:none}
 .maplibregl-ctrl-group{background:rgba(255,255,255,.92)!important}
@@ -129,7 +129,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=50"></script>
+<script src="pct.js?v=51"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -227,20 +227,20 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     // the label follows the dot smoothly instead of jumping with every bend of the track
     // label is part of the marker itself, so it can never lag behind or cover the dot
     var bubEl = document.createElement("div"); bubEl.className = "me-bub";
-    function bubTxt(n, d) { return T("Tag ", "Day ") + (n || 0) + " · <b>" + L.dist(d ? d.km : 0, 1) + "</b>" + (d && d.up ? ' · <span class="up">↑\u00a0' + L.elev(d.up).replace(" ", "\u00a0") + "</span>" : ""); }
+    function hmm(sec) { var m = Math.round(sec / 60); return Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0") + "\u00a0h"; }
+    function bubTxt(n, d) { return T("Tag ", "Day ") + (n || 0) + " · <b>" + L.dist(d ? d.km : 0, 1) + "</b>" + (d && d.sec ? ' · <span class="up">' + hmm(d.sec) + "</span>" : "") + (d && d.up ? ' · <span class="up">↑\u00a0' + L.elev(d.up).replace(" ", "\u00a0") + "</span>" : ""); }
     bubEl.innerHTML = '<div class="bub">' + bubTxt(D.dayNo, D.today) + '</div>';
-    // The label glides after the dot in screen space (readable while the dot zigzags along the trail),
-    // but is held at least a little above it and not too far to the side, so it never covers the dot.
+    // While the dot moves there is no label (day, km and time are in the bar below); as soon as it
+    // stops, at the tent at night or when paused, the day's numbers appear right next to it.
     map.getContainer().appendChild(bubEl);
-    var gx = null, gy = null;
-    (function glide() {
-      var p = map.project(meMk.getLngLat()), tx = p.x, ty = p.y - 34;
-      if (gx === null) { gx = tx; gy = ty; }
-      gx += (tx - gx) * .07; gy += (ty - gy) * .07;
-      gy = Math.min(gy, p.y - 24); gy = Math.max(gy, p.y - 70);       // bottom edge between 24 and 70 px above the dot
-      gx = Math.max(p.x - 70, Math.min(p.x + 70, gx));
-      bubEl.style.transform = "translate(" + gx.toFixed(1) + "px," + gy.toFixed(1) + "px) translate(-50%,-100%)";
-      requestAnimationFrame(glide);
+    var lastLL = null, still = 0;
+    (function place() {
+      var ll = meMk.getLngLat(), p = map.project(ll), now = performance.now();
+      if (!lastLL || Math.abs(ll.lng - lastLL.lng) > 1e-7 || Math.abs(ll.lat - lastLL.lat) > 1e-7) still = now;
+      lastLL = ll;
+      bubEl.classList.toggle("away", now - still < 250);
+      bubEl.style.transform = "translate(" + (p.x + 24).toFixed(1) + "px," + (p.y - 14).toFixed(1) + "px) translate(0,-50%)";   // right of the dot / tent
+      requestAnimationFrame(place);
     })();
     meMk.getElement().style.zIndex = 5;   // dot and label above tents and badges
     L.addLocate(map, function () { return meMk.getLngLat().toArray(); }, "bottom-left");

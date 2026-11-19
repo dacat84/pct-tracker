@@ -724,6 +724,8 @@
       // clock in the local time where the walk happened (Pacific on the PCT, Berlin for test walks)
       if (o.ui.clock) o.ui.clock.textContent = dfmt(p.t, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: p.c[0] < -30 ? "America/Los_Angeles" : "Europe/Berlin" }) + T(" Uhr", "");
       var f = D.track.features[s.f], day = f.properties.day, dn = D.days.findIndex(function (d) { return d.date === day; });
+      var atEnd = dayEnds.findIndex(function (k) { return Math.abs(k - cur) < 1e-6; });   // at a tent: still the day just walked
+      if (atEnd >= 0 && atEnd < D.days.length && cur < END) { dn = atEnd; day = D.days[dn].date; }
       var dnow = dn + 1, done = cur >= END;   // tents only where the night is already behind (or reached)
       document.querySelectorAll(".camp").forEach(function (c) { var d = +c.dataset.day; c.style.visibility = (done || d < dnow || (d === dnow && dayEnds.some(function (k) { return Math.abs(k - cur) < 1e-6; }))) ? "visible" : "hidden"; });
       if (o.onUpdate) o.onUpdate({ km: cur, lnglat: p.c, feature: f, date: day, dayNo: dn + 1, day: D.days[dn], end: cur >= END });
