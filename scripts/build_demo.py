@@ -64,12 +64,18 @@ def slice_km(a, b):
 def trail_km(lat, lon):
     return min(range(len(coords)), key=lambda i: hav(coords[i], (lon, lat)))
 ZEROS = [(cum[trail_km(33.7769, -116.6658)], 1), (cum[trail_km(34.2439, -116.9114)], 2), (cum[trail_km(34.3608, -117.6334)], 1)]
+NERO = cum[trail_km(33.0998, -116.4700)]   # Julian via Scissors Crossing: a nero, no zero
+nero_next = 0
 day = datetime.date(2026, 4, 22)
 km, feats = 0.0, []
 for n in range(30):
     base = 17 + n * 0.5 if n < 12 else 26
-    dist = max(12.0, min(36.0, random.gauss(base, 4)))
+    dist = max(17.0, min(36.0, random.gauss(base, 4)))
     zero = 0
+    if nero_next:   # short day: into town in the morning, resupply, a few km out again
+        dist, nero_next = nero_next, 0
+    elif km + dist < NERO <= km + dist + 16 and NERO - km - 9 >= 12:   # camp ~9 km before town
+        dist, nero_next = NERO - km - 9, 9 + random.uniform(3, 5)
     for town_km, z in ZEROS:
         if km < town_km <= km + dist + 8:   # walk on (or stop a bit early) to reach town
             dist, zero = town_km - km, z

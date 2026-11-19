@@ -43,6 +43,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
 .days::-webkit-scrollbar{width:8px}.days::-webkit-scrollbar-track{background:transparent}
 .days::-webkit-scrollbar-thumb{background:#2c343b;border-radius:4px}.days::-webkit-scrollbar-thumb:hover{background:#3a444c}
 .dl .row.zero .b{background:none;font:400 12px 'JetBrains Mono',monospace;color:#7d8790;white-space:nowrap;overflow:hidden;height:auto}
+.dl .row.nero .b{position:relative;display:flex;align-items:center;height:10px}.dl .row.nero .b span{position:absolute;left:calc(var(--w,0) + 8px);font:400 12px 'JetBrains Mono',monospace;color:#7d8790;white-space:nowrap}
 .dl .row.zero .b svg{vertical-align:-1px;margin-right:2px}.dl .row.zero .k{color:#7d8790}
 .dl .row.zero.on .b,.dl .row.zero.on .d,.dl .row.zero.on .k{color:#ff4d2e}
 .dl{display:grid;grid-template-columns:max-content 1fr max-content;gap:6px 12px;align-items:center}
@@ -87,7 +88,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
   <div class="panel"><h3><span data-de="Höhenprofil · Campo → Kanada" data-en="Elevation profile · Campo → Canada">Höhenprofil · Campo → Kanada</span><span id="profInfo"></span></h3><div class="prof" id="prof"></div><div class="tip" id="tip"></div></div>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../pct.js?v=21"></script>
+<script src="../pct.js?v=22"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -120,6 +121,8 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     var a2 = two(n ? D.walkedKm / n : 0, 1); $("tAvg").textContent = a2[0]; $("tAvg2").textContent = a2[1];
     var v = sec ? D.walkedKm / (sec / 3600) : 0; $("tPace").textContent = L.EN ? nf(v * KM2MI, 1) + " mph" : nf(v, 1) + " km/h"; $("tPace2").textContent = L.EN ? nf(v, 1) + " km/h" : nf(v * KM2MI, 1) + " mph";
     $("tDays").textContent = n; $("tZero").textContent = Math.max(0, span - n);
+    var nNero = days.filter(function (d) { return d.nero; }).length;
+    if (nNero) $("tZero").nextElementSibling.textContent = T("Ruhetage", "rest days") + " · " + nNero + " Nero";
     $("tMax").textContent = mx ? two(mx.km, 1)[0] : "–"; $("tMax2").textContent = mx ? two(mx.km, 1)[1] + " · " + hm(mx.sec) + " · " + dShort(mx.date) : "";
     $("tMin").textContent = mn ? two(mn.km, 1)[0] : "–"; $("tMin2").textContent = mn ? two(mn.km, 1)[1] + " · " + hm(mn.sec) + " · " + dShort(mn.date) : "";
 
@@ -139,7 +142,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     var mxk = mx ? mx.km : 1;
     // walking days plus the zero days after them (0 km, bed, town)
     var rows = []; days.forEach(function (d, i) {
-      rows.push('<div class="row" data-d="' + d.date + '"><div class="d">' + dShort(d.date) + '</div><div class="b"><i style="width:' + (d.km / mxk * 100) + '%"></i></div><div class="k">' + L.dist(d.km, 1) + " <small>· ↑ " + L.elev(d.up) + "</small></div></div>");
+      rows.push('<div class="row' + (d.nero ? " nero" : "") + '" data-d="' + d.date + '"><div class="d">' + dShort(d.date) + '</div><div class="b" style="--w:' + (d.km / mxk * 100) + '%"><i style="width:' + (d.km / mxk * 100) + '%"></i>' + (d.nero ? "<span>Nero · " + d.nero + "</span>" : "") + '</div><div class="k">' + L.dist(d.km, 1) + " <small>· ↑ " + L.elev(d.up) + "</small></div></div>");
       var c = D.camps[i];
       for (var z = 1; c && z <= c.zero; z++) {
         var zd = new Date(Date.parse(d.date + "T12:00:00Z") + z * 86400000).toISOString().slice(0, 10);
