@@ -489,23 +489,18 @@
       }
       return { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: coords } };
     });
-    // closed area: a band of ~3 km on both sides of the trail, hatched like on fire maps
-    var W = 3, zone = feats.map(function (f) {
-      var c = f.geometry.coordinates, L = [], Rr = [];
-      c.forEach(function (p, i) {
-        var a = c[Math.max(0, i - 1)], b = c[Math.min(c.length - 1, i + 1)], kx = 111.32 * Math.cos(p[1] * Math.PI / 180), ky = 110.57;
-        var dx = (b[0] - a[0]) * kx, dy = (b[1] - a[1]) * ky, len = Math.hypot(dx, dy) || 1, nx = -dy / len * W, ny = dx / len * W;
-        L.push([p[0] + nx / kx, p[1] + ny / ky]); Rr.push([p[0] - nx / kx, p[1] - ny / ky]);
-      });
-      function cap(p, q, dir) {   // round end around the first / last trail point
-        var out = [], kx = 111.32 * Math.cos(p[1] * Math.PI / 180), ky = 110.57, a0 = Math.atan2((q[1] - p[1]) * ky, (q[0] - p[0]) * kx);
-        for (var s = 1; s < 12; s++) { var a = a0 + dir * Math.PI * s / 12; out.push([p[0] + Math.cos(a) * W / kx, p[1] + Math.sin(a) * W / ky]); }
-        return out;
-      }
-      var ring = L.concat(cap(c[c.length - 1], L[L.length - 1], -1), Rr.reverse(), cap(c[0], Rr[Rr.length - 1], -1));
-      ring.push(ring[0]);
-      return { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [ring] } };
-    });
+    // closed area: a clean band of ~3 km around the (smoothed) trail, hatched like on fire maps.
+    // Turf.js does the buffering (real union, so no self-overlaps in bends); loaded only when needed.
+    function zoneData() {
+      return { type: "FeatureCollection", features: feats.map(function (f) {
+        var sm = turf.simplify(f, { tolerance: 0.01, highQuality: true });
+        return turf.buffer(sm, 3, { units: "kilometers", steps: 12 });
+      }) };
+    }
+    function withTurf(cb) {
+      if (window.turf) return cb();
+      var s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"; s.onload = cb; document.head.appendChild(s);
+    }
     if (!map.hasImage("hatch")) {
       var cv = document.createElement("canvas"); cv.width = cv.height = 12; var g = cv.getContext("2d");
       g.strokeStyle = "rgba(255,212,0,.85)"; g.lineWidth = 1.3;
@@ -513,7 +508,8 @@
       g.moveTo(0, 0); g.lineTo(12, 12); g.moveTo(-6, 6); g.lineTo(6, 18); g.moveTo(6, -6); g.lineTo(18, 6); g.stroke();
       map.addImage("hatch", g.getImageData(0, 0, 12, 12));
     }
-    map.addSource("closure-zone", { type: "geojson", data: { type: "FeatureCollection", features: zone } });
+    map.addSource("closure-zone", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    withTurf(function () { map.getSource("closure-zone").setData(zoneData()); });
     map.addLayer({ id: "closure-fill", type: "fill", source: "closure-zone", paint: { "fill-color": "rgba(255,212,0,.12)" } });
     map.addLayer({ id: "closure-hatch", type: "fill", source: "closure-zone", paint: { "fill-pattern": "hatch", "fill-opacity": .9 } });
     map.addLayer({ id: "closure-edge", type: "line", source: "closure-zone", paint: { "line-color": "#ffd400", "line-width": 2.5 }, layout: { "line-join": "round" } });
