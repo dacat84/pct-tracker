@@ -263,6 +263,9 @@
   }
 
   // ---- Replay: walks the recorded track from day 1 to now ----
+  // Smooth: position is interpolated every frame, the camera follows a smoothed
+  // (lagging) centre so small zigzags don't shake the map, and the line is only
+  // redrawn a few times per second. Faster speed = camera zooms further out.
   // opts: { map, D, marker, ui: {play, speed, clock, slider?}, onUpdate(state) }
   function replay(o) {
     var D = o.D, seq = [], base = 0;
@@ -270,41 +273,62 @@
       var c = f.geometry.coordinates, t0 = Date.parse(f.properties.start_date), dur = (f.properties.moving_time_s || 0) * 1000, n = c.length;
       var geo = [0]; for (var k = 1; k < n; k++) geo.push(geo[k - 1] + hav(c[k - 1][1], c[k - 1][0], c[k][1], c[k][0]));
       var real = (f.properties.distance_m || 0) / 1000 || geo[n - 1], sc = geo[n - 1] ? real / geo[n - 1] : 0;
-      for (k = 0; k < n; k++) seq.push({ c: c[k], f: fi, km: base + geo[k] * sc, t: t0 + (n > 1 ? dur * k / (n - 1) : 0) });
+      for (k = 0; k < n; k++) seq.push({ c: c[k], f: fi, k: k, km: base + geo[k] * sc, t: t0 + (n > 1 ? dur * k / (n - 1) : 0) });
       base += real;
     });
-    var N = seq.length, idx = N - 1, timer = null, speeds = [1, 2, 4], sp = 0;
-    function trackUpTo(i) {
-      var out = [];
-      D.track.features.forEach(function (f, fi) {
-        if (fi < seq[i].f) out.push(f);
-        else if (fi === seq[i].f) { var start = seq.findIndex(function (s) { return s.f === fi; }); out.push({ type: "Feature", properties: f.properties, geometry: { type: "LineString", coordinates: f.geometry.coordinates.slice(0, i - start + 1).concat(i - start === 0 ? [f.geometry.coordinates[0]] : []) } }); }
-      });
+    var N = seq.length, END = N ? seq[N - 1].km : 0, cur = END, raf = null, sp = 0, lastDraw = 0, cam = null, zoom = null;
+    var SPEEDS = [1, 2, 4], ZOOM = [12, 10.6, 9.2], DAY_MS = 6000;      // 1x: one day of walking in ~6 s
+    function idxAt(km) { var lo = 0, hi = N - 1; while (hi - lo > 1) { var m = (lo + hi) >> 1; if (seq[m].km <= km) lo = m; else hi = m; } return lo; }
+    function pointAt(km) {
+      var i = idxAt(km), a = seq[i], b = seq[Math.min(N - 1, i + 1)];
+      if (b.f !== a.f || b.km === a.km) return { i: i, c: a.c, t: a.t };
+      var r = Math.max(0, Math.min(1, (km - a.km) / (b.km - a.km)));
+      return { i: i, c: [a.c[0] + (b.c[0] - a.c[0]) * r, a.c[1] + (b.c[1] - a.c[1]) * r], t: a.t + (b.t - a.t) * r };
+    }
+    function trackUpTo(p) {
+      var s = seq[p.i], out = D.track.features.slice(0, s.f);
+      var part = D.track.features[s.f].geometry.coordinates.slice(0, s.k + 1).concat([p.c]);
+      out.push({ type: "Feature", properties: D.track.features[s.f].properties, geometry: { type: "LineString", coordinates: part } });
       return { type: "FeatureCollection", features: out };
     }
-    function set(i, follow) {
-      if (!N) return; idx = Math.max(0, Math.min(N - 1, i)); var s = seq[idx];
-      var src = o.map.getSource(o.source || "trk"); if (src) src.setData(idx === N - 1 ? D.track : trackUpTo(idx));
-      if (o.marker) o.marker.setLngLat(s.c);
-      if (follow) o.map.easeTo({ center: s.c, duration: 120, easing: function (x) { return x; } });
-      if (o.ui.slider) o.ui.slider.value = idx;
-      if (o.ui.clock) o.ui.clock.textContent = new Date(s.t).toLocaleString("de-DE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Los_Angeles" }) + " Uhr";
+    function show(km, follow, force) {
+      if (!N) return; cur = Math.max(0, Math.min(END, km)); var p = pointAt(cur), s = seq[p.i], now = performance.now();
+      if (force || now - lastDraw > 140 || cur >= END) { var src = o.map.getSource(o.source || "trk"); if (src) src.setData(cur >= END ? D.track : trackUpTo(p)); lastDraw = now; }
+      if (o.marker) o.marker.setLngLat(p.c);
+      if (o.ui.slider) o.ui.slider.value = Math.round(cur / (END || 1) * 1000);
+      if (o.ui.clock) o.ui.clock.textContent = new Date(p.t).toLocaleString("de-DE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Los_Angeles" }) + " Uhr";
       var f = D.track.features[s.f], day = String(f.properties.start_date).slice(0, 10), dn = D.days.findIndex(function (d) { return d.date === day; });
-      if (o.onUpdate) o.onUpdate({ i: idx, n: N, km: s.km, lnglat: s.c, feature: f, date: day, dayNo: dn + 1, day: D.days[dn], end: idx === N - 1 });
+      if (o.onUpdate) o.onUpdate({ km: cur, lnglat: p.c, feature: f, date: day, dayNo: dn + 1, day: D.days[dn], end: cur >= END });
+      return p;
     }
-    function stop() { clearInterval(timer); timer = null; o.ui.play.innerHTML = "▶"; o.ui.play.classList.remove("on"); }
+    function stop() { if (raf) cancelAnimationFrame(raf); raf = null; o.ui.play.innerHTML = "▶"; o.ui.play.classList.remove("on"); }
     function play() {
-      if (!N) return; if (idx >= N - 1) set(0, true);
+      if (!N) return;
+      if (cur >= END) { show(0, false, true); var p0 = pointAt(0); o.map.jumpTo({ center: p0.c, zoom: ZOOM[sp] }); }
+      cam = o.map.getCenter().toArray(); zoom = o.map.getZoom();
       o.ui.play.innerHTML = "❚❚"; o.ui.play.classList.add("on");
-      var step = Math.max(1, Math.round(N / 900));          // ~30 s for the whole track at 1x
-      timer = setInterval(function () { if (idx >= N - 1) { stop(); return; } set(idx + step * speeds[sp], true); }, 33);
+      var last = performance.now();
+      function frame(now) {
+        var dt = Math.min(64, now - last); last = now;
+        var p = pointAt(cur), f = D.track.features[seq[p.i].f], dayKm = Math.max(5, (f.properties.distance_m || 10000) / 1000);
+        var p2 = show(cur + dayKm * dt * SPEEDS[sp] / DAY_MS, true);
+        var a = Math.min(1, dt / 650), za = Math.min(1, dt / 900);      // smoothing for camera and zoom
+        cam = [cam[0] + (p2.c[0] - cam[0]) * a, cam[1] + (p2.c[1] - cam[1]) * a];
+        zoom = zoom + (ZOOM[sp] - zoom) * za;
+        o.map.jumpTo({ center: cam, zoom: zoom });
+        if (cur >= END) { stop(); return; }
+        raf = requestAnimationFrame(frame);
+      }
+      raf = requestAnimationFrame(frame);
     }
-    o.ui.play.onclick = function () { timer ? stop() : play(); };
-    if (o.ui.speed) o.ui.speed.onclick = function () { sp = (sp + 1) % speeds.length; o.ui.speed.textContent = speeds[sp] + "×"; };
-    if (o.ui.slider) { o.ui.slider.max = Math.max(0, N - 1); o.ui.slider.oninput = function () { stop(); set(+o.ui.slider.value, true); }; }
-    document.addEventListener("keydown", function (e) { if (e.code === "Space" && !(e.target.closest && e.target.closest("input,select,textarea"))) { e.preventDefault(); o.ui.play.click(); } });
-    set(N - 1, false);
-    return { set: set, stop: stop, toDate: function (date) { var k = -1; seq.forEach(function (s, j) { if (String(D.track.features[s.f].properties.start_date).slice(0, 10) <= date) k = j; }); if (k >= 0) { stop(); set(k, false); } return k >= 0 ? seq[k].c : null; } };
+    o.ui.play.onclick = function () { raf ? stop() : play(); };
+    if (o.ui.speed) o.ui.speed.onclick = function () { sp = (sp + 1) % SPEEDS.length; o.ui.speed.textContent = SPEEDS[sp] + "×"; };
+    if (o.ui.slider) { o.ui.slider.max = 1000; o.ui.slider.oninput = function () { stop(); var p = show(+o.ui.slider.value / 1000 * END, false, true); if (p) o.map.jumpTo({ center: p.c }); }; }
+    document.addEventListener("keydown", function (e) { if (e.code === "Space" && !(e.target.closest && e.target.closest("input,select,textarea,button"))) { e.preventDefault(); o.ui.play.click(); } });
+    show(END, false, true);
+    return { stop: stop, toDate: function (date) {
+      var k = -1; seq.forEach(function (s, j) { if (String(D.track.features[s.f].properties.start_date).slice(0, 10) <= date) k = j; });
+      if (k < 0) return null; stop(); show(seq[k].km, false, true); return seq[k].c; } };
   }
 
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,

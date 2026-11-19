@@ -68,6 +68,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .me .bub b{color:#e0452f}
 .maplibregl-ctrl-group{background:rgba(255,255,255,.92)!important}
 .maplibregl-ctrl-attrib{font-size:10px}
+.maplibregl-ctrl-bottom-right{bottom:300px}
+@media(max-width:820px){.maplibregl-ctrl-bottom-right{bottom:auto;top:110px}}
 @media(max-width:820px){
   .head{left:18px;top:64px;right:18px}.head h1{font-size:40px}.head p{font-size:16px}.head .who{display:none}
   .card{left:18px;right:18px;top:auto;bottom:212px;width:auto;padding:8px 14px 6px}
@@ -115,7 +117,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=4"></script>
+<script src="pct.js?v=5"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, $ = function (id) { return document.getElementById(id); };
