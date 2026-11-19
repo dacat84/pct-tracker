@@ -374,15 +374,16 @@
     var css = document.getElementById("lb-css");
     if (!css) { css = document.createElement("style"); css.id = "lb-css";
       css.textContent = ".lb{position:fixed;inset:0;z-index:9500;background:rgba(5,8,10,.92);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}" +
-        ".lb img{max-width:92vw;max-height:80vh;box-shadow:0 10px 40px rgba(0,0,0,.6)}.lb .cap{color:#dfe6ea;font:500 14px Inter,system-ui,sans-serif;text-align:center;max-width:80vw}" +
-        ".lb button{position:absolute;top:50%;transform:translateY(-50%);all:unset;cursor:pointer;color:#fff;font:300 46px/1 system-ui;padding:20px;opacity:.8}.lb .p{left:8px}.lb .n{right:8px}" +
+        ".lb .row{display:flex;align-items:center;gap:6px;max-width:100vw}.lb img{max-width:calc(100vw - 150px);max-height:80vh;box-shadow:0 10px 40px rgba(0,0,0,.6)}.lb .cap{color:#dfe6ea;font:500 14px Inter,system-ui,sans-serif;text-align:center;max-width:80vw}" +
+        ".lb button{all:unset;flex:none;width:60px;text-align:center;cursor:pointer;color:#fff;font:300 46px/1 system-ui;padding:20px 0;opacity:.75}.lb button:hover{opacity:1}" +
         ".lb .x{position:absolute;top:14px;right:18px;color:#fff;font:300 34px/1 system-ui;cursor:pointer}";
       document.head.appendChild(css); }
     var lb = document.createElement("div"); lb.className = "lb";
     function show() {
       var p = list[i], d = p.taken ? dfmt(p.taken.replace(" ", "T"), { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) + T(" Uhr", "") : "";
-      lb.innerHTML = '<span class="x">×</span>' + (list.length > 1 ? '<button class="p">‹</button><button class="n">›</button>' : "") +
-        '<img src="' + (p.l || p.m) + '" alt=""><div class="cap">' + [p.title, d].filter(Boolean).join(" · ") + "</div>";
+      var many = list.length > 1;
+      lb.innerHTML = '<span class="x">×</span><div class="row">' + (many ? '<button class="p">‹</button>' : "") +
+        '<img src="' + (p.l || p.m) + '" alt="">' + (many ? '<button class="n">›</button>' : "") + '</div><div class="cap">' + [p.title, d].filter(Boolean).join(" · ") + "</div>";
       var pb = lb.querySelector(".p"), nb = lb.querySelector(".n");
       if (pb) pb.onclick = function (e) { e.stopPropagation(); i = (i - 1 + list.length) % list.length; show(); };
       if (nb) nb.onclick = function (e) { e.stopPropagation(); i = (i + 1) % list.length; show(); };
