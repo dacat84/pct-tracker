@@ -67,7 +67,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .me i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid #e0452f;animation:mePulse 2s ease-out infinite}
 @keyframes mePulse{from{transform:scale(1);opacity:.9}to{transform:scale(3);opacity:0}}
 .me-bub .bub{white-space:nowrap;font:600 12px/1 Inter,system-ui,sans-serif;background:#fff;color:#14202a;padding:5px 9px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
-.me-bub .bub b{color:#e0452f}.me-bub{pointer-events:none}
+.me-bub .bub b{color:#e0452f}.me-bub .bub .up{color:#56636d;font-weight:500}.me-bub{pointer-events:none}
 .maplibregl-ctrl-group{background:rgba(255,255,255,.92)!important}
 .maplibregl-ctrl-attrib{font-size:10px}
 .maplibregl-ctrl-bottom-right{bottom:300px}
@@ -172,7 +172,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         $("cDay").textContent = T("Tag ", "Day ") + (i + 1);
         $("cDate").textContent = L.dfmt(d.date + "T12:00", { weekday: "short", day: "numeric", month: "long" });
         var cd = $("cDate"); if (cd.scrollWidth > cd.clientWidth + 1) cd.textContent = L.dfmt(d.date + "T12:00", { weekday: "short", day: "numeric", month: "short" });   // "16. Nov." when the long month doesn't fit
-        $("cToday").textContent = L.dist(d.km, 1); $("cTodayL").textContent = T("gelaufen", "hiked");
+        $("cToday").textContent = L.dist(d.km, 1); $("cTodayL").textContent = T("gelaufen", "hiked") + (d.up ? " · ↑ " + L.elev(d.up) : "");
         if (d.nero) $("cTodayL").textContent = T("gelaufen · Nero, Nacht in ", "hiked · nero, night in ") + d.nero;
       }
       $("cTotal").textContent = L.dist(tot);
@@ -212,7 +212,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     var meMk = new maplibregl.Marker({ element: me, anchor: "center" }).setLngLat(pos).addTo(map);
     // the label follows the dot smoothly instead of jumping with every bend of the track
     var bubEl = document.createElement("div"); bubEl.className = "me-bub";
-    bubEl.innerHTML = '<div class="bub">' + T("Tag ", "Day ") + (D.dayNo || 0) + ' · <b>' + L.dist(D.today ? D.today.km : 0, 1) + '</b></div>';
+    function bubTxt(n, d) { return T("Tag ", "Day ") + (n || 0) + " · <b>" + L.dist(d ? d.km : 0, 1) + "</b>" + (d && d.up ? ' · <span class="up">↑\u00a0' + L.elev(d.up).replace(" ", "\u00a0") + "</span>" : ""); }
+    bubEl.innerHTML = '<div class="bub">' + bubTxt(D.dayNo, D.today) + '</div>';
     var bubPos = pos.slice(), bubT = performance.now(), bubMk = new maplibregl.Marker({ element: bubEl, anchor: "left", offset: [16, 0] }).setLngLat(pos).addTo(map);
     function moveBub(ll) { var now = performance.now(), a = Math.min(1, (now - bubT) / 900); bubT = now; bubPos = [bubPos[0] + (ll[0] - bubPos[0]) * a, bubPos[1] + (ll[1] - bubPos[1]) * a]; bubMk.setLngLat(bubPos); }
     L.addLocate(map, function () { return meMk.getLngLat().toArray(); }, "bottom-left");
@@ -235,7 +236,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         $("sDay").textContent = s.dayNo || 0; $("sKm").textContent = L.dist(s.km);
         var sn = L.trailPoint(D, s.lnglat) || D.here;
         $("sLeft").textContent = L.dist(D.total - (sn ? sn.km : 0));
-        bubEl.firstChild.innerHTML = T("Tag ", "Day ") + (s.dayNo || 0) + " · <b>" + L.dist(s.day ? s.day.km : 0, 1) + "</b>";
+        bubEl.firstChild.innerHTML = bubTxt(s.dayNo, s.day);
         if (s.end) { bubPos = s.lnglat.slice(); bubMk.setLngLat(bubPos); } else moveBub(s.lnglat);
         if (s.dayNo && s.dayNo - 1 !== card.cur && !card.zeroOn) card(s.dayNo - 1);
         if (sn && Math.abs(sn.km - strip.km) > 0.8) strip(sn.km);
