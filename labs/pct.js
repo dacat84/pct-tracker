@@ -46,9 +46,11 @@
   function nf(v, d) { return Number(v).toLocaleString(LOC, { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
   // distances / elevations in the right unit: dist(km) -> "12 km" | "7.5 mi", elev(m) -> "1.600 m" | "5,249 ft"
   function distV(km) { return EN ? km / MI2KM : km; } function DU() { return EN ? "mi" : "km"; }
-  function dist(km, d) { return nf(distV(km), d || 0) + " " + DU(); }
+  function dist(km, d) { return nf(distV(km), d || 0) + "\u00a0" + DU(); }
+  function nw(s) { return '<span style="white-space:nowrap">' + s + "</span>"; }   // keep a phrase on one line
+  function nwList(s) { return String(s).split(" · ").map(nw).join(" · "); }
   function elevV(m) { return EN ? m * 3.28084 : m; } function EU() { return EN ? "ft" : "m"; }
-  function elev(m) { return nf(elevV(m), 0) + " " + EU(); }
+  function elev(m) { return nf(elevV(m), 0) + "\u00a0" + EU(); }
   function dfmt(d, o) { return new Date(d).toLocaleString(LOC, o); }
 
   function snap(pts, lat, lon) {
@@ -292,7 +294,7 @@
     if (!css) { css = document.createElement("style"); css.id = "tw-css";
       css.textContent = ".tw{display:flex;align-items:center;gap:5px;cursor:pointer}.tw i{width:12px;height:12px;border-radius:3px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5)}" +
         ".tw span{font:600 12px Inter,system-ui,sans-serif;white-space:nowrap}" +
-        ".tw-pop .maplibregl-popup-content{padding:12px 14px;max-width:260px;font:14px/1.45 Inter,system-ui,sans-serif;color:#14202a;border-radius:6px}" +
+        ".tw-pop .maplibregl-popup-content{padding:12px 14px;max-width:300px;font:14px/1.45 Inter,system-ui,sans-serif;color:#14202a;border-radius:6px}" +
         ".tw-pop h4{margin:0 0 2px;font-size:16px}.tw-pop .m{font-size:12px;color:#56636d;margin-bottom:6px}.tw-pop .n{font-size:11px;color:#8a959d;margin-top:8px}";
       document.head.appendChild(css); }
     var lines = { type: "FeatureCollection", features: [] };
@@ -305,10 +307,12 @@
       if (s && !direct) lines.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: path } });
       var el = document.createElement("div"); el.className = "tw";
       el.innerHTML = '<i style="background:' + (theme.dot || "#f5b301") + '"></i><span style="color:' + (theme.text || "#fff") + ";text-shadow:" + (theme.halo || "0 1px 3px #000,0 0 8px rgba(0,0,0,.7)") + '">' + t[0] + "</span>";
-      var pop = new maplibregl.Popup({ offset: 12, className: "tw-pop", maxWidth: "280px" }).setHTML(
-        "<h4>" + t[0] + '</h4><div class="m">' + (direct ? T("Direkt am Trail", "Right on the trail") + " · Trail-" + DU() + " " + nf(distV(s ? s.km : 0))
-          : (acc ? T("Zugang: ", "Access: ") + acc[0] : T("Nächster Trailpunkt", "Nearest trail point")) + " · Trail-" + DU() + " " + nf(distV(s ? s.km : 0)) + "<br>" + T("ca. ", "approx. ") + nf(distV(off), off < 10 ? 1 : 0) + " " + DU() + (via ? T(" bis in den Ort (über die Straße)", " to town (by road)") : T(" Luftlinie bis in den Ort", " to town (straight line)"))) + "</div>" +
-        t[3] + '<div class="n">' + T("Stand Planung, vor Ort gilt FarOut.", "From planning, check FarOut on trail.") + "</div>");
+      var tkm = nw("Trail-" + DU() + "\u00a0" + nf(distV(s ? s.km : 0)));
+      var pop = new maplibregl.Popup({ offset: 12, className: "tw-pop", maxWidth: "300px" }).setHTML(
+        "<h4>" + t[0] + '</h4><div class="m">' + (direct ? nw(T("Direkt am Trail", "Right on the trail")) + " · " + tkm
+          : (acc ? nw(T("Zugang: ", "Access: ")) + " " + acc[0] : nw(T("Nächster Trailpunkt", "Nearest trail point"))) + "<br>" + tkm + "<br>" +
+            nw(T("ca. ", "approx. ") + dist(off, off < 10 ? 1 : 0) + (via ? T(" über die Straße in den Ort", " by road to town") : T(" Luftlinie in den Ort", " to town (straight line)")))) + "</div>" +
+        nwList(t[3]) + '<div class="n">' + T("Stand Planung, vor Ort gilt FarOut.", "From planning, check FarOut on trail.") + "</div>");
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-6, 0] }).setLngLat([t[2], t[1]]).setPopup(pop).addTo(map);
     });
     D.landmarks.forEach(function (l) { if (l.side) lines.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: [[l.lon, l.lat], l.trail] } }); });
@@ -324,10 +328,10 @@
       el.className = "lm " + l.type + " t" + l.tier; el.style.cursor = "pointer"; el.style.pointerEvents = "auto";
       el.innerHTML = "<i style='background:" + (theme.dot ? theme.dot(l) : Ty.c) + "'></i><span>" + l.name + "</span>";
       if (l.type === "peak" && !theme.dot) el.firstChild.style.background = "transparent";
-      var pop = new maplibregl.Popup({ offset: 10, className: "tw-pop", maxWidth: "260px" }).setHTML(
+      var pop = new maplibregl.Popup({ offset: 10, className: "tw-pop", maxWidth: "300px" }).setHTML(
         "<h4>" + l.name + '</h4><div class="m">' + Ty[LANG] + " · " + elev(l.m) + "</div>" +
-        (l.side ? T("Abstecher vom Trail bei ", "Side trip from the trail at ") : T("Am Trail bei ", "On the trail at ")) + "Trail-" + DU() + " " + nf(distV(l.km)) +
-        (l.type === "term" ? "" : "<br>" + T("Ab Campo ", "From Campo ") + dist(l.km) + T(", bis Kanada ", ", to Canada ") + dist(D.total - l.km)));
+        nw((l.side ? T("Abstecher bei ", "Side trip at ") : T("Am Trail bei ", "On the trail at ")) + "Trail-" + DU() + "\u00a0" + nf(distV(l.km))) +
+        (l.type === "term" ? "" : "<br>" + nw(dist(l.km) + T(" ab Campo", " from Campo")) + "<br>" + nw(dist(D.total - l.km) + T(" bis Kanada", " to Canada"))));
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-5, 0] }).setLngLat([l.lon, l.lat]).setPopup(pop).addTo(map);
     });
   }
