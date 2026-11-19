@@ -117,7 +117,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=18"></script>
+<script src="pct.js?v=19"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -130,6 +130,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       layers: [{ id: "sat", type: "raster", source: "sat", paint: { "raster-saturation": -0.25, "raster-brightness-max": 0.85 } }] }
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+  window.__map = map;   // handy for testing in the browser console
   function zoomClass() { var z = map.getZoom(), el = $("map"); el.classList.toggle("z-lo", z < 7.5); el.classList.toggle("z-mid", z >= 7.5 && z < 10); }
   map.on("zoom", zoomClass);
 
@@ -148,15 +149,27 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     var ri = D.regions.indexOf(D.region);
     $("kicker").textContent = T("Abschnitt ", "Section ") + (ri + 1) + T(" von ", " of ") + D.regions.length + T(" · Tag ", " · Day ") + (D.dayNo || 0) + " · " + L.DU() + " " + nf(L.distV(here.km));
     $("title").textContent = L.reg(D.region);
-    var last = D.diary[0];
-    $("sub").textContent = last ? T("„", "“") + firstSentence(L.EN ? (last.en || last.de) : last.de) + T("“", "”") : (D.next ? T("Unterwegs Richtung ", "Heading for ") + D.next.name + "." : "");
-    $("cToday").textContent = D.today ? nf(L.distV(D.today.km), 1) : "0"; $("cTodayL").textContent = T("km heute", "mi today").replace("km", L.DU());
-    $("cTotal").textContent = L.dist(D.walkedKm);
-    $("cKm").textContent = L.DU() + " " + nf(L.distV(here.km)) + " · " + nf(here.km / D.total * 100, 1) + " %";
-    $("cLeft").textContent = L.dist(D.total - here.km);
-    $("cElev").textContent = L.elev(here.m);
-    $("cNext").textContent = D.next ? D.next.name + " · " + L.dist(D.next.km - here.km) : T("Kanada!", "Canada!");
+    var toStart = Math.ceil((Date.parse(L.START + "T00:00:00") - Date.now()) / 86400000);
+    if (toStart > 0) $("sub").textContent = T("Noch " + nf(toStart) + " Tage bis zum Start am 22. April 2027.", nf(toStart) + " days until the start on April 22, 2027.");
+    else $("sub").textContent = D.next ? T("Nächster Ort: ", "Next town: ") + D.next.name + T(" in ", " in ") + L.dist(D.next.km - here.km) + "." : T("Auf dem letzten Stück nach Kanada.", "On the last stretch to Canada.");
     $("cSeen").textContent = ago(D.latest && D.latest.ts);
+
+    // --- info card for one day (default: the latest). Click a day on the map to see it. ---
+    function nextTownFrom(km) { return D.towns.filter(function (tw) { return tw.km > km + 0.5; })[0] || null; }
+    function card(i) {
+      var d = D.days[i], c = D.camps[i];
+      if (!d) { $("cToday").textContent = "0"; $("cTodayL").textContent = T("km heute", "mi today").replace("km", L.DU()); return; }
+      var tp = L.trailPoint(D, c.lnglat) || D.here, tot = D.days.slice(0, i + 1).reduce(function (s, x) { return s + x.km; }, 0), nt = nextTownFrom(tp.km);
+      $("cToday").textContent = nf(L.distV(d.km), 1);
+      $("cTodayL").textContent = L.DU() + T(" am ", " on ") + L.dfmt(d.date + "T12:00", { weekday: "short", day: "numeric", month: "short" }) + T(" · Tag ", " · day ") + (i + 1);
+      $("cTotal").textContent = L.dist(tot);
+      $("cKm").textContent = L.DU() + " " + nf(L.distV(tp.km)) + " · " + nf(tp.km / D.total * 100, 1) + " %";
+      $("cLeft").textContent = L.dist(D.total - tp.km);
+      $("cElev").textContent = L.elev(tp.m);
+      $("cNext").textContent = nt ? nt.name + " · " + L.dist(nt.km - tp.km) : T("Kanada!", "Canada!");
+      card.cur = i;
+    }
+    card(D.days.length - 1);
 
     // --- map: PCT line, walked track, landmarks ---
     map.addSource("pct", { type: "geojson", data: D.line });
@@ -165,6 +178,16 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     map.addLayer({ id: "trk-glow", type: "line", source: "trk", paint: { "line-color": "#e0452f", "line-width": 9, "line-opacity": .28, "line-blur": 4 }, layout: { "line-cap": "round", "line-join": "round" } });
     map.addLayer({ id: "trk", type: "line", source: "trk", paint: { "line-color": L.dayColor("#ff6b4f", "#ffd166"), "line-width": 3 }, layout: { "line-cap": "round", "line-join": "round" } });
     L.addCamps(map, D, { fill: "#ffd166", ink: "#14202a" });
+    map.addLayer({ id: "trk-sel", type: "line", source: "trk", filter: ["==", ["get", "dayIdx"], -1], paint: { "line-color": "#fff", "line-width": 6, "line-opacity": .9 }, layout: { "line-cap": "round", "line-join": "round" } }, "trk");
+    map.addLayer({ id: "trk-hit", type: "line", source: "trk", paint: { "line-color": "#000", "line-width": 18, "line-opacity": 0 } });
+    function pickDay(i) { card(i); map.setFilter("trk-sel", ["==", ["get", "dayIdx"], i]); }
+    map.on("click", function (e) {   // a day on the map: show it in the card; elsewhere: back to the latest day
+      var f = map.queryRenderedFeatures(e.point, { layers: ["trk-hit"] })[0];
+      if (f && f.properties.dayIdx != null) pickDay(+f.properties.dayIdx);
+      else if (card.cur !== D.days.length - 1 || map.getFilter("trk-sel")[2] !== -1) { card(D.days.length - 1); map.setFilter("trk-sel", ["==", ["get", "dayIdx"], -1]); }
+    });
+    map.on("mouseenter", "trk-hit", function () { map.getCanvas().style.cursor = "pointer"; });
+    map.on("mouseleave", "trk-hit", function () { map.getCanvas().style.cursor = ""; });
 
     L.addLandmarks(map, D);
 
@@ -193,6 +216,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         var sn = L.trailPoint(D, s.lnglat) || D.here;
         $("sLeft").textContent = L.dist(D.total - (sn ? sn.km : 0));
         me.querySelector(".bub").innerHTML = T("Tag ", "Day ") + (s.dayNo || 0) + " · <b>" + L.dist(s.day ? s.day.km : 0, 1) + "</b>";
+        if (s.dayNo && s.dayNo - 1 !== card.cur) card(s.dayNo - 1);
       } });
     if (!D.track.features.length) { $("play").style.opacity = .4; $("clock").textContent = T("Noch keine Aufzeichnung, Start am 22. April 2027", "Nothing recorded yet, start on April 22, 2027"); }
 
