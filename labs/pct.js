@@ -416,7 +416,7 @@
     // are just seen from the trail, a long line to them would only clutter the map
     D.landmarks.forEach(function (l) { if (l.side && l.off <= 8) lines.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: [[l.lon, l.lat], l.trail] } }); });
     map.addSource("tw-links", { type: "geojson", data: lines });
-    map.addLayer({ id: "tw-links", type: "line", source: "tw-links", paint: { "line-color": theme.link || "#f5b301", "line-width": 1.3, "line-opacity": .8, "line-dasharray": [2, 2] } });
+    map.addLayer({ id: "tw-links", type: "line", source: "tw-links", minzoom: 7, paint: { "line-color": theme.link || "#f5b301", "line-width": 1.3, "line-opacity": .8, "line-dasharray": [2, 2] } });
   }
 
   // ---- Trail landmarks (peaks, passes, water, parks, termini), clickable ----
@@ -469,7 +469,7 @@
       var n = Math.max(1, Math.min(8, Math.round((b - a) / 15)));
       for (var k = 0; k < n; k++) {
         var p = atKm(D.pts, a + (b - a) * (k + .5) / n), el = document.createElement("div");
-        el.innerHTML = FLAME; el.style.cssText = "cursor:pointer;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))";
+        el.innerHTML = FLAME; el.className = "flame" + (k === Math.floor(n / 2) ? " flame-main" : ""); el.style.cssText = "cursor:pointer;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))";
         new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([p.lon, p.lat])
           .setPopup(new maplibregl.Popup({ offset: 22, className: "tw-pop", maxWidth: "300px" }).setHTML(
             "<h4>" + T("Waldbrand-Sperrung", "Fire closure") + '</h4><div class="m">' + (c.name ? c.name + "<br>" : "") +
@@ -522,6 +522,24 @@
           '<line x1="' + a + '" x2="' + b + '" y1="' + top + '" y2="' + top + '" stroke="#ffd400" stroke-width="2" vector-effect="non-scaling-stroke"/>'; }).join("");
   }
 
+  // ---- Less on the map the further out you zoom ----
+  //  far  (< 6.5): only termini, position, one flame per closure
+  //  lo  (6.5-8.5): + town dots, main landmarks (no labels for minor ones)
+  //  mid (8.5-10):  + town names, tents and zero/nero/hero badges
+  function declutter(map) {
+    if (!document.getElementById("dz-css")) {
+      var s = document.createElement("style"); s.id = "dz-css";
+      s.textContent =
+        ".dz-far .tw,.dz-far .camp,.dz-far .lm:not(.term),.dz-far .flame:not(.flame-main),.dz-far .ph,.dz-far .phm,.dz-far .man{display:none!important}" +
+        ".dz-lo .tw span,.dz-lo .camp,.dz-lo .lm.t2,.dz-lo .lm.t3,.dz-lo .flame:not(.flame-main),.dz-lo .man{display:none!important}" +
+        ".dz-mid .lm.t3 span{display:none!important}";
+      document.head.appendChild(s);
+    }
+    var el = map.getContainer();
+    function upd() { var z = map.getZoom(); el.classList.toggle("dz-far", z < 6.5); el.classList.toggle("dz-lo", z >= 6.5 && z < 8.5); el.classList.toggle("dz-mid", z >= 8.5 && z < 10); }
+    map.on("zoom", upd); upd();
+  }
+
   // ---- What zero / nero / hero mean (tooltips) ----
   var TERMS = {
     zero: T("Zero: ein Tag ohne Trail-Kilometer, also 0 km gelaufen.", "Zero: a day with no trail miles at all, 0 mi hiked."),
@@ -534,7 +552,7 @@
     theme = theme || {};
     (D.manual || []).forEach(function (m, i) {
       if (i === D.manual.length - 1 && D.latest && D.latest.manual) return;   // the newest one is the position marker itself
-      var el = document.createElement("div");
+      var el = document.createElement("div"); el.className = "man";
       el.style.cssText = "width:12px;height:12px;border-radius:50%;background:" + (theme.fill || "#fff") + ";border:2px dashed " + (theme.ink || "#e0452f") + ";cursor:pointer";
       el.title = dfmt(m.ts, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + (m.note ? " · " + m.note : "");
       new maplibregl.Marker({ element: el }).setLngLat([m.lon, m.lat])
@@ -783,6 +801,6 @@
   function regS(g) { return EN ? g.en_s : g.short; }
 
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, closureBands: closureBands, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, closureBands: closureBands, declutter: declutter, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();
