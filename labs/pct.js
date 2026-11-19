@@ -164,7 +164,12 @@
         // camp = last point of the last activity of each day
         var camps = dayList.map(function (d, i) {
           var fs = feats.filter(function (f) { return f.properties.dayIdx === i; }), last = fs[fs.length - 1], c = last.geometry.coordinates;
-          return { day: i + 1, date: d.date, km: d.km, lnglat: c[c.length - 1] };
+          var ll = c[c.length - 1], nx = dayList[i + 1];
+          // zero days = calendar days without walking before the next active day
+          var zero = nx ? Math.max(0, Math.round((Date.parse(nx.date) - Date.parse(d.date)) / 86400000) - 1) : 0;
+          var town = null, bd = 30;   // nearest resupply town within 30 km
+          TOWNS.forEach(function (tw) { var dd = hav(ll[1], ll[0], tw[1], tw[2]); if (dd < bd) { bd = dd; town = tw; } });
+          return { day: i + 1, date: d.date, km: d.km, lnglat: ll, zero: zero, town: town ? { name: town[0], lnglat: [town[2], town[1]] } : null };
         });
         var totalKm = dayList.reduce(function (s, d) { return s + d.km; }, 0);
         var next = lms.filter(function (l) { return (l.type === "town" || l.type === "term") && l.km > here.km + 0.5; })[0] || null;
@@ -259,7 +264,15 @@
       el.title = "Nacht nach Tag " + c.day + " · " + new Date(c.date + "T12:00").toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }) + " · " + nf(c.km, 1) + " km";
       el.style.cssText = "width:32px;height:26px;cursor:default;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))";
       el.innerHTML = '<svg viewBox="0 0 22 18" width="32" height="26"><path d="M1.5 16.5 L11 2 L20.5 16.5 Z" fill="' + fill + '" stroke="' + ink + '" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 2 L11 16.5" stroke="' + ink + '" stroke-width="1.1"/><path d="M8.2 16.5 L11 10.5 L13.8 16.5 Z" fill="' + ink + '"/></svg>';
-      return new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(c.lnglat).addTo(map);
+      var mk = new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(c.lnglat).addTo(map);
+      if (c.zero) {   // rest days: counter at the nearby town (or at the tent if there is none)
+        var z = document.createElement("div"); z.className = "camp"; z.dataset.day = c.day;
+        z.title = c.zero + (c.zero === 1 ? " Zero-Tag" : " Zero-Tage") + (c.town ? " in " + c.town.name : "");
+        z.style.cssText = "background:" + fill + ";color:" + ink + ";border:2px solid " + ink + ";border-radius:12px;padding:2px 7px;font:700 11px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
+        z.textContent = c.zero + " × Zero";
+        new maplibregl.Marker({ element: z, anchor: c.town ? "top" : "bottom", offset: c.town ? [0, 10] : [0, -28] }).setLngLat(c.town ? c.town.lnglat : c.lnglat).addTo(map);
+      }
+      return mk;
     });
   }
   // alternating colours per day for a line layer
@@ -366,9 +379,10 @@
           var p = pointAt(cur), f = D.track.features[seq[p.i].f], dayKm = Math.max(5, (f.properties.distance_m || 10000) / 1000);
           var nxt = cur + dayKm * dt * SPEEDS[sp] / DAY_MS;
           var stopAt = dayEnds.find(function (k) { return k > cur + 1e-9 && k <= nxt; });
-          if (stopAt !== undefined) { nxt = stopAt; restUntil = now + NIGHT_MS / SPEEDS[sp]; }
+          var camp = stopAt !== undefined ? (D.camps || [])[dayEnds.indexOf(stopAt)] : null, zero = camp ? camp.zero : 0;
+          if (stopAt !== undefined) { nxt = stopAt; restUntil = now + NIGHT_MS * (1 + zero) / SPEEDS[sp]; }
           p2 = show(nxt, true);
-          if (stopAt !== undefined && o.ui.clock) o.ui.clock.textContent = "Nachtlager · Zzz";
+          if (stopAt !== undefined && o.ui.clock) o.ui.clock.textContent = zero ? zero + (zero === 1 ? " Zero-Tag" : " Zero-Tage") + (camp.town ? " in " + camp.town.name : "") + " · Zzz" : "Nachtlager · Zzz";
         }
         var a = Math.min(1, dt / 650), za = Math.min(1, dt / 900);      // smoothing for camera and zoom
         cam = [cam[0] + (p2.c[0] - cam[0]) * a, cam[1] + (p2.c[1] - cam[1]) * a];
@@ -389,6 +403,9 @@
       if (k < 0) return null; stop(); show(seq[k].km, false, true); return seq[k].c; } };
   }
 
+  // trail point for a position, or null when it is more than 50 km off the trail
+  function trailPoint(D, ll) { var s = snap(D.pts, ll[1], ll[0]); return s && s.off <= 50 ? s : null; }
+
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, BASE: BASE };
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, BASE: BASE };
 })();

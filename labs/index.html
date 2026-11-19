@@ -117,7 +117,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=12"></script>
+<script src="pct.js?v=14"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, $ = function (id) { return document.getElementById(id); };
@@ -197,8 +197,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     L.replay({ map: map, D: D, marker: meMk, ui: { play: $("play"), speed: $("speed"), clock: $("clock") },
       onUpdate: function (s) {
         $("sDay").textContent = s.dayNo || 0; $("sKm").textContent = nf(s.km, 0) + " km";
-        var tk = L.atKm(D.pts, 0), sn = null; // trail km of current replay point
-        var best = 1e9; D.pts.forEach(function (p) { var d = Math.abs(p.lat - s.lnglat[1]) + Math.abs(p.lon - s.lnglat[0]); if (d < best) { best = d; sn = p; } });
+        var sn = L.trailPoint(D, s.lnglat) || D.here;
         $("sLeft").textContent = nf(D.total - (sn ? sn.km : 0), 0) + " km";
         me.querySelector(".bub").innerHTML = "Tag " + (s.dayNo || 0) + " · <b>" + (s.day ? nf(s.day.km, 1) : 0) + " km</b>";
       } });

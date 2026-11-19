@@ -82,7 +82,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
   <div class="panel"><h3><span>Höhenprofil · Campo → Kanada</span><span id="profInfo"></span></h3><div class="prof" id="prof"></div><div class="tip" id="tip"></div></div>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../pct.js?v=12"></script>
+<script src="../pct.js?v=14"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, $ = function (id) { return document.getElementById(id); };
@@ -166,7 +166,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     var rp = L.replay({ map: map, D: D, marker: mk, ui: { play: $("play"), speed: $("speed"), clock: $("clock") },
       onUpdate: function (s) {
         $("dayTag").textContent = "TAG " + (s.dayNo || 0);
-        var sn = null, best = 1e9; D.pts.forEach(function (p) { var d = Math.abs(p.lat - s.lnglat[1]) + Math.abs(p.lon - s.lnglat[0]); if (d < best) { best = d; sn = p; } });
+        var sn = L.trailPoint(D, s.lnglat) || D.here;
         var km = sn ? sn.km : 0; if (Math.abs(km - lastKm) > 2 || s.end) { drawProf(km); lastKm = km; }
         if (s.date !== markDay.cur) { markDay.cur = s.date; markDay(s.date); }
       } });
