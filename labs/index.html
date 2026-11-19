@@ -57,7 +57,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .ctl #speed{all:unset;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.25);color:#fff;border-radius:16px;padding:6px 11px;font:500 13px Inter,sans-serif;cursor:pointer}
 .ctl #clock{font-size:14px;color:#e9eef1}
 .ctl .stats{margin-left:auto;display:flex;gap:26px;font-size:13px;color:#aeb9c1}
-.ctl .stats b{color:#fff;font-weight:600;font-size:15px;margin-left:6px}
+.ctl .stats i{font-style:normal}.ctl .stats b{color:#fff;font-weight:600;font-size:15px;margin-left:6px}
 @media(max-width:820px){.ctl .stats{display:none}.ctl #play{width:40px;height:40px}}
 /* position */
 .me{position:relative;width:18px;height:18px}
@@ -87,18 +87,18 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
   <div class="k" id="kicker">&nbsp;</div>
   <h1 id="title">Pacific Crest Trail</h1>
   <p id="sub">&nbsp;</p>
-  <div class="who">Pacific Crest Trail 2027 · Campo → Kanada</div>
+  <div class="who" data-de="Pacific Crest Trail 2027 · Campo → Kanada" data-en="Pacific Crest Trail 2027 · Campo → Canada">Pacific Crest Trail 2027 · Campo → Kanada</div>
 </div>
 
 <div class="card">
   <div class="top"><span class="t" id="cToday">–</span><span class="d" id="cTodayL">km heute</span></div>
-  <div class="r"><span>Gesamt gelaufen</span><b id="cTotal">–</b></div>
-  <div class="r"><span>Position am Trail</span><b id="cKm">–</b></div>
-  <div class="r"><span>Bis Kanada</span><b id="cLeft">–</b></div>
-  <div class="r hide-m"><span>Höhe</span><b id="cElev">–</b></div>
-  <div class="r"><span>Nächster Ort</span><b id="cNext">–</b></div>
-  <div class="r hide-m"><span>Letztes Signal</span><b id="cSeen">–</b></div>
-  <div class="src">Track: Garmin · Fotos: Flickr · Karte: Esri</div>
+  <div class="r"><span data-de="Gesamt gelaufen" data-en="Total hiked">Gesamt gelaufen</span><b id="cTotal">–</b></div>
+  <div class="r"><span data-de="Position am Trail" data-en="Trail position">Position am Trail</span><b id="cKm">–</b></div>
+  <div class="r"><span data-de="Bis Kanada" data-en="To Canada">Bis Kanada</span><b id="cLeft">–</b></div>
+  <div class="r hide-m"><span data-de="Höhe" data-en="Elevation">Höhe</span><b id="cElev">–</b></div>
+  <div class="r"><span data-de="Nächster Ort" data-en="Next town">Nächster Ort</span><b id="cNext">–</b></div>
+  <div class="r hide-m"><span data-de="Letztes Signal" data-en="Last signal">Letztes Signal</span><b id="cSeen">–</b></div>
+  <div class="src" data-de="Track: Garmin · Fotos: Flickr · Karte: Esri" data-en="Track: Garmin · Photos: Flickr · Map: Esri">Track: Garmin · Fotos: Flickr · Karte: Esri</div>
 </div>
 
 <div class="bottom">
@@ -106,21 +106,21 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     <button id="play" title="Abspielen (Leertaste)">▶</button>
     <button id="speed" title="Tempo">1×</button>
     <span id="clock"></span>
-    <div class="stats"><span>Tag <b id="sDay">–</b></span><span>gelaufen <b id="sKm">–</b></span><span>bis Kanada <b id="sLeft">–</b></span></div>
+    <div class="stats"><span><i data-de="Tag" data-en="Day">Tag</i> <b id="sDay">–</b></span><span><i data-de="gelaufen" data-en="hiked">gelaufen</i> <b id="sKm">–</b></span><span><i data-de="bis Kanada" data-en="to Canada">bis Kanada</i> <b id="sLeft">–</b></span></div>
   </div>
-  <div class="prof" id="prof" title="Höhenprofil, antippen springt zur Stelle"></div>
+  <div class="prof" id="prof"></div>
   <div class="chap" id="chap"></div>
-  <div class="strip" id="strip"><span class="empty">Fotos werden geladen …</span></div>
+  <div class="strip" id="strip"><span class="empty" data-de="Fotos werden geladen …" data-en="Loading photos …">Fotos werden geladen …</span></div>
 </div>
 
 
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=14"></script>
+<script src="pct.js?v=16"></script>
 <script>
 (function () {
-  var L = PCTLab, nf = L.nf, $ = function (id) { return document.getElementById(id); };
+  var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
   L.switcher(0);
 
   var map = new maplibregl.Map({
@@ -136,8 +136,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
   function ago(ts) {
     var t = Date.parse(ts || ""); if (!isFinite(t)) return "–";
     var h = (Date.now() - t) / 3600000;
-    if (h < 1) return "gerade eben"; if (h < 24) return "vor " + Math.round(h) + " Std.";
-    var d = Math.round(h / 24); return d === 1 ? "gestern" : "vor " + nf(d) + " Tagen";
+    if (h < 1) return T("gerade eben", "just now"); if (h < 24) return T("vor " + Math.round(h) + " Std.", Math.round(h) + " h ago");
+    var d = Math.round(h / 24); return d === 1 ? T("gestern", "yesterday") : T("vor " + nf(d) + " Tagen", nf(d) + " days ago");
   }
   function firstSentence(s) { s = String(s || "").replace(/\s+/g, " ").trim(); var m = s.match(/^.{20,180}?[.!?](\s|$)/); return m ? m[0].trim() : s.slice(0, 160); }
 
@@ -146,16 +146,16 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
     // --- text ---
     var ri = D.regions.indexOf(D.region);
-    $("kicker").textContent = "Abschnitt " + (ri + 1) + " von " + D.regions.length + " · Tag " + (D.dayNo || 0) + " · km " + nf(here.km);
-    $("title").textContent = D.region.de;
+    $("kicker").textContent = T("Abschnitt ", "Section ") + (ri + 1) + T(" von ", " of ") + D.regions.length + T(" · Tag ", " · Day ") + (D.dayNo || 0) + " · " + L.DU() + " " + nf(L.distV(here.km));
+    $("title").textContent = L.reg(D.region);
     var last = D.diary[0];
-    $("sub").textContent = last ? "„" + firstSentence(last.de) + "“" : (D.next ? "Unterwegs Richtung " + D.next.name + "." : "");
-    $("cToday").textContent = D.today ? nf(D.today.km, 1) : "0";
-    $("cTotal").textContent = nf(D.walkedKm, 0) + " km";
-    $("cKm").textContent = "km " + nf(here.km) + " · " + nf(here.km / D.total * 100, 1) + " %";
-    $("cLeft").textContent = nf(D.total - here.km) + " km";
-    $("cElev").textContent = nf(here.m) + " m";
-    $("cNext").textContent = D.next ? D.next.name + " · " + nf(D.next.km - here.km) + " km" : "Kanada!";
+    $("sub").textContent = last ? T("„", "“") + firstSentence(L.EN ? (last.en || last.de) : last.de) + T("“", "”") : (D.next ? T("Unterwegs Richtung ", "Heading for ") + D.next.name + "." : "");
+    $("cToday").textContent = D.today ? nf(L.distV(D.today.km), 1) : "0"; $("cTodayL").textContent = T("km heute", "mi today").replace("km", L.DU());
+    $("cTotal").textContent = L.dist(D.walkedKm);
+    $("cKm").textContent = L.DU() + " " + nf(L.distV(here.km)) + " · " + nf(here.km / D.total * 100, 1) + " %";
+    $("cLeft").textContent = L.dist(D.total - here.km);
+    $("cElev").textContent = L.elev(here.m);
+    $("cNext").textContent = D.next ? D.next.name + " · " + L.dist(D.next.km - here.km) : T("Kanada!", "Canada!");
     $("cSeen").textContent = ago(D.latest && D.latest.ts);
 
     // --- map: PCT line, walked track, landmarks ---
@@ -166,20 +166,13 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     map.addLayer({ id: "trk", type: "line", source: "trk", paint: { "line-color": L.dayColor("#ff6b4f", "#ffd166"), "line-width": 3 }, layout: { "line-cap": "round", "line-join": "round" } });
     L.addCamps(map, D, { fill: "#ffd166", ink: "#14202a" });
 
-    D.landmarks.filter(function (l) { return l.type !== "town"; }).forEach(function (l) {
-      var T = L.TYPE[l.type] || L.TYPE.town, el = document.createElement("div");
-      el.className = "lm " + l.type + " t" + l.tier;
-      el.title = l.name + " · " + T.de + " · km " + nf(l.km) + " · " + nf(l.m) + " m";
-      el.innerHTML = "<i style='background:" + T.c + "'></i><span>" + l.name + "</span>";
-      if (l.type === "peak") el.firstChild.style.background = "transparent";
-      new maplibregl.Marker({ element: el, anchor: "left", offset: [-5, 0] }).setLngLat([l.lon, l.lat]).addTo(map);
-    });
+    L.addLandmarks(map, D);
 
     // --- position marker (simple pulsing dot; the animated hiker is parked in pct.js for later) ---
     L.addTowns(map, D, {});
     var pos = D.latest && typeof D.latest.lat === "number" ? [D.latest.lon, D.latest.lat] : [here.lon, here.lat];
     var me = document.createElement("div"); me.className = "me";
-    me.innerHTML = '<div class="bub">Tag ' + (D.dayNo || 0) + ' · <b>' + (D.today ? nf(D.today.km, 1) : 0) + ' km</b></div><i></i>';
+    me.innerHTML = '<div class="bub">' + T("Tag ", "Day ") + (D.dayNo || 0) + ' · <b>' + L.dist(D.today ? D.today.km : 0, 1) + '</b></div><i></i>';
     var meMk = new maplibregl.Marker({ element: me, anchor: "center" }).setLngLat(pos).addTo(map);
 
     // --- start view: last day + position ---
@@ -196,17 +189,17 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     // --- replay ---
     L.replay({ map: map, D: D, marker: meMk, ui: { play: $("play"), speed: $("speed"), clock: $("clock") },
       onUpdate: function (s) {
-        $("sDay").textContent = s.dayNo || 0; $("sKm").textContent = nf(s.km, 0) + " km";
+        $("sDay").textContent = s.dayNo || 0; $("sKm").textContent = L.dist(s.km);
         var sn = L.trailPoint(D, s.lnglat) || D.here;
-        $("sLeft").textContent = nf(D.total - (sn ? sn.km : 0), 0) + " km";
-        me.querySelector(".bub").innerHTML = "Tag " + (s.dayNo || 0) + " · <b>" + (s.day ? nf(s.day.km, 1) : 0) + " km</b>";
+        $("sLeft").textContent = L.dist(D.total - (sn ? sn.km : 0));
+        me.querySelector(".bub").innerHTML = T("Tag ", "Day ") + (s.dayNo || 0) + " · <b>" + L.dist(s.day ? s.day.km : 0, 1) + "</b>";
       } });
-    if (!D.track.features.length) { $("play").style.opacity = .4; $("clock").textContent = "Noch keine Aufzeichnung, Start am 22. April 2027"; }
+    if (!D.track.features.length) { $("play").style.opacity = .4; $("clock").textContent = T("Noch keine Aufzeichnung, Start am 22. April 2027", "Nothing recorded yet, start on April 22, 2027"); }
 
     // --- chapter bar ---
     $("chap").innerHTML = D.regions.map(function (g, i) {
       var p = Math.max(0, Math.min(1, (here.km - g.ka) / (g.kb - g.ka)));
-      return '<button data-i="' + i + '" class="' + (g === D.region ? "on" : "") + '" style="flex:' + (g.kb - g.ka) + '"><div class="bar"><i style="width:' + (p * 100) + '%"></i></div><div class="n">' + g.short + "</div></button>";
+      return '<button data-i="' + i + '" class="' + (g === D.region ? "on" : "") + '" style="flex:' + (g.kb - g.ka) + '"><div class="bar"><i style="width:' + (p * 100) + '%"></i></div><div class="n">' + L.regS(g) + "</div></button>";
     }).join("");
     $("chap").querySelectorAll("button").forEach(function (bt) {
       bt.onclick = function () {
@@ -236,9 +229,9 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
     // --- photos: strip + on the map where they were taken ---
     L.photos().then(function (ph) {
-      if (!ph.length) { $("strip").innerHTML = '<span class="empty">Noch keine Fotos im Album.</span>'; return; }
+      if (!ph.length) { $("strip").innerHTML = '<span class="empty">' + T("Noch keine Fotos im Album.", "No photos in the album yet.") + "</span>"; return; }
       $("strip").innerHTML = ph.map(function (p) {
-        var d = p.taken ? new Date(p.taken.replace(" ", "T")).toLocaleDateString("de-DE", { day: "numeric", month: "short" }) : "";
+        var d = p.taken ? L.dfmt(p.taken.replace(" ", "T"), { day: "numeric", month: "short" }) : "";
         return '<a href="#" style="background-image:url(' + p.m + ')" data-i="' + ph.indexOf(p) + '"><span>' + d + "</span></a>";
       }).join("");
       $("strip").querySelectorAll("a").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); L.lightbox(ph, +a.dataset.i); }; });
@@ -248,7 +241,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         new maplibregl.Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(map);
       });
     });
-  }).catch(function (e) { $("sub").textContent = "Daten konnten nicht geladen werden (" + e.message + ")."; });
+  }).catch(function (e) { $("sub").textContent = T("Daten konnten nicht geladen werden (", "Could not load data (") + e.message + ")."; });
 })();
 </script>
 </body>

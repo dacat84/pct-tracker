@@ -68,28 +68,28 @@ body{background:#efe8d8;color:#1d2a33;font-family:'Source Serif 4',Georgia,serif
 <div class="mapwrap">
   <div id="map"></div>
   <div class="frame"></div>
-  <div class="plate"><div class="k">Pacific Crest Trail · 2027</div><h1 id="pTitle">Campo → Kanada</h1><p id="pSub">4.265 km zu Fuß von Mexiko nach Kanada</p></div>
+  <div class="plate"><div class="k">Pacific Crest Trail · 2027</div><h1 id="pTitle" data-de="Campo → Kanada" data-en="Campo → Canada">Campo → Kanada</h1><p id="pSub" data-de="4.265 km zu Fuß von Mexiko nach Kanada" data-en="2,650 miles on foot from Mexico to Canada">4.265 km zu Fuß von Mexiko nach Kanada</p></div>
 </div>
 <div class="side">
   <div class="sh">
-    <div class="t"><h2>Tagebuch</h2><span id="sheet">–</span></div>
+    <div class="t"><h2 data-de="Tagebuch" data-en="Trail journal">Tagebuch</h2><span id="sheet">–</span></div>
     <div class="kp">
-      <div>Etappe<b id="kDay">–</b></div>
-      <div>Höhenmeter<b id="kUp">–</b></div>
-      <div>Gesamt<b id="kTot">–</b></div>
+      <div><span data-de="Etappe" data-en="Stage">Etappe</span><b id="kDay">–</b></div>
+      <div><span data-de="Höhenmeter" data-en="Elevation gain">Höhenmeter</span><b id="kUp">–</b></div>
+      <div><span data-de="Gesamt" data-en="Total">Gesamt</span><b id="kTot">–</b></div>
     </div>
   </div>
   <div class="list" id="list"></div>
   <div class="foot">
-    <div class="row"><button id="play" title="Abspielen (Leertaste)">▶</button><input type="range" id="slider" min="0" max="0" value="0"><button id="speed">1×</button></div>
+    <div class="row"><button id="play">▶</button><input type="range" id="slider" min="0" max="0" value="0"><button id="speed">1×</button></div>
     <div id="clock"></div>
   </div>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../pct.js?v=14"></script>
+<script src="../pct.js?v=16"></script>
 <script>
 (function () {
-  var L = PCTLab, nf = L.nf, $ = function (id) { return document.getElementById(id); };
+  var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
   L.switcher(1);
   var map = new maplibregl.Map({
     container: "map", center: [-116.47, 32.59], zoom: 9, attributionControl: { compact: true },
@@ -100,7 +100,7 @@ body{background:#efe8d8;color:#1d2a33;font-family:'Source Serif 4',Georgia,serif
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
   map.on("zoom", function () { var z = map.getZoom(), el = $("map"); el.classList.toggle("z-lo", z < 7.5); el.classList.toggle("z-mid", z >= 7.5 && z < 10); });
 
-  function dLong(s) { var d = new Date(String(s).trim().replace(" ", "T")); return isNaN(d) ? s : d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
+  function dLong(s) { var d = new Date(String(s).trim().replace(" ", "T")); return isNaN(d) ? s : L.dfmt(d, { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
   function esc(s) { return String(s || "").replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
 
   Promise.all([L.load(), new Promise(function (r) { map.on("load", r); }), L.photos()]).then(function (r) {
@@ -111,10 +111,7 @@ body{background:#efe8d8;color:#1d2a33;font-family:'Source Serif 4',Georgia,serif
     map.addSource("trk", { type: "geojson", data: D.track });
     map.addLayer({ id: "trk", type: "line", source: "trk", paint: { "line-color": L.dayColor("#c0392b", "#2c5d8f"), "line-width": 3 }, layout: { "line-cap": "round", "line-join": "round" } });
     L.addCamps(map, D, { fill: "#f3ecdc", ink: "#1d2a33" });
-    D.landmarks.filter(function (l) { return l.type !== "town"; }).forEach(function (l) {
-      var el = document.createElement("div"); el.className = "lm " + l.type + " t" + l.tier; el.innerHTML = "<i></i>" + l.name;
-      new maplibregl.Marker({ element: el, anchor: "left", offset: [-4, 0] }).setLngLat([l.lon, l.lat]).addTo(map);
-    });
+    L.addLandmarks(map, D, { dot: function (l) { return (l.type === "term") ? "#1d2a33" : "#f3ecdc"; } });
     ph.filter(function (p) { return p.lat && p.lon; }).forEach(function (p) {
       var el = document.createElement("div"); el.className = "phm"; el.style.backgroundImage = "url(" + p.q + ")";
       el.onclick = function () { L.lightbox(ph, ph.indexOf(p)); };
@@ -128,13 +125,13 @@ body{background:#efe8d8;color:#1d2a33;font-family:'Source Serif 4',Georgia,serif
 
     // entries, newest first; photos of the same day underneath
     var list = $("list");
-    if (!D.diary.length) list.innerHTML = '<div class="e"><div class="x">Noch keine Einträge.</div></div>';
+    if (!D.diary.length) list.innerHTML = '<div class="e"><div class="x">' + T("Noch keine Einträge.", "No entries yet.") + "</div></div>";
     D.diary.forEach(function (u, i) {
       var day = String(u.date).slice(0, 10), pics = ph.filter(function (p) { return String(p.taken || "").slice(0, 10) === day; });
-      var where = first && day >= first ? "auf dem Trail" : "Vorbereitung";
+      var where = first && day >= first ? T("auf dem Trail", "on the trail") : T("Vorbereitung", "preparation");
       var el = document.createElement("div"); el.className = "e"; el.dataset.day = day;
       el.innerHTML = '<div class="d">' + dLong(u.date) + '</div><div class="w">' + where + '</div><div class="x">' +
-        String(u.de || "").split(/\n+/).map(function (p) { return "<p>" + esc(p) + "</p>"; }).join("") + "</div>" +
+        String((L.EN ? u.en : u.de) || u.de || "").split(/\n+/).map(function (p) { return "<p>" + esc(p) + "</p>"; }).join("") + "</div>" +
         (pics.length ? '<div class="ph">' + pics.map(function (p) { return '<i style="background-image:url(' + p.q + ')" data-i="' + ph.indexOf(p) + '"></i>'; }).join("") + "</div>" : "");
       el.querySelectorAll(".ph i").forEach(function (t) { t.onclick = function (e) { e.stopPropagation(); L.lightbox(ph, +t.dataset.i); }; });
       el.onclick = function () {
@@ -146,15 +143,15 @@ body{background:#efe8d8;color:#1d2a33;font-family:'Source Serif 4',Georgia,serif
 
     var rp = L.replay({ map: map, D: D, marker: mk, ui: { play: $("play"), speed: $("speed"), clock: $("clock"), slider: $("slider") },
       onUpdate: function (s) {
-        $("sheet").textContent = "Blatt " + (s.dayNo || 0) + " · " + new Date(s.date + "T12:00").toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" });
-        $("kDay").innerHTML = (s.day ? nf(s.day.km, 1) : "0") + "<small> km</small>";
-        $("kUp").innerHTML = (s.day ? nf(s.day.up) : "0") + "<small> m</small>";
-        $("kTot").innerHTML = nf(s.km) + "<small> km</small>";
+        $("sheet").textContent = T("Blatt ", "Page ") + (s.dayNo || 0) + " · " + L.dfmt(s.date + "T12:00", { weekday: "short", day: "numeric", month: "short" });
+        $("kDay").innerHTML = nf(L.distV(s.day ? s.day.km : 0), 1) + "<small> " + L.DU() + "</small>";
+        $("kUp").innerHTML = nf(L.elevV(s.day ? s.day.up : 0)) + "<small> " + L.EU() + "</small>";
+        $("kTot").innerHTML = nf(L.distV(s.km)) + "<small> " + L.DU() + "</small>";
         var sn = L.trailPoint(D, s.lnglat) || D.here;
         var g = D.regions.find(function (x) { return sn && sn.km >= x.ka && sn.km < x.kb; });
-        if (g) { $("pTitle").textContent = g.de; $("pSub").textContent = "Tag " + s.dayNo + " · km " + nf(sn.km) + " von " + nf(D.total); }
+        if (g) { $("pTitle").textContent = L.reg(g); $("pSub").textContent = T("Tag ", "Day ") + s.dayNo + " · " + L.DU() + " " + nf(L.distV(sn.km)) + T(" von ", " of ") + nf(L.distV(D.total)); }
       } });
-    if (!D.track.features.length) { $("sheet").textContent = "Vor dem Start"; $("clock").textContent = "Noch keine Aufzeichnung, Start am 22. April 2027"; $("kDay").innerHTML = $("kUp").innerHTML = $("kTot").innerHTML = "0"; }
+    if (!D.track.features.length) { $("sheet").textContent = T("Vor dem Start", "Before the start"); $("clock").textContent = T("Noch keine Aufzeichnung, Start am 22. April 2027", "Nothing recorded yet, start on April 22, 2027"); $("kDay").innerHTML = $("kUp").innerHTML = $("kTot").innerHTML = "0"; }
   });
 })();
 </script>
