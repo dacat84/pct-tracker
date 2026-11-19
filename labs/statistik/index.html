@@ -20,6 +20,7 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;
 header h1{font-size:30px;font-weight:800;letter-spacing:.02em;margin:0;text-transform:uppercase}
 header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13px 'JetBrains Mono',monospace;color:#9aa4ad}
 .tag{background:#ffb020;color:#111;font:700 12px 'JetBrains Mono',monospace;padding:3px 8px}
+[hidden]{display:none!important}
 .ctl{display:flex;align-items:center;gap:10px;border:1px solid #2a3038;padding:8px 10px;background:#12161a}
 #play{all:unset;width:40px;height:32px;background:#ffb020;color:#111;display:grid;place-items:center;cursor:pointer;font-size:13px}
 #speed{all:unset;border:1px solid #2a3038;padding:6px 9px;font:500 12.5px 'JetBrains Mono',monospace;cursor:pointer}
@@ -63,7 +64,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
 <div class="wrap">
   <header>
     <div><h1 data-de="Statistik" data-en="Statistics">Statistik</h1><div class="sub"><span class="tag" id="dayTag">TAG –</span><span data-de="PACIFIC CREST TRAIL · CAMPO → KANADA" data-en="PACIFIC CREST TRAIL · CAMPO → CANADA">PACIFIC CREST TRAIL · CAMPO → KANADA</span></div></div>
-    <div class="ctl"><button id="play">▶</button><button id="speed">1×</button><span id="clock"></span></div>
+    <div class="ctl" hidden><button id="play">▶</button><button id="speed">1×</button><span id="clock"></span></div>
   </header>
   <div class="hero">
     <div class="l" data-de="Gelaufen" data-en="Hiked">Gelaufen</div>
