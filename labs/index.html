@@ -129,7 +129,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=52"></script>
+<script src="pct.js?v=54"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -209,6 +209,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     map.addLayer({ id: "trk-hit", type: "line", source: "trk", paint: { "line-color": "#000", "line-width": 18, "line-opacity": 0 } });
     function pickDay(i) { card(i); map.setFilter("trk-sel", ["==", ["get", "dayIdx"], i]); if (D.camps[i]) pinBub(D.camps[i].lnglat, bubTxt(i + 1, D.days[i])); }
     map.on("click", function (e) {   // a day on the map: show it in the card; elsewhere: back to the latest day
+      if (L.justPaused()) return;
       var f = map.queryRenderedFeatures(e.point, { layers: ["trk-hit"] })[0];
       if (f && f.properties.dayIdx != null) pickDay(+f.properties.dayIdx);
       else if (card.cur !== D.days.length - 1 || map.getFilter("trk-sel")[2] !== -1) { card(D.days.length - 1); map.setFilter("trk-sel", ["==", ["get", "dayIdx"], -1]); pinBub(meMk.getLngLat(), bubTxt(D.dayNo, D.today)); }
@@ -230,18 +231,13 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     function hmm(sec) { var m = Math.round(sec / 60); return Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0") + "\u00a0h"; }
     function bubTxt(n, d) { return T("Tag ", "Day ") + (n || 0) + " · <b>" + L.dist(d ? d.km : 0, 1) + "</b>" + (d && d.sec ? ' · <span class="up">' + hmm(d.sec) + "</span>" : "") + (d && d.up ? ' · <span class="up">↑\u00a0' + L.elev(d.up).replace(" ", "\u00a0") + "</span>" : ""); }
     bubEl.innerHTML = '<div class="bub">' + bubTxt(D.dayNo, D.today) + '</div>';
-    // The label belongs to the tent: when the dot stops (tent at night, pause) the day's numbers are
-    // pinned next to that spot and stay there while the dot walks on, until it stops at the next tent.
+    // The label belongs to the tent: it appears when the dot reaches a tent (or the newest position)
+    // and stays pinned there while the dot walks on, until the next tent. Nothing while a day is underway.
     map.getContainer().appendChild(bubEl);
-    var lastLL = null, still = 0, pinLL = meMk.getLngLat(), pendTxt = null, moved = false;
-    function pinBub(ll, txt) { pinLL = maplibregl.LngLat.convert(ll); bubEl.firstChild.innerHTML = txt; moved = false; }   // e.g. a day picked on the map
+    var pinLL = meMk.getLngLat();
+    function pinBub(ll, txt) { pinLL = maplibregl.LngLat.convert(ll); bubEl.firstChild.innerHTML = txt; bubEl.style.display = ""; }
+    function hideBub() { bubEl.style.display = "none"; }
     (function place() {
-      var ll = meMk.getLngLat(), now = performance.now();
-      if (!lastLL || Math.abs(ll.lng - lastLL.lng) > 1e-7 || Math.abs(ll.lat - lastLL.lat) > 1e-7) { still = now; if (lastLL) moved = true; }
-      lastLL = ll;
-      if (moved && now - still > 250) {   // the dot walked and stopped again: label to the new spot
-        pinLL = ll; moved = false; if (pendTxt) bubEl.firstChild.innerHTML = pendTxt;
-      }
       var p = map.project(pinLL);
       bubEl.style.transform = "translate(" + (p.x + 24).toFixed(1) + "px," + (p.y - 14).toFixed(1) + "px) translate(0,-50%)";
       requestAnimationFrame(place);
@@ -267,7 +263,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         $("sDay").textContent = s.dayNo || 0; $("sKm").textContent = L.dist(s.km);
         var sn = L.trailPoint(D, s.lnglat) || D.here;
         $("sLeft").textContent = L.dist(D.total - (sn ? sn.km : 0));
-        pendTxt = bubTxt(s.dayNo, s.day);
+        if (s.atCamp || s.end) pinBub(s.end ? meMk.getLngLat() : s.lnglat, bubTxt(s.dayNo, s.day));
+        else if (s.km < 0.05) hideBub();   // replay starts again at Campo
         if (s.dayNo && s.dayNo - 1 !== card.cur && !card.zeroOn) card(s.dayNo - 1);
         if (sn && Math.abs(sn.km - strip.km) > 0.8) strip(sn.km);
       } });
