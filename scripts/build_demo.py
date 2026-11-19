@@ -59,13 +59,20 @@ def slice_km(a, b):
         out = [out[int(i * step)] for i in range(299)] + [out[-1]]
     return out
 
-# zero days after reaching these trail km (towns): Idyllwild, Big Bear, Wrightwood
-ZERO_AFTER = {279: 1, 432: 2, 567: 1}
+# zero days in these towns: the day before ends where the trail meets the town access
+# (Idyllwild via Devils Slide, Big Bear Lake, Wrightwood), the next day starts there again
+def trail_km(lat, lon):
+    return min(range(len(coords)), key=lambda i: hav(coords[i], (lon, lat)))
+ZEROS = [(cum[trail_km(33.7769, -116.6658)], 1), (cum[trail_km(34.2439, -116.9114)], 2), (cum[trail_km(34.3608, -117.6334)], 1)]
 day = datetime.date(2026, 4, 22)
 km, feats = 0.0, []
 for n in range(30):
     base = 17 + n * 0.5 if n < 12 else 26
     dist = max(12.0, min(36.0, random.gauss(base, 4)))
+    zero = 0
+    for town_km, z in ZEROS:
+        if km < town_km <= km + dist + 8:   # walk on (or stop a bit early) to reach town
+            dist, zero = town_km - km, z
     a, b = km, km + dist
     pts = slice_km(a, b)
     up = 0.0
@@ -82,9 +89,7 @@ for n in range(30):
         "geometry": {"type": "LineString", "coordinates": [[round(x, 6), round(y, 6)] for x, y in pts]}})
     km = b
     day += datetime.timedelta(days=1)
-    for town_km, z in ZERO_AFTER.items():
-        if a < town_km <= b:
-            day += datetime.timedelta(days=z)
+    day += datetime.timedelta(days=zero)
 
 (ROOT / "data/demo/track.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": feats}))
 last = feats[-1]

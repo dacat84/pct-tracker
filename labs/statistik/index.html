@@ -39,7 +39,12 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
 .panel{border:1px solid #2a3038;background:#12161a;position:relative}
 .panel h3{margin:0;padding:10px 14px 6px;font:500 11px 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:#7d8790;display:flex;justify-content:space-between}
 #map{height:420px}
-.days{max-height:420px;overflow-y:auto;padding:4px 14px 12px}
+.days{max-height:420px;overflow-y:auto;padding:4px 14px 12px;scrollbar-width:thin;scrollbar-color:#2c343b transparent}
+.days::-webkit-scrollbar{width:8px}.days::-webkit-scrollbar-track{background:transparent}
+.days::-webkit-scrollbar-thumb{background:#2c343b;border-radius:4px}.days::-webkit-scrollbar-thumb:hover{background:#3a444c}
+.dl .row.zero .b{background:none;font:400 12px 'JetBrains Mono',monospace;color:#7d8790;white-space:nowrap;overflow:hidden;height:auto}
+.dl .row.zero .b svg{vertical-align:-1px;margin-right:2px}.dl .row.zero .k{color:#7d8790}
+.dl .row.zero.on .b,.dl .row.zero.on .d,.dl .row.zero.on .k{color:#ff4d2e}
 .dl{display:grid;grid-template-columns:max-content 1fr max-content;gap:6px 12px;align-items:center}
 .dl .row{display:contents;cursor:pointer}
 .dl .d{font:400 12.5px 'JetBrains Mono',monospace;color:#9aa4ad;white-space:nowrap}
@@ -132,11 +137,22 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
 
     // day by day (newest first), click = show that day
     var mxk = mx ? mx.km : 1;
-    $("days").innerHTML = n ? days.slice().reverse().map(function (d) {
-      return '<div class="row" data-d="' + d.date + '"><div class="d">' + dShort(d.date) + '</div><div class="b"><i style="width:' + (d.km / mxk * 100) + '%"></i></div><div class="k">' + L.dist(d.km, 1) + " <small>· ↑ " + L.elev(d.up) + "</small></div></div>";
-    }).join("") : '<div class="d" style="grid-column:1/-1">' + T("Noch keine Etappen. Start am 22. April 2027.", "No stages yet. Start on April 22, 2027.") + "</div>";
-    $("days").querySelectorAll(".row").forEach(function (r) { r.onclick = function () { rp.toDate(r.dataset.d); markDay(r.dataset.d); L.fitDay(map, D, r.dataset.d, 40); }; });
-    function markDay(date) { $("days").querySelectorAll(".row").forEach(function (r) { r.classList.toggle("on", r.dataset.d === date); }); }
+    // walking days plus the zero days after them (0 km, bed, town)
+    var rows = []; days.forEach(function (d, i) {
+      rows.push('<div class="row" data-d="' + d.date + '"><div class="d">' + dShort(d.date) + '</div><div class="b"><i style="width:' + (d.km / mxk * 100) + '%"></i></div><div class="k">' + L.dist(d.km, 1) + " <small>· ↑ " + L.elev(d.up) + "</small></div></div>");
+      var c = D.camps[i];
+      for (var z = 1; c && z <= c.zero; z++) {
+        var zd = new Date(Date.parse(d.date + "T12:00:00Z") + z * 86400000).toISOString().slice(0, 10);
+        rows.push('<div class="row zero" data-d="' + d.date + '" data-z="' + i + '"><div class="d">' + dShort(zd) + '</div><div class="b"><span>' + L.BED + " Zero" + (c.town ? " · " + c.town.name : "") + '</span></div><div class="k">' + L.dist(0, 1) + " <small>· ↑ " + L.elev(0) + "</small></div></div>");
+      }
+    });
+    $("days").innerHTML = n ? rows.reverse().join("") : '<div class="d" style="grid-column:1/-1">' + T("Noch keine Etappen. Start am 22. April 2027.", "No stages yet. Start on April 22, 2027.") + "</div>";
+    $("days").querySelectorAll(".row").forEach(function (r) { r.onclick = function () {
+      rp.toDate(r.dataset.d); markDay(r);
+      if (r.dataset.z) { var c = D.camps[+r.dataset.z]; map.flyTo({ center: c.town ? c.town.lnglat : c.lnglat, zoom: 11, duration: 900 }); }
+      else L.fitDay(map, D, r.dataset.d, 40);
+    }; });
+    function markDay(sel) { $("days").querySelectorAll(".row").forEach(function (r) { r.classList.toggle("on", typeof sel === "string" ? r.dataset.d === sel && !r.dataset.z : r === sel); }); }
 
     // elevation profile
     var W = 1400, H = 230, padB = 26, padT = 34, pts = D.pts, mxh = 0; pts.forEach(function (p) { if (p.m > mxh) mxh = p.m; }); mxh = Math.ceil(mxh / 500) * 500;
