@@ -127,7 +127,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=34"></script>
+<script src="pct.js?v=35"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -162,7 +162,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     var toStart = Math.ceil((Date.parse(L.START + "T00:00:00") - Date.now()) / 86400000);
     if (toStart > 0) $("sub").textContent = T("Noch " + nf(toStart) + " Tage bis zum Start am 22. April 2027.", nf(toStart) + " days until the start on April 22, 2027.");
     else $("sub").textContent = D.next ? T("Nächster Ort: ", "Next town: ") + D.next.name + T(" in ", " in ") + L.dist(D.next.km - here.km) + "." : T("Auf dem letzten Stück nach Kanada.", "On the last stretch to Canada.");
-    $("cSeen").textContent = ago(D.latest && D.latest.ts);
+    $("cSeen").textContent = ago(D.latest && D.latest.ts) + (D.latest && D.latest.manual ? T(" (per Nachricht)", " (by message)") : "");
 
     // --- info card for one day (default: the latest). Click a day on the map to see it. ---
     function nextTownFrom(km) { return D.towns.filter(function (tw) { return tw.km > km + 0.5; })[0] || null; }
@@ -198,6 +198,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     map.addLayer({ id: "trk-glow", type: "line", source: "trk", paint: { "line-color": "#e0452f", "line-width": 9, "line-opacity": .28, "line-blur": 4 }, layout: { "line-cap": "round", "line-join": "round" } });
     map.addLayer({ id: "trk", type: "line", source: "trk", paint: { "line-color": L.dayColor("#ff6b4f", "#ffd166"), "line-width": 3 }, layout: { "line-cap": "round", "line-join": "round" } });
     L.addCamps(map, D, { fill: "#ffd166", ink: "#14202a" });
+    L.addManual(map, D, { fill: "#fff", ink: "#e0452f" });
     map.addLayer({ id: "trk-sel", type: "line", source: "trk", filter: ["==", ["get", "dayIdx"], -1], paint: { "line-color": "#fff", "line-width": 6, "line-opacity": .9 }, layout: { "line-cap": "round", "line-join": "round" } }, "trk");
     map.addLayer({ id: "trk-hit", type: "line", source: "trk", paint: { "line-color": "#000", "line-width": 18, "line-opacity": 0 } });
     function pickDay(i) { card(i); map.setFilter("trk-sel", ["==", ["get", "dayIdx"], i]); }
