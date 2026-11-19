@@ -129,9 +129,10 @@
   // ---- Load everything and derive what the designs need ----
   function load() {
     return Promise.all([J("data/pct_profile.json"), J(DIR + "track.geojson").catch(function () { return { features: [] }; }),
-      J(DIR + "latest.json").catch(function () { return null; }), J("data/Full_PCT_Simplified.geojson")])
+      J(DIR + "latest.json").catch(function () { return null; }), J("data/Full_PCT_Simplified.geojson"),
+      J("labs/diary.json").catch(function () { return window.PCT_DIARY || []; })])
       .then(function (r) {
-        var prof = r[0], track = r[1], latest = r[2], line = r[3], pts = prof.points, F = prof.total_km / NOMINAL;
+        var prof = r[0], track = r[1], latest = r[2], line = r[3], diary = r[4] || [], pts = prof.points, F = prof.total_km / NOMINAL;
         var feats = (track.features || []).filter(function (f) { return f.geometry && f.geometry.coordinates && f.geometry.coordinates.length; })
           .sort(function (a, b) { return String(a.properties.start_date).localeCompare(String(b.properties.start_date)); });
         var here = latest && typeof latest.lat === "number" ? snap(pts, latest.lat, latest.lon) : null;
@@ -146,7 +147,7 @@
         var days = {};
         feats.forEach(function (f) {
           var d = String(f.properties.start_date).slice(0, 10);
-          days[d] = days[d] || { date: d, km: 0, up: 0 }; days[d].km += (f.properties.distance_m || 0) / 1000; days[d].up += f.properties.elevation_gain_m || 0;
+          days[d] = days[d] || { date: d, km: 0, up: 0, sec: 0 }; days[d].km += (f.properties.distance_m || 0) / 1000; days[d].up += f.properties.elevation_gain_m || 0; days[d].sec += f.properties.moving_time_s || 0;
         });
         var dayList = Object.keys(days).sort().map(function (k) { return days[k]; });
         var totalKm = dayList.reduce(function (s, d) { return s + d.km; }, 0);
@@ -154,10 +155,158 @@
         return {
           src: SRC, pts: pts, total: prof.total_km, line: line, track: { type: "FeatureCollection", features: feats }, latest: latest,
           here: here, landmarks: lms, regions: regs, region: reg, days: dayList, today: dayList[dayList.length - 1] || null,
-          dayNo: dayList.length, walkedKm: totalKm, next: next, diary: (window.PCT_DIARY || [])
+          dayNo: dayList.length, walkedKm: totalKm, next: next, diary: diary
         };
       });
   }
 
-  window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC };
+  // ---- Resupply towns at their real position (not on the trail), with a short note ----
+  // Notes are from planning, not checked on site: services change, always look at FarOut.
+  var TOWNS = [
+    ["Mount Laguna", 32.8686, -116.4211, "Kleiner Laden, Lodge und Post direkt am Trail."],
+    ["Julian", 33.0786, -116.6020, "Hitch ab Scissors Crossing. Supermarkt, Post, und bei Mom's Pie gibt es für Hiker traditionell ein Stück Kuchen."],
+    ["Warner Springs", 33.2828, -116.6339, "Community Center mit Hiker-Station, Post. Kaum Einkauf."],
+    ["Idyllwild", 33.7400, -116.7189, "Bergdorf mit Supermarkt, Outfitter, Post und vielen Cafés."],
+    ["Big Bear Lake", 34.2439, -116.9114, "Größere Stadt: Supermärkte, Outfitter, Post, viele Unterkünfte."],
+    ["Wrightwood", 34.3608, -117.6334, "Kleiner Ort mit Lebensmittelladen und einem bei Hikern bekannten Eisenwarenladen."],
+    ["Agua Dulce", 34.4964, -118.3256, "Der Trail führt durch den Ort. Kleiner Supermarkt, Restaurants."],
+    ["Tehachapi", 35.1322, -118.4490, "Große Stadt abseits vom Trail: Supermärkte, Post, alles für einen Großeinkauf vor der Sierra."],
+    ["Kennedy Meadows", 35.9823, -118.1242, "General Store am Tor zur Sierra. Pakete, Bärenkanister, Eispickel."],
+    ["Lone Pine", 36.6060, -118.0629, "Über Cottonwood oder Kearsarge Pass erreichbar. Supermarkt, Outfitter, Post."],
+    ["Bishop", 37.3635, -118.3951, "Größte Stadt an der Ostsierra: Supermärkte, mehrere Outfitter, Bäckerei."],
+    ["Mammoth Lakes", 37.6485, -118.9721, "Ski-Ort mit Supermärkten, Outfittern und Post. Bus ab Reds Meadow."],
+    ["Tuolumne Meadows", 37.8735, -119.3590, "Saisonaler Laden mit Post im Yosemite-Nationalpark."],
+    ["South Lake Tahoe", 38.9399, -119.9772, "Große Stadt: alles, was man braucht. Bus ab Echo Summit."],
+    ["Truckee", 39.3280, -120.1833, "Stadt mit Supermärkten und Outfittern, erreichbar ab Donner Pass."],
+    ["Sierra City", 39.5657, -120.6324, "Kleiner Ort mit Laden und Post."],
+    ["Belden", 40.0058, -121.2483, "Winziger Ort direkt am Trail. Kaum Einkauf."],
+    ["Chester", 40.3063, -121.2316, "Kleinstadt mit Supermarkt und Post."],
+    ["Burney", 40.8824, -121.6608, "Kleinstadt mit Supermarkt und Post."],
+    ["Mount Shasta", 41.3099, -122.3106, "Stadt am Fuß des Shasta: Supermärkte, Outfitter, Post."],
+    ["Etna", 41.4568, -122.8948, "Kleiner Ort mit Laden, Post und Brauerei."],
+    ["Seiad Valley", 41.8418, -123.1964, "Laden mit Café direkt am Trail, bekannt für die Pancake Challenge."],
+    ["Ashland", 42.1946, -122.7095, "Größere Stadt in Oregon: Supermärkte, Outfitter, Post."],
+    ["Mazama Village", 42.8668, -122.1675, "Laden und Campingplatz am Crater Lake. Pakete möglich."],
+    ["Sisters", 44.2910, -121.5492, "Kleinstadt mit Supermarkt und Outfitter, Hitch ab Santiam oder McKenzie Pass."],
+    ["Cascade Locks", 45.6696, -121.8909, "Der Trail führt durch den Ort. Laden, Post, Bridge of the Gods nach Washington."],
+    ["Trout Lake", 45.9968, -121.5287, "Kleiner Ort mit Laden und Post, Hitch ab Forest Road 23."],
+    ["White Pass", 46.6378, -121.3913, "Laden mit Pakethaltung direkt am Pass."],
+    ["Snoqualmie Pass", 47.4243, -121.4135, "Kleiner Ort am Pass mit Laden und Unterkünften."],
+    ["Skykomish", 47.7090, -121.3590, "Kleiner Ort unterhalb von Stevens Pass."],
+    ["Stehekin", 48.3093, -120.6545, "Nur per Bus oder Boot erreichbar. Post und die berühmte Bäckerei."],
+    ["Mazama", 48.5926, -120.4039, "Kleiner Laden, letzte Versorgung vor Kanada. Hitch ab Rainy Pass."]
+  ];
+  function addTowns(map, D, theme) {
+    theme = theme || {};
+    var css = document.getElementById("tw-css");
+    if (!css) { css = document.createElement("style"); css.id = "tw-css";
+      css.textContent = ".tw{display:flex;align-items:center;gap:5px;cursor:pointer}.tw i{width:12px;height:12px;border-radius:3px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5)}" +
+        ".tw span{font:600 12px Inter,system-ui,sans-serif;white-space:nowrap}" +
+        ".tw-pop .maplibregl-popup-content{padding:12px 14px;max-width:260px;font:14px/1.45 Inter,system-ui,sans-serif;color:#14202a;border-radius:6px}" +
+        ".tw-pop h4{margin:0 0 2px;font-size:16px}.tw-pop .m{font-size:12px;color:#56636d;margin-bottom:6px}.tw-pop .n{font-size:11px;color:#8a959d;margin-top:8px}";
+      document.head.appendChild(css); }
+    var lines = { type: "FeatureCollection", features: [] };
+    TOWNS.forEach(function (t) {
+      var s = snap(D.pts, t[1], t[2]), off = s ? s.off : 0;
+      if (s && off > 0.4) lines.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: [[t[2], t[1]], [s.lon, s.lat]] } });
+      var el = document.createElement("div"); el.className = "tw";
+      el.innerHTML = '<i style="background:' + (theme.dot || "#f5b301") + '"></i><span style="color:' + (theme.text || "#fff") + ";text-shadow:" + (theme.halo || "0 1px 3px #000,0 0 8px rgba(0,0,0,.7)") + '">' + t[0] + "</span>";
+      var pop = new maplibregl.Popup({ offset: 12, className: "tw-pop", maxWidth: "280px" }).setHTML(
+        "<h4>" + t[0] + '</h4><div class="m">Trail-km ' + nf(s ? s.km : 0) + (off > 0.4 ? " · ca. " + nf(off, off < 10 ? 1 : 0) + " km vom Trail (Luftlinie)" : " · direkt am Trail") + "</div>" +
+        t[3] + '<div class="n">Stand Planung, vor Ort gilt FarOut.</div>');
+      new maplibregl.Marker({ element: el, anchor: "left", offset: [-6, 0] }).setLngLat([t[2], t[1]]).setPopup(pop).addTo(map);
+    });
+    map.addSource("tw-links", { type: "geojson", data: lines });
+    map.addLayer({ id: "tw-links", type: "line", source: "tw-links", paint: { "line-color": theme.link || "#f5b301", "line-width": 1.3, "line-opacity": .8, "line-dasharray": [2, 2] } });
+  }
+
+  // ---- Design switcher (Reportage / Tagebuch / Instrumente) + data source ----
+  var DESIGNS = [["", "Reportage"], ["tagebuch/", "Tagebuch"], ["instrumente/", "Instrumente"]];
+  function switcher(active) {
+    var css = document.createElement("style");
+    css.textContent = ".lab{position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:9000;display:flex;align-items:center;gap:2px;background:rgba(14,18,22,.88);color:#fff;border-radius:22px;padding:4px;font:500 13px/1 system-ui,-apple-system,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.25);backdrop-filter:blur(6px)}" +
+      ".lab a{color:#fff;text-decoration:none;padding:7px 13px;border-radius:16px;white-space:nowrap}.lab a:hover{background:rgba(255,255,255,.12)}.lab a.on{background:#e0452f}" +
+      ".lab select{background:transparent;color:#ffd2c4;border:0;font:600 12px system-ui;margin:0 6px;cursor:pointer}.lab select option{color:#000}" +
+      "@media(max-width:700px){.lab{top:auto;bottom:10px}.lab select{display:none}}";
+    document.head.appendChild(css);
+    var q = SRC !== "demo" ? "?data=" + SRC : "";
+    var el = document.createElement("div"); el.className = "lab";
+    el.innerHTML = DESIGNS.map(function (d, i) { return '<a href="' + BASE + "labs/" + d[0] + q + '" class="' + (i === active ? "on" : "") + '">' + d[1] + "</a>"; }).join("") +
+      '<select title="Datenquelle"><option value="demo">Demo-Daten</option><option value="test">Meine Testrunden</option><option value="live">Live</option></select>';
+    var sel = el.querySelector("select"); sel.value = SRC;
+    sel.onchange = function () { var u = new URL(location.href); u.searchParams.set("data", sel.value); location.href = u; };
+    document.body.appendChild(el);
+  }
+
+  // ---- Photo pop-up (no jump to Flickr) ----
+  function lightbox(list, i) {
+    var css = document.getElementById("lb-css");
+    if (!css) { css = document.createElement("style"); css.id = "lb-css";
+      css.textContent = ".lb{position:fixed;inset:0;z-index:9500;background:rgba(5,8,10,.92);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}" +
+        ".lb img{max-width:92vw;max-height:80vh;box-shadow:0 10px 40px rgba(0,0,0,.6)}.lb .cap{color:#dfe6ea;font:500 14px Inter,system-ui,sans-serif;text-align:center;max-width:80vw}" +
+        ".lb button{position:absolute;top:50%;transform:translateY(-50%);all:unset;cursor:pointer;color:#fff;font:300 46px/1 system-ui;padding:20px;opacity:.8}.lb .p{left:8px}.lb .n{right:8px}" +
+        ".lb .x{position:absolute;top:14px;right:18px;color:#fff;font:300 34px/1 system-ui;cursor:pointer}";
+      document.head.appendChild(css); }
+    var lb = document.createElement("div"); lb.className = "lb";
+    function show() {
+      var p = list[i], d = p.taken ? new Date(p.taken.replace(" ", "T")).toLocaleString("de-DE", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) + " Uhr" : "";
+      lb.innerHTML = '<span class="x">×</span>' + (list.length > 1 ? '<button class="p">‹</button><button class="n">›</button>' : "") +
+        '<img src="' + (p.l || p.m) + '" alt=""><div class="cap">' + [p.title, d].filter(Boolean).join(" · ") + "</div>";
+      var pb = lb.querySelector(".p"), nb = lb.querySelector(".n");
+      if (pb) pb.onclick = function (e) { e.stopPropagation(); i = (i - 1 + list.length) % list.length; show(); };
+      if (nb) nb.onclick = function (e) { e.stopPropagation(); i = (i + 1) % list.length; show(); };
+      lb.querySelector("img").onclick = function (e) { e.stopPropagation(); };
+    }
+    function close() { lb.remove(); document.removeEventListener("keydown", key); }
+    function key(e) { if (e.key === "Escape") close(); if (e.key === "ArrowLeft" && list.length > 1) { i = (i - 1 + list.length) % list.length; show(); } if (e.key === "ArrowRight" && list.length > 1) { i = (i + 1) % list.length; show(); } }
+    lb.onclick = close; document.addEventListener("keydown", key); show(); document.body.appendChild(lb);
+  }
+
+  // ---- Replay: walks the recorded track from day 1 to now ----
+  // opts: { map, D, marker, ui: {play, speed, clock, slider?}, onUpdate(state) }
+  function replay(o) {
+    var D = o.D, seq = [], base = 0;
+    D.track.features.forEach(function (f, fi) {
+      var c = f.geometry.coordinates, t0 = Date.parse(f.properties.start_date), dur = (f.properties.moving_time_s || 0) * 1000, n = c.length;
+      var geo = [0]; for (var k = 1; k < n; k++) geo.push(geo[k - 1] + hav(c[k - 1][1], c[k - 1][0], c[k][1], c[k][0]));
+      var real = (f.properties.distance_m || 0) / 1000 || geo[n - 1], sc = geo[n - 1] ? real / geo[n - 1] : 0;
+      for (k = 0; k < n; k++) seq.push({ c: c[k], f: fi, km: base + geo[k] * sc, t: t0 + (n > 1 ? dur * k / (n - 1) : 0) });
+      base += real;
+    });
+    var N = seq.length, idx = N - 1, timer = null, speeds = [1, 2, 4], sp = 0;
+    function trackUpTo(i) {
+      var out = [];
+      D.track.features.forEach(function (f, fi) {
+        if (fi < seq[i].f) out.push(f);
+        else if (fi === seq[i].f) { var start = seq.findIndex(function (s) { return s.f === fi; }); out.push({ type: "Feature", properties: f.properties, geometry: { type: "LineString", coordinates: f.geometry.coordinates.slice(0, i - start + 1).concat(i - start === 0 ? [f.geometry.coordinates[0]] : []) } }); }
+      });
+      return { type: "FeatureCollection", features: out };
+    }
+    function set(i, follow) {
+      if (!N) return; idx = Math.max(0, Math.min(N - 1, i)); var s = seq[idx];
+      var src = o.map.getSource(o.source || "trk"); if (src) src.setData(idx === N - 1 ? D.track : trackUpTo(idx));
+      if (o.marker) o.marker.setLngLat(s.c);
+      if (follow) o.map.easeTo({ center: s.c, duration: 120, easing: function (x) { return x; } });
+      if (o.ui.slider) o.ui.slider.value = idx;
+      if (o.ui.clock) o.ui.clock.textContent = new Date(s.t).toLocaleString("de-DE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Los_Angeles" }) + " Uhr";
+      var f = D.track.features[s.f], day = String(f.properties.start_date).slice(0, 10), dn = D.days.findIndex(function (d) { return d.date === day; });
+      if (o.onUpdate) o.onUpdate({ i: idx, n: N, km: s.km, lnglat: s.c, feature: f, date: day, dayNo: dn + 1, day: D.days[dn], end: idx === N - 1 });
+    }
+    function stop() { clearInterval(timer); timer = null; o.ui.play.innerHTML = "▶"; o.ui.play.classList.remove("on"); }
+    function play() {
+      if (!N) return; if (idx >= N - 1) set(0, true);
+      o.ui.play.innerHTML = "❚❚"; o.ui.play.classList.add("on");
+      var step = Math.max(1, Math.round(N / 900));          // ~30 s for the whole track at 1x
+      timer = setInterval(function () { if (idx >= N - 1) { stop(); return; } set(idx + step * speeds[sp], true); }, 33);
+    }
+    o.ui.play.onclick = function () { timer ? stop() : play(); };
+    if (o.ui.speed) o.ui.speed.onclick = function () { sp = (sp + 1) % speeds.length; o.ui.speed.textContent = speeds[sp] + "×"; };
+    if (o.ui.slider) { o.ui.slider.max = Math.max(0, N - 1); o.ui.slider.oninput = function () { stop(); set(+o.ui.slider.value, true); }; }
+    document.addEventListener("keydown", function (e) { if (e.code === "Space" && !(e.target.closest && e.target.closest("input,select,textarea"))) { e.preventDefault(); o.ui.play.click(); } });
+    set(N - 1, false);
+    return { set: set, stop: stop, toDate: function (date) { var k = -1; seq.forEach(function (s, j) { if (String(D.track.features[s.f].properties.start_date).slice(0, 10) <= date) k = j; }); if (k >= 0) { stop(); set(k, false); } return k >= 0 ? seq[k].c : null; } };
+  }
+
+  window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, BASE: BASE };
 })();
