@@ -51,6 +51,14 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .lm.term span{font-family:'Playfair Display';font-size:15px;font-weight:700}
 #map.z-lo .lm.t2 span,#map.z-lo .lm.t3,#map.z-mid .lm.t3 span{display:none}
 .ph{width:38px;height:38px;border-radius:50%;border:2px solid #fff;background:#1b232a center/cover;box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer}
+/* replay controls */
+.ctl{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.ctl #play{all:unset;width:48px;height:48px;border-radius:50%;background:#e0452f;color:#fff;font-size:16px;cursor:pointer;box-shadow:0 4px 14px rgba(224,69,47,.4);flex:none;display:grid;place-items:center}
+.ctl #speed{all:unset;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.25);color:#fff;border-radius:16px;padding:6px 11px;font:500 13px Inter,sans-serif;cursor:pointer}
+.ctl #clock{font-size:14px;color:#e9eef1}
+.ctl .stats{margin-left:auto;display:flex;gap:26px;font-size:13px;color:#aeb9c1}
+.ctl .stats b{color:#fff;font-weight:600;font-size:15px;margin-left:6px}
+@media(max-width:820px){.ctl .stats{display:none}.ctl #play{width:40px;height:40px}}
 /* position */
 .me{position:relative;width:18px;height:18px}
 .me i{position:absolute;inset:0;border-radius:50%;background:#e0452f;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)}
@@ -58,12 +66,6 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 @keyframes mePulse{from{transform:scale(1);opacity:.9}to{transform:scale(3);opacity:0}}
 .me .bub{position:absolute;left:24px;top:50%;transform:translateY(-50%);white-space:nowrap;font:600 12px/1 Inter,system-ui,sans-serif;background:#fff;color:#14202a;padding:5px 9px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
 .me .bub b{color:#e0452f}
-/* lab bar */
-.lab{position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:9000;display:flex;align-items:center;gap:2px;background:rgba(14,18,22,.86);color:#fff;border-radius:22px;padding:4px;font:500 13px/1 system-ui,-apple-system,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.25);backdrop-filter:blur(6px)}
-.lab button,.lab a{all:unset;cursor:pointer;padding:7px 13px;border-radius:16px;white-space:nowrap}
-.lab .on{background:#e0452f}.lab .off{opacity:.4;cursor:default}
-.lab select{background:transparent;color:#ffd2c4;border:0;font:600 12px system-ui;margin:0 6px;cursor:pointer}
-.lab select option{color:#000}
 .maplibregl-ctrl-group{background:rgba(255,255,255,.92)!important}
 .maplibregl-ctrl-attrib{font-size:10px}
 @media(max-width:820px){
@@ -72,7 +74,6 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
   .card .top{display:none}.card .r{padding:5px 0;font-size:13px}.card .src{display:none}
   .card .r.hide-m{display:none}
   .bottom{padding:0 18px 14px}.strip{height:70px}.chap .n{font-size:9.5px;letter-spacing:.04em}
-  .lab{top:10px}.lab .off{display:none}
 }
 </style>
 </head>
@@ -84,7 +85,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
   <div class="k" id="kicker">&nbsp;</div>
   <h1 id="title">Pacific Crest Trail</h1>
   <p id="sub">&nbsp;</p>
-  <div class="who">Felix · PCT 2027 · Campo → Kanada</div>
+  <div class="who">Pacific Crest Trail 2027 · Campo → Kanada</div>
 </div>
 
 <div class="card">
@@ -99,31 +100,26 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 </div>
 
 <div class="bottom">
+  <div class="ctl">
+    <button id="play" title="Abspielen (Leertaste)">▶</button>
+    <button id="speed" title="Tempo">1×</button>
+    <span id="clock"></span>
+    <div class="stats"><span>Tag <b id="sDay">–</b></span><span>gelaufen <b id="sKm">–</b></span><span>bis Kanada <b id="sLeft">–</b></span></div>
+  </div>
   <div class="prof" id="prof" title="Höhenprofil, antippen springt zur Stelle"></div>
   <div class="chap" id="chap"></div>
   <div class="strip" id="strip"><span class="empty">Fotos werden geladen …</span></div>
 </div>
 
-<div class="lab">
-  <button class="on">Reportage</button>
-  <button class="off" title="kommt als Nächstes">Tagebuch</button>
-  <button class="off" title="kommt als Nächstes">Instrumente</button>
-  <select id="dsrc" title="Datenquelle">
-    <option value="demo">Demo-Daten</option><option value="test">Meine Testrunden</option><option value="live">Live</option>
-  </select>
-</div>
 
-{% assign items = site.updates | sort: "date" | reverse %}
-<script>
-window.PCT_DIARY = [{% for u in items %}{"date": {{ u.date | jsonify }}, "de": {{ u.de | jsonify }}, "en": {{ u.en | jsonify }}}{% unless forloop.last %},{% endunless %}{% endfor %}];
-</script>
+
+
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=1"></script>
+<script src="pct.js?v=3"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, $ = function (id) { return document.getElementById(id); };
-  var sel = $("dsrc"); sel.value = L.src;
-  sel.onchange = function () { var u = new URL(location.href); u.searchParams.set("data", sel.value); location.href = u; };
+  L.switcher(0);
 
   var map = new maplibregl.Map({
     container: "map", center: [-116.47, 32.59], zoom: 9, attributionControl: { compact: true },
@@ -167,7 +163,7 @@ window.PCT_DIARY = [{% for u in items %}{"date": {{ u.date | jsonify }}, "de": {
     map.addLayer({ id: "trk-glow", type: "line", source: "trk", paint: { "line-color": "#e0452f", "line-width": 9, "line-opacity": .28, "line-blur": 4 }, layout: { "line-cap": "round", "line-join": "round" } });
     map.addLayer({ id: "trk", type: "line", source: "trk", paint: { "line-color": "#ff6b4f", "line-width": 3 }, layout: { "line-cap": "round", "line-join": "round" } });
 
-    D.landmarks.forEach(function (l) {
+    D.landmarks.filter(function (l) { return l.type !== "town"; }).forEach(function (l) {
       var T = L.TYPE[l.type] || L.TYPE.town, el = document.createElement("div");
       el.className = "lm " + l.type + " t" + l.tier;
       el.title = l.name + " · " + T.de + " · km " + nf(l.km) + " · " + nf(l.m) + " m";
@@ -177,10 +173,11 @@ window.PCT_DIARY = [{% for u in items %}{"date": {{ u.date | jsonify }}, "de": {
     });
 
     // --- position marker (simple pulsing dot; the animated hiker is parked in pct.js for later) ---
+    L.addTowns(map, D, {});
     var pos = D.latest && typeof D.latest.lat === "number" ? [D.latest.lon, D.latest.lat] : [here.lon, here.lat];
     var me = document.createElement("div"); me.className = "me";
     me.innerHTML = '<div class="bub">Tag ' + (D.dayNo || 0) + ' · <b>' + (D.today ? nf(D.today.km, 1) : 0) + ' km</b></div><i></i>';
-    new maplibregl.Marker({ element: me, anchor: "center" }).setLngLat(pos).addTo(map);
+    var meMk = new maplibregl.Marker({ element: me, anchor: "center" }).setLngLat(pos).addTo(map);
 
     // --- start view: last day + position ---
     var lastDay = D.today ? D.track.features.filter(function (f) { return String(f.properties.start_date).slice(0, 10) === D.today.date; }) : [];
@@ -192,6 +189,17 @@ window.PCT_DIARY = [{% for u in items %}{"date": {{ u.date | jsonify }}, "de": {
     map.jumpTo({ center: pos, zoom: z });
     map.panBy(mob ? [0, 60] : [-130, 30], { duration: 0 });
     zoomClass();
+
+    // --- replay ---
+    L.replay({ map: map, D: D, marker: meMk, ui: { play: $("play"), speed: $("speed"), clock: $("clock") },
+      onUpdate: function (s) {
+        $("sDay").textContent = s.dayNo || 0; $("sKm").textContent = nf(s.km, 0) + " km";
+        var tk = L.atKm(D.pts, 0), sn = null; // trail km of current replay point
+        var best = 1e9; D.pts.forEach(function (p) { var d = Math.abs(p.lat - s.lnglat[1]) + Math.abs(p.lon - s.lnglat[0]); if (d < best) { best = d; sn = p; } });
+        $("sLeft").textContent = nf(D.total - (sn ? sn.km : 0), 0) + " km";
+        me.querySelector(".bub").innerHTML = "Tag " + (s.dayNo || 0) + " · <b>" + (s.day ? nf(s.day.km, 1) : 0) + " km</b>";
+      } });
+    if (!D.track.features.length) { $("play").style.opacity = .4; $("clock").textContent = "Noch keine Aufzeichnung, Start am 22. April 2027"; }
 
     // --- chapter bar ---
     $("chap").innerHTML = D.regions.map(function (g, i) {
@@ -229,10 +237,12 @@ window.PCT_DIARY = [{% for u in items %}{"date": {{ u.date | jsonify }}, "de": {
       if (!ph.length) { $("strip").innerHTML = '<span class="empty">Noch keine Fotos im Album.</span>'; return; }
       $("strip").innerHTML = ph.map(function (p) {
         var d = p.taken ? new Date(p.taken.replace(" ", "T")).toLocaleDateString("de-DE", { day: "numeric", month: "short" }) : "";
-        return '<a href="' + p.href + '" target="_blank" rel="noopener" style="background-image:url(' + p.m + ')" data-id="' + p.id + '"><span>' + d + "</span></a>";
+        return '<a href="#" style="background-image:url(' + p.m + ')" data-i="' + ph.indexOf(p) + '"><span>' + d + "</span></a>";
       }).join("");
+      $("strip").querySelectorAll("a").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); L.lightbox(ph, +a.dataset.i); }; });
       ph.filter(function (p) { return p.lat && p.lon; }).forEach(function (p) {
-        var el = document.createElement("a"); el.className = "ph"; el.href = p.href; el.target = "_blank"; el.style.backgroundImage = "url(" + p.q + ")";
+        var el = document.createElement("div"); el.className = "ph"; el.style.backgroundImage = "url(" + p.q + ")";
+        el.onclick = function () { L.lightbox(ph, ph.indexOf(p)); };
         new maplibregl.Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(map);
       });
     });

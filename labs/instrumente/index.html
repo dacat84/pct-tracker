@@ -1,0 +1,181 @@
+---
+layout: null
+sitemap: false
+---
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>PCT Labs · Instrumente</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23141414'/><rect x='2.5' y='2.5' width='27' height='27' fill='%23f5b301'/><path d='M5 25 L13 10 L17.5 18 L20.5 13 L27 25 Z' fill='%23141414'/></svg>" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+*{box-sizing:border-box}html,body{margin:0}
+body{background:#0d0f12;color:#e8ecef;font-family:Inter,system-ui,sans-serif;min-height:100vh}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+.wrap{max-width:1400px;margin:0 auto;padding:22px 24px 40px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:16px;padding-top:30px}
+header h1{font-size:30px;font-weight:800;letter-spacing:.02em;margin:0;text-transform:uppercase}
+header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13px 'JetBrains Mono',monospace;color:#9aa4ad}
+.tag{background:#ffb020;color:#111;font:700 12px 'JetBrains Mono',monospace;padding:3px 8px}
+.ctl{display:flex;align-items:center;gap:10px;border:1px solid #2a3038;padding:8px 10px;background:#12161a}
+#play{all:unset;width:40px;height:32px;background:#ffb020;color:#111;display:grid;place-items:center;cursor:pointer;font-size:13px}
+#speed{all:unset;border:1px solid #2a3038;padding:6px 9px;font:500 12.5px 'JetBrains Mono',monospace;cursor:pointer}
+#clock{font:400 12.5px 'JetBrains Mono',monospace;color:#c9d1d7;min-width:190px}
+.kpi{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid #2a3038;background:#12161a;margin-bottom:14px}
+.kpi div{padding:12px 16px;border-right:1px solid #2a3038}.kpi div:last-child{border-right:0}
+.kpi span{display:block;font:500 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#7d8790}
+.kpi b{display:block;font:500 26px 'JetBrains Mono',monospace;margin-top:6px;white-space:nowrap}
+.kpi b small{font-size:13px;color:#7d8790;margin-left:3px}
+.grid{display:grid;grid-template-columns:1.1fr 1fr;gap:14px;margin-bottom:14px}
+.panel{border:1px solid #2a3038;background:#12161a;position:relative}
+.panel h3{margin:0;padding:10px 14px 0;font:500 11px 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:#7d8790;display:flex;justify-content:space-between}
+#map{height:360px}
+.gauges{display:grid;grid-template-columns:1fr 1fr;height:100%}
+.g{border-right:1px solid #2a3038;border-bottom:1px solid #2a3038;padding:10px 12px 8px;display:flex;flex-direction:column;align-items:center}
+.g:nth-child(2n){border-right:0}.g:nth-child(n+3){border-bottom:0}
+.g .lab2{align-self:flex-start;font:500 11px 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:#7d8790}
+.g svg{width:150px;height:130px}
+.prof svg,.bars svg{display:block;width:100%}
+.prof{height:230px}.bars{height:150px}
+.tip{position:absolute;pointer-events:none;background:#ffb020;color:#111;font:600 12px 'JetBrains Mono',monospace;padding:4px 7px;white-space:nowrap;transform:translate(-50%,-120%);display:none}
+.me{width:14px;height:14px;background:#ff4d2e;border:2px solid #fff;transform:rotate(45deg)}
+.maplibregl-ctrl-attrib{background:rgba(0,0,0,.5)!important;color:#888}.maplibregl-ctrl-attrib a{color:#aaa}
+@media(max-width:900px){.kpi{grid-template-columns:repeat(3,1fr)}.kpi div:nth-child(3){border-right:0}.kpi div:nth-child(-n+3){border-bottom:1px solid #2a3038}.grid{grid-template-columns:1fr}#map{height:280px}.wrap{padding:14px 12px 70px}header{padding-top:4px}.kpi b{font-size:20px}#clock{min-width:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><h1>Pacific Crest Trail</h1><div class="sub"><span class="tag" id="dayTag">TAG –</span><span>CAMPO ⇄ KANADA · 2027</span></div></div>
+    <div class="ctl"><button id="play" title="Abspielen (Leertaste)">▶</button><button id="speed">1×</button><span id="clock"></span></div>
+  </header>
+  <div class="kpi">
+    <div><span>Gelaufen</span><b id="kTot">–</b></div>
+    <div><span>Bis Kanada</span><b id="kLeft">–</b></div>
+    <div><span>Tage</span><b id="kDays">–</b></div>
+    <div><span>Ø pro Tag</span><b id="kAvg">–</b></div>
+    <div><span>Höhenmeter</span><b id="kUp">–</b></div>
+    <div><span>Längster Tag</span><b id="kMax">–</b></div>
+  </div>
+  <div class="grid">
+    <div class="panel"><div id="map"></div></div>
+    <div class="panel"><div class="gauges" id="gauges"></div></div>
+  </div>
+  <div class="panel" style="margin-bottom:14px"><h3><span>Höhenprofil · Campo → Kanada</span><span id="profInfo"></span></h3><div class="prof" id="prof"></div><div class="tip" id="tip"></div></div>
+  <div class="panel"><h3><span>Etappen · km pro Tag</span><span>antippen wählt den Tag</span></h3><div class="bars" id="bars"></div></div>
+</div>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="../pct.js?v=3"></script>
+<script>
+(function () {
+  var L = PCTLab, nf = L.nf, $ = function (id) { return document.getElementById(id); };
+  L.switcher(2);
+  var AMB = "#ffb020";
+  var map = new maplibregl.Map({
+    container: "map", center: [-116.47, 32.59], zoom: 8, attributionControl: { compact: true },
+    style: { version: 8, sources: {
+      d: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, attribution: "Esri, HERE, Garmin" } },
+      layers: [{ id: "d", type: "raster", source: "d" }] }
+  });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+
+  // round gauge: value v of max, label, unit
+  function gauge(title, v, max, unit, dec) {
+    var a0 = -220, a1 = 40, p = Math.max(0, Math.min(1, v / max)), R = 52, cx = 75, cy = 70;
+    function pt(a, r) { var t = a * Math.PI / 180; return [cx + r * Math.cos(t), cy + r * Math.sin(t)]; }
+    function arc(f, t, r) { var s = pt(f, r), e = pt(t, r), big = (t - f) > 180 ? 1 : 0; return "M" + s[0] + " " + s[1] + " A" + r + " " + r + " 0 " + big + " 1 " + e[0] + " " + e[1]; }
+    var ticks = ""; for (var k = 0; k <= 10; k++) { var a = a0 + (a1 - a0) * k / 10, i = pt(a, R + 6), o = pt(a, R + (k % 5 ? 10 : 13)); ticks += '<line x1="' + i[0] + '" y1="' + i[1] + '" x2="' + o[0] + '" y2="' + o[1] + '" stroke="#55606a" stroke-width="' + (k % 5 ? 1 : 2) + '"/>'; }
+    return '<div class="g"><div class="lab2">' + title + '</div><svg viewBox="0 0 150 130">' + ticks +
+      '<path d="' + arc(a0, a1, R) + '" fill="none" stroke="#2a3038" stroke-width="7"/>' +
+      (p > 0 ? '<path d="' + arc(a0, a0 + (a1 - a0) * p, R) + '" fill="none" stroke="' + AMB + '" stroke-width="7"/>' : "") +
+      '<text x="75" y="76" text-anchor="middle" font-family="JetBrains Mono" font-size="26" fill="#e8ecef">' + nf(v, dec || 0) + '</text>' +
+      '<text x="75" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="10" letter-spacing="2" fill="#7d8790">' + unit + "</text></svg></div>";
+  }
+
+  Promise.all([L.load(), new Promise(function (r) { map.on("load", r); })]).then(function (r) {
+    var D = r[0], days = D.days, upTot = days.reduce(function (s, d) { return s + d.up; }, 0), maxDay = days.reduce(function (m, d) { return d.km > m.km ? d : m; }, { km: 0 });
+    $("kTot").innerHTML = nf(D.walkedKm) + "<small>km</small>";
+    $("kLeft").innerHTML = nf(D.total - D.here.km) + "<small>km</small>";
+    $("kDays").textContent = days.length;
+    $("kAvg").innerHTML = (days.length ? nf(D.walkedKm / days.length, 1) : "0") + "<small>km</small>";
+    $("kUp").innerHTML = nf(upTot) + "<small>m</small>";
+    $("kMax").innerHTML = nf(maxDay.km, 1) + "<small>km</small>";
+
+    map.addSource("pct", { type: "geojson", data: D.line });
+    map.addLayer({ id: "pct", type: "line", source: "pct", paint: { "line-color": "#3a8f9a", "line-width": 1.2, "line-dasharray": [2, 2] } });
+    map.addSource("trk", { type: "geojson", data: D.track });
+    map.addLayer({ id: "trk-g", type: "line", source: "trk", paint: { "line-color": AMB, "line-width": 7, "line-opacity": .25, "line-blur": 3 } });
+    map.addLayer({ id: "trk", type: "line", source: "trk", paint: { "line-color": AMB, "line-width": 2.4 }, layout: { "line-cap": "round" } });
+    L.addTowns(map, D, { dot: "#ffb020", link: "#ffb020" });
+    var pos = D.latest && typeof D.latest.lat === "number" ? [D.latest.lon, D.latest.lat] : [D.here.lon, D.here.lat];
+    var me = document.createElement("div"); me.className = "me";
+    var mk = new maplibregl.Marker({ element: me }).setLngLat(pos).addTo(map);
+    map.jumpTo({ center: pos, zoom: D.track.features.length ? 10 : 8 });
+
+    function showDay(d) {
+      d = d || { km: 0, up: 0, sec: 0 };
+      var h = d.sec / 3600, v = h > 0 ? d.km / h : 0;
+      $("gauges").innerHTML = gauge("Etappe", d.km, 50, "KM", 1) + gauge("Anstieg", d.up, 2500, "HM") + gauge("Gehzeit", h, 14, "STUNDEN", 1) + gauge("Tempo", v, 6, "KM/H", 1);
+      drawBars(d.date);
+    }
+
+    // --- elevation profile with landmarks, walked part, position, hover readout ---
+    var W = 1400, H = 230, padB = 26, padT = 34, pts = D.pts, mx = 0; pts.forEach(function (p) { if (p.m > mx) mx = p.m; }); mx = Math.ceil(mx / 500) * 500;
+    function X(km) { return km / D.total * W; } function Y(m) { return padT + (1 - m / mx) * (H - padT - padB); }
+    function drawProf(curKm) {
+      var path = pts.map(function (p, i) { return (i ? "L" : "M") + X(p.km).toFixed(1) + " " + Y(p.m).toFixed(1); }).join("");
+      var s = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" style="height:' + H + 'px">';
+      for (var m = 0; m <= mx; m += 1000) s += '<line x1="0" x2="' + W + '" y1="' + Y(m) + '" y2="' + Y(m) + '" stroke="#1f252b"/><text x="4" y="' + (Y(m) - 3) + '" font-family="JetBrains Mono" font-size="10" fill="#55606a">' + m + " m</text>";
+      D.regions.forEach(function (g, i) { s += '<line x1="' + X(g.ka) + '" x2="' + X(g.ka) + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#262d34"/><text x="' + (X(g.ka) + 4) + '" y="' + (H - 9) + '" font-family="JetBrains Mono" font-size="10" letter-spacing="1" fill="#7d8790">' + g.short.toUpperCase() + "</text>"; });
+      s += '<path d="' + path + "L" + W + " " + (H - padB) + "L0 " + (H - padB) + 'Z" fill="#1a2026"/><path d="' + path + '" fill="none" stroke="#3a8f9a" stroke-width="1.2" vector-effect="non-scaling-stroke"/>';
+      s += '<clipPath id="dn"><rect x="0" y="0" width="' + X(curKm) + '" height="' + H + '"/></clipPath><g clip-path="url(#dn)"><path d="' + path + "L" + W + " " + (H - padB) + "L0 " + (H - padB) + 'Z" fill="rgba(255,176,32,.18)"/><path d="' + path + '" fill="none" stroke="' + AMB + '" stroke-width="2" vector-effect="non-scaling-stroke"/></g>';
+      var lastX = -1e9;
+      D.landmarks.filter(function (l) { return l.tier === 1; }).sort(function (a, b) { return a.km - b.km; }).forEach(function (l) {
+        if (X(l.km) - lastX < 95) return; lastX = X(l.km);
+        s += '<line x1="' + X(l.km) + '" x2="' + X(l.km) + '" y1="' + (Y(l.m) - 4) + '" y2="' + (padT - 6) + '" stroke="#3a434c" stroke-dasharray="2 2"/><text x="' + X(l.km) + '" y="' + (padT - 10) + '" text-anchor="middle" font-family="Inter" font-size="10.5" fill="#9aa4ad">' + l.name + "</text>";
+      });
+      var cp = L.atKm(pts, curKm);
+      s += '<line x1="' + X(curKm) + '" x2="' + X(curKm) + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#ff4d2e" stroke-width="1.5" vector-effect="non-scaling-stroke"/><circle cx="' + X(curKm) + '" cy="' + Y(cp.m) + '" r="5" fill="#ff4d2e" stroke="#fff" stroke-width="2"/></svg>';
+      $("prof").innerHTML = s;
+      $("profInfo").textContent = "km " + nf(curKm) + " · " + nf(cp.m) + " m";
+    }
+    $("prof").onmousemove = function (e) {
+      var r = $("prof").getBoundingClientRect(), km = (e.clientX - r.left) / r.width * D.total, p = L.atKm(pts, km), tip = $("tip");
+      var near = D.landmarks.filter(function (l) { return Math.abs(l.km - km) < D.total / 120; })[0];
+      tip.style.display = "block"; tip.style.left = (e.clientX - r.left) + "px"; tip.style.top = (e.clientY - r.top + 34) + "px";
+      tip.textContent = "km " + nf(km) + " · " + nf(p.m) + " m" + (near ? " · " + near.name : "");
+    };
+    $("prof").onmouseleave = function () { $("tip").style.display = "none"; };
+
+    // --- day bars ---
+    function drawBars(sel) {
+      var BW = 1400, BH = 150, n = Math.max(days.length, 1), mxk = Math.max(40, maxDay.km), w = Math.min(36, BW / n - 4), s = '<svg viewBox="0 0 ' + BW + " " + BH + '" style="height:' + BH + 'px">';
+      if (!days.length) s += '<text x="20" y="70" font-family="JetBrains Mono" font-size="13" fill="#7d8790">Noch keine Etappen. Start am 22. April 2027.</text>';
+      days.forEach(function (d, i) {
+        var h = d.km / mxk * (BH - 44), x = 14 + i * (w + 4), on = d.date === sel;
+        s += '<g data-d="' + d.date + '" style="cursor:pointer"><rect x="' + x + '" y="' + (BH - 22 - h) + '" width="' + w + '" height="' + h + '" fill="' + (on ? "#ff4d2e" : AMB) + '" opacity="' + (on ? 1 : .75) + '"/>' +
+          '<text x="' + (x + w / 2) + '" y="' + (BH - 26 - h) + '" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#c9d1d7">' + nf(d.km) + '</text>' +
+          '<text x="' + (x + w / 2) + '" y="' + (BH - 8) + '" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#7d8790">' + (i + 1) + "</text></g>";
+      });
+      $("bars").innerHTML = s + "</svg>";
+      $("bars").querySelectorAll("g[data-d]").forEach(function (g) { g.onclick = function () { var c = rp.toDate(g.dataset.d); if (c) map.flyTo({ center: c, zoom: 10.5 }); }; });
+    }
+
+    var lastKm = -1;
+    var rp = L.replay({ map: map, D: D, marker: mk, ui: { play: $("play"), speed: $("speed"), clock: $("clock") },
+      onUpdate: function (s) {
+        $("dayTag").textContent = "TAG " + (s.dayNo || 0);
+        var sn = null, best = 1e9; D.pts.forEach(function (p) { var d = Math.abs(p.lat - s.lnglat[1]) + Math.abs(p.lon - s.lnglat[0]); if (d < best) { best = d; sn = p; } });
+        var km = sn ? sn.km : 0; if (Math.abs(km - lastKm) > 0.3) { drawProf(km); lastKm = km; }
+        if (s.day && s.day.date !== showDay.cur) { showDay.cur = s.day.date; showDay(s.day); }
+      } });
+    if (!D.track.features.length) { drawProf(0); showDay(null); $("clock").textContent = "Start am 22. April 2027"; $("dayTag").textContent = "TAG 0"; }
+  });
+})();
+</script>
+</body>
+</html>

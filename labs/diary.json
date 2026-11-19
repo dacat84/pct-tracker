@@ -1,0 +1,5 @@
+---
+layout: null
+sitemap: false
+---
+{% assign items = site.updates | sort: "date" | reverse %}[{% for u in items %}{"date": {{ u.date | jsonify }}, "de": {{ u.de | jsonify }}, "en": {{ u.en | jsonify }}}{% unless forloop.last %},{% endunless %}{% endfor %}]
