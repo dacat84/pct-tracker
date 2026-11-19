@@ -33,8 +33,6 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
 .tile{border:1px solid #2a3038;background:#12161a;padding:14px 16px}
 .tile span{display:block;font:500 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#7d8790}
 .tile b{display:block;font:500 26px 'JetBrains Mono',monospace;margin:6px 0 2px;white-space:nowrap}
-.tip-t{position:relative;cursor:help}.tt{display:none;position:absolute;left:0;right:0;top:100%;z-index:20;margin-top:6px;background:#1b2128;border:1px solid #3a434c;padding:10px 12px;font:400 12px/1.5 Inter,system-ui,sans-serif;color:#d6dde2;box-shadow:0 8px 24px rgba(0,0,0,.5)}
-.tt p{margin:0 0 6px}.tt p:last-child{margin:0}.tip-t:hover .tt,.tip-t.show .tt{display:block}
 .tile em{font-style:normal;font:400 12.5px 'JetBrains Mono',monospace;color:#9aa4ad}
 .tile.w2{grid-column:span 2}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
@@ -79,7 +77,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     <div class="tile"><span data-de="Ø pro Tag" data-en="Ø per day">Ø pro Tag</span><b id="tAvg">–</b><em id="tAvg2"></em></div>
     <div class="tile"><span data-de="Ø Tempo" data-en="Ø pace">Ø Tempo</span><b id="tPace">–</b><em id="tPace2"></em></div>
     <div class="tile"><span data-de="Tage unterwegs" data-en="Days on trail">Tage unterwegs</span><b id="tDays">–</b><em data-de="aktive Tage" data-en="active days">aktive Tage</em></div>
-    <div class="tile tip-t" id="zTile"><span data-de="Zero-Tage" data-en="Zero days">Zero-Tage</span><b id="tZero">–</b><em data-de="Ruhetage" data-en="rest days">Ruhetage</em><div class="tt" id="zTip"></div></div>
+    <div class="tile"><span data-de="Zero-Tage" data-en="Zero days">Zero-Tage</span><b id="tZero">–</b><em data-de="Ruhetage" data-en="rest days">Ruhetage</em></div>
     <div class="tile"><span data-de="Längster Tag" data-en="Longest day">Längster Tag</span><b id="tMax">–</b><em id="tMax2"></em></div>
     <div class="tile"><span data-de="Kürzester Tag" data-en="Shortest day">Kürzester Tag</span><b id="tMin">–</b><em id="tMin2"></em></div>
   </div>
@@ -123,10 +121,6 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     var a2 = two(n ? D.walkedKm / n : 0, 1); $("tAvg").textContent = a2[0]; $("tAvg2").textContent = a2[1];
     var v = sec ? D.walkedKm / (sec / 3600) : 0; $("tPace").textContent = L.EN ? nf(v * KM2MI, 1) + " mph" : nf(v, 1) + " km/h"; $("tPace2").textContent = L.EN ? nf(v, 1) + " km/h" : nf(v * KM2MI, 1) + " mph";
     $("tDays").textContent = n; $("tZero").textContent = Math.max(0, span - n);
-    var nNero = days.filter(function (d) { return d.nero; }).length, nHero = days.filter(function (d) { return d.hero; }).length;
-    $("tZero").nextElementSibling.textContent = T("Ruhetage", "rest days") + (nNero ? " · " + nNero + " Nero" : "") + (nHero ? " · " + nHero + " Hero" : "");
-    $("zTip").innerHTML = "<p>" + L.TERMS.zero + "</p><p>" + L.TERMS.nero + "</p><p>" + L.TERMS.hero + "</p>";
-    $("zTile").onclick = function () { this.classList.toggle("show"); };   // tap on phones
     $("tMax").textContent = mx ? two(mx.km, 1)[0] : "–"; $("tMax2").textContent = mx ? two(mx.km, 1)[1] + " · " + hm(mx.sec) + " · " + dShort(mx.date) : "";
     $("tMin").textContent = mn ? two(mn.km, 1)[0] : "–"; $("tMin2").textContent = mn ? two(mn.km, 1)[1] + " · " + hm(mn.sec) + " · " + dShort(mn.date) : "";
 
