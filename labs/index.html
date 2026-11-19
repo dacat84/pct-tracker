@@ -117,7 +117,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=19"></script>
+<script src="pct.js?v=20"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -245,10 +245,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         '<path d="' + path + '" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1" vector-effect="non-scaling-stroke"/>' +
         '<g clip-path="url(#done)"><path d="' + path + "L" + W + " " + H + "L0 " + H + 'Z" fill="rgba(224,69,47,.35)"/><path d="' + path + '" fill="none" stroke="#ff6b4f" stroke-width="2" vector-effect="non-scaling-stroke"/></g>' +
         '<line x1="' + hx + '" x2="' + hx + '" y1="0" y2="' + H + '" stroke="#fff" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>';
-      $("prof").onclick = function (e) {
-        var r = $("prof").getBoundingClientRect(), km = (e.clientX - r.left) / r.width * D.total, p = L.atKm(D.pts, km);
-        map.flyTo({ center: [p.lon, p.lat], zoom: 11, duration: 1200 });
-      };
+      L.scrubProfile($("prof"), map, D);
     })();
 
     // --- photos: strip + on the map where they were taken ---

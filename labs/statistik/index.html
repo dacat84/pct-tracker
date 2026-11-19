@@ -82,7 +82,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
   <div class="panel"><h3><span data-de="Höhenprofil · Campo → Kanada" data-en="Elevation profile · Campo → Canada">Höhenprofil · Campo → Kanada</span><span id="profInfo"></span></h3><div class="prof" id="prof"></div><div class="tip" id="tip"></div></div>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../pct.js?v=19"></script>
+<script src="../pct.js?v=20"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -134,7 +134,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     $("days").innerHTML = n ? days.slice().reverse().map(function (d) {
       return '<div class="row" data-d="' + d.date + '"><div class="d">' + dShort(d.date) + '</div><div class="b"><i style="width:' + (d.km / mxk * 100) + '%"></i></div><div class="k">' + L.dist(d.km, 1) + " <small>· ↑ " + L.elev(d.up) + "</small></div></div>";
     }).join("") : '<div class="d" style="grid-column:1/-1">' + T("Noch keine Etappen. Start am 22. April 2027.", "No stages yet. Start on April 22, 2027.") + "</div>";
-    $("days").querySelectorAll(".row").forEach(function (r) { r.onclick = function () { var c = rp.toDate(r.dataset.d); if (c) map.flyTo({ center: c, zoom: 11 }); }; });
+    $("days").querySelectorAll(".row").forEach(function (r) { r.onclick = function () { rp.toDate(r.dataset.d); markDay(r.dataset.d); L.fitDay(map, D, r.dataset.d, 40); }; });
     function markDay(date) { $("days").querySelectorAll(".row").forEach(function (r) { r.classList.toggle("on", r.dataset.d === date); }); }
 
     // elevation profile
@@ -156,6 +156,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
       s += '<line x1="' + X(curKm) + '" x2="' + X(curKm) + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#ff4d2e" stroke-width="1.5" vector-effect="non-scaling-stroke"/><circle cx="' + X(curKm) + '" cy="' + Y(cp.m) + '" r="5" fill="#ff4d2e" stroke="#fff" stroke-width="2"/></svg>';
       $("prof").innerHTML = s; $("profInfo").textContent = L.DU() + " " + nf(L.distV(curKm)) + " · " + L.elev(cp.m);
     }
+    L.scrubProfile($("prof"), map, D, function (km) { drawProf(km); lastKm = km; });
     $("prof").onmousemove = function (e) {
       var r = $("prof").getBoundingClientRect(), km = (e.clientX - r.left) / r.width * D.total, p = L.atKm(pts, km), tip = $("tip");
       var near = D.landmarks.filter(function (l) { return Math.abs(l.km - km) < D.total / 120; })[0];
