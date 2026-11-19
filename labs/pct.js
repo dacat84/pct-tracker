@@ -506,6 +506,15 @@
     });
   }
 
+  // small popup for the zero / nero / hero badges: what happened + what the word means
+  function termPop(kind, c, extra) {
+    var d = function (iso) { return dfmt(iso + "T12:00", { weekday: "short", day: "numeric", month: "long" }); };
+    var head = kind === "zero" ? (c.zero === 1 ? "Zero" : c.zero + " Zeros") + (c.town ? " in " + c.town.name : "") : (kind === "nero" ? "Nero in " : "Hero in ") + extra;
+    var when = kind === "zero" ? T("nach Tag ", "after day ") + c.day + " · " + d(new Date(Date.parse(c.date + "T12:00:00Z") + 86400000).toISOString().slice(0, 10)) + (c.zero > 1 ? T(" bis ", " to ") + d(new Date(Date.parse(c.date + "T12:00:00Z") + c.zero * 86400000).toISOString().slice(0, 10)) : "")
+      : T("Tag ", "Day ") + c.day + " · " + d(c.date) + " · " + dist(c.km, 1);
+    return new maplibregl.Popup({ offset: 12, className: "tw-pop", maxWidth: "280px" }).setHTML("<h4>" + head + '</h4><div class="m">' + when + '</div><div class="n" style="margin-top:4px">' + TERMS[kind] + "</div>");
+  }
+
   // ---- Tents where each day ended (except the current position) ----
   function addCamps(map, D, theme) {
     theme = theme || {};
@@ -522,19 +531,22 @@
         z.title = c.zero + (c.zero === 1 ? " Zero-" + T("Tag", "day") : " Zero-" + T("Tage", "days")) + (c.town ? " in " + c.town.name : "");
         z.style.cssText = "background:" + fill + ";color:" + ink + ";border:2px solid " + ink + ";border-radius:12px;padding:2px 7px;font:700 11px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
         z.innerHTML = BED + " ×" + c.zero;
-        new maplibregl.Marker({ element: z, anchor: c.town ? "top" : "bottom", offset: c.town ? [0, 10] : [0, -4] }).setLngLat(c.town ? c.town.lnglat : c.lnglat).addTo(map);
+        z.style.cursor = "pointer"; z.title = "";
+        new maplibregl.Marker({ element: z, anchor: c.town ? "top" : "bottom", offset: c.town ? [0, 10] : [0, -4] }).setLngLat(c.town ? c.town.lnglat : c.lnglat).setPopup(termPop("zero", c)).addTo(map);
       } else if (c.hero) {   // in and out of town the same day: small badge at the town
         var hz = document.createElement("div"); hz.className = "camp"; hz.dataset.day = c.day; hz.title = TERMS.hero;
         hz.style.cssText = "background:" + ink + ";color:" + fill + ";border:1.5px solid " + fill + ";border-radius:10px;padding:1px 6px;font:700 10px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
         hz.textContent = "Hero"; var htw = TOWNS.find(function (x) { return x[0] === c.hero; });
-        new maplibregl.Marker({ element: hz, anchor: "top", offset: [0, 10] }).setLngLat(htw ? [htw[2], htw[1]] : c.lnglat).addTo(map);
+        hz.style.cursor = "pointer"; hz.title = "";
+        new maplibregl.Marker({ element: hz, anchor: "top", offset: [0, 10] }).setLngLat(htw ? [htw[2], htw[1]] : c.lnglat).setPopup(termPop("hero", c, c.hero)).addTo(map);
       }
       if (c.nero) {   // night in town: bed + "Nero" at the town
         var nz = document.createElement("div"); nz.className = "camp"; nz.dataset.day = c.day;
         nz.title = "Nero" + " in " + c.nero + " · " + T("Nacht nach Tag ", "night after day ") + c.day;
         nz.style.cssText = "background:" + fill + ";color:" + ink + ";border:2px solid " + ink + ";border-radius:12px;padding:2px 7px;font:700 11px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
         nz.innerHTML = BED + " Nero";
-        new maplibregl.Marker({ element: nz, anchor: "top", offset: [0, 10] }).setLngLat(c.town.lnglat).addTo(map);
+        nz.style.cursor = "pointer"; nz.title = "";
+        new maplibregl.Marker({ element: nz, anchor: "top", offset: [0, 10] }).setLngLat(c.town.lnglat).setPopup(termPop("nero", c, c.nero)).addTo(map);
       }
       return mk;
     });
