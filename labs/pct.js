@@ -182,13 +182,15 @@
           TOWNS.forEach(function (tw) { var dd = hav(ll[1], ll[0], tw[1], tw[2]); if (dd < bd) { bd = dd; town = tw; } });
           return { day: i + 1, date: d.date, km: d.km, lnglat: ll, zero: zero, town: town ? { name: town[0], lnglat: [town[2], town[1]] } : null };
         });
-        // nero = short day (under ~10 mi) that starts or ends at a town access point
+        // nero = hiked that day, slept in town, back on the trail at the same spot the next day (no zero in between)
         var accPts = TOWNS.map(function (tw) { var a = ACCESS[tw[0]]; return { name: tw[0], lat: a ? a[1] : tw[1], lon: a ? a[2] : tw[2], tlat: tw[1], tlon: tw[2] }; });
         dayList.forEach(function (d, i) {
-          d.nero = null; if (d.km >= 16) return;
-          var fs = feats.filter(function (f) { return f.properties.dayIdx === i; }), a = fs[0].geometry.coordinates[0], lc = fs[fs.length - 1].geometry.coordinates, b = lc[lc.length - 1];
-          accPts.forEach(function (tw) { [a, b].forEach(function (p) { if (!d.nero && (hav(p[1], p[0], tw.lat, tw.lon) < 6 || hav(p[1], p[0], tw.tlat, tw.tlon) < 6)) d.nero = tw.name; }); });
-          if (camps[i]) camps[i].nero = d.nero;
+          d.nero = null; var c = camps[i], nx = camps[i + 1]; if (!c || !nx || c.zero) return;
+          var nf = feats.filter(function (f) { return f.properties.dayIdx === i + 1; })[0].geometry.coordinates[0], b = c.lnglat;
+          if (hav(b[1], b[0], nf[1], nf[0]) > 2) return;   // next day starts somewhere else
+          accPts.forEach(function (tw) { if (!d.nero && (hav(b[1], b[0], tw.lat, tw.lon) < 3 || hav(b[1], b[0], tw.tlat, tw.tlon) < 3)) d.nero = tw.name; });
+          c.nero = d.nero;
+          if (d.nero && !c.town) { var tw = TOWNS.find(function (x) { return x[0] === d.nero; }); c.town = { name: tw[0], lnglat: [tw[2], tw[1]] }; }
         });
         var totalKm = dayList.reduce(function (s, d) { return s + d.km; }, 0);
         // towns with the trail km of the point where you leave the trail for them (same data as on the map)
@@ -324,19 +326,19 @@
       el.style.cssText = "width:32px;height:26px;cursor:default;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))";
       el.innerHTML = '<svg viewBox="0 0 22 18" width="32" height="26"><path d="M1.5 16.5 L11 2 L20.5 16.5 Z" fill="' + fill + '" stroke="' + ink + '" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 2 L11 16.5" stroke="' + ink + '" stroke-width="1.1"/><path d="M8.2 16.5 L11 10.5 L13.8 16.5 Z" fill="' + ink + '"/></svg>';
       // before a zero you sleep in town: no tent, the track just ends where you left the trail
-      var mk = c.zero ? null : new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(c.lnglat).addTo(map);
+      var mk = (c.zero || c.nero) ? null : new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(c.lnglat).addTo(map);
       if (c.zero) {   // rest days: counter at the nearby town (or at the tent if there is none)
         var z = document.createElement("div"); z.className = "camp"; z.dataset.day = c.day;
         z.title = c.zero + (c.zero === 1 ? " Zero-" + T("Tag", "day") : " Zero-" + T("Tage", "days")) + (c.town ? " in " + c.town.name : "");
         z.style.cssText = "background:" + fill + ";color:" + ink + ";border:2px solid " + ink + ";border-radius:12px;padding:2px 7px;font:700 11px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
         z.innerHTML = BED + " ×" + c.zero;
         new maplibregl.Marker({ element: z, anchor: c.town ? "top" : "bottom", offset: c.town ? [0, 10] : [0, -4] }).setLngLat(c.town ? c.town.lnglat : c.lnglat).addTo(map);
-      } else if (c.nero) {   // short town day: small badge above the tent
+      } else if (c.nero) {   // night in town: bed + "Nero" at the town
         var nz = document.createElement("div"); nz.className = "camp"; nz.dataset.day = c.day;
-        nz.title = "Nero" + T(" in ", " in ") + c.nero + " · " + dist(c.km, 1);
-        nz.style.cssText = "background:" + ink + ";color:" + fill + ";border:1.5px solid " + fill + ";border-radius:10px;padding:1px 6px;font:700 10px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
-        nz.textContent = "Nero";
-        new maplibregl.Marker({ element: nz, anchor: "bottom", offset: [0, -28] }).setLngLat(c.lnglat).addTo(map);
+        nz.title = "Nero" + " in " + c.nero + " · " + T("Nacht nach Tag ", "night after day ") + c.day;
+        nz.style.cssText = "background:" + fill + ";color:" + ink + ";border:2px solid " + ink + ";border-radius:12px;padding:2px 7px;font:700 11px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
+        nz.innerHTML = BED + " Nero";
+        new maplibregl.Marker({ element: nz, anchor: "top", offset: [0, 10] }).setLngLat(c.town.lnglat).addTo(map);
       }
       return mk;
     });
@@ -454,7 +456,7 @@
           var camp = stopAt !== undefined ? (D.camps || [])[dayEnds.indexOf(stopAt)] : null, zero = camp ? camp.zero : 0;
           if (stopAt !== undefined) { nxt = stopAt; restUntil = now + NIGHT_MS * (1 + zero) / SPEEDS[sp]; if (zero && o.onCamp) { o.onCamp(camp); resting = true; } }
           p2 = show(nxt, true);
-          if (stopAt !== undefined && o.ui.clock) o.ui.clock.textContent = zero ? zero + " Zero-" + (zero === 1 ? T("Tag", "day") : T("Tage", "days")) + (camp.town ? " in " + camp.town.name : "") + " · Zzz" : T("Nachtlager", "Camp") + " · Zzz";
+          if (stopAt !== undefined && o.ui.clock) o.ui.clock.textContent = (!zero && camp && camp.nero) ? "Nero · " + T("Nacht in ", "night in ") + camp.nero + " · Zzz" : zero ? zero + " Zero-" + (zero === 1 ? T("Tag", "day") : T("Tage", "days")) + (camp.town ? " in " + camp.town.name : "") + " · Zzz" : T("Nachtlager", "Camp") + " · Zzz";
         }
         var a = Math.min(1, dt / 650), za = Math.min(1, dt / 900);      // smoothing for camera and zoom
         cam = [cam[0] + (p2.c[0] - cam[0]) * a, cam[1] + (p2.c[1] - cam[1]) * a];
