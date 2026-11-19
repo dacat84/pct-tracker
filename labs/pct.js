@@ -231,8 +231,8 @@
   // Towns not listed use the nearest trail point.
   var ACCESS = {
     "Julian": ["Scissors Crossing", 33.0998, -116.4700], "Idyllwild": ["Saddle Junction / Devils Slide", 33.7769, -116.6658],
-    "Tehachapi": ["Hwy 58", 35.1010, -118.2870], "Lone Pine": ["Cottonwood Pass / Horseshoe Meadows", 36.4537, -118.1734],
-    "Bishop": ["Kearsarge Pass / Onion Valley", 36.7735, -118.3768], "Mammoth Lakes": ["Reds Meadow", 37.6153, -119.0747],
+    "Tehachapi": ["Hwy 58", 35.1010, -118.2870], "Lone Pine": ["Cottonwood Pass / Horseshoe Meadows", 36.4537, -118.1734, [[36.4501, -118.1694], [36.5560, -118.1100]]],
+    "Bishop": ["Kearsarge Pass / Onion Valley", 36.7735, -118.3768, [[36.7726, -118.3409], [36.8027, -118.1999], [37.0500, -118.2500]]], "Mammoth Lakes": ["Reds Meadow", 37.6153, -119.0747],
     "South Lake Tahoe": ["Echo Summit", 38.8125, -120.0302], "Truckee": ["Donner Pass (I-80)", 39.3390, -120.3440],
     "Mount Shasta": ["I-5 bei Castle Crags", 41.1500, -122.3100], "Ashland": ["I-5 bei Callahan's", 42.0900, -122.6010],
     "Sisters": ["Santiam Pass", 44.4253, -121.8546], "Skykomish": ["Stevens Pass", 47.7463, -121.0857],
@@ -250,13 +250,16 @@
     var lines = { type: "FeatureCollection", features: [] };
     TOWNS.forEach(function (t) {
       var acc = ACCESS[t[0]], s = acc ? snap(D.pts, acc[1], acc[2]) : snap(D.pts, t[1], t[2]);
-      var off = s ? hav(t[1], t[2], s.lat, s.lon) : 0, direct = off < 1.5;
-      if (s && !direct) lines.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: [[t[2], t[1]], [s.lon, s.lat]] } });
+      // optional via points follow the road/trail to town (e.g. Bishop via Onion Valley and Independence)
+      var path = [[t[2], t[1]]].concat(acc && acc[3] ? acc[3].slice().reverse().map(function (v) { return [v[1], v[0]]; }) : []).concat(s ? [[s.lon, s.lat]] : []);
+      var off = 0; for (var q = 1; q < path.length; q++) off += hav(path[q - 1][1], path[q - 1][0], path[q][1], path[q][0]);
+      var direct = off < 1.5, via = !!(acc && acc[3]);
+      if (s && !direct) lines.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: path } });
       var el = document.createElement("div"); el.className = "tw";
       el.innerHTML = '<i style="background:' + (theme.dot || "#f5b301") + '"></i><span style="color:' + (theme.text || "#fff") + ";text-shadow:" + (theme.halo || "0 1px 3px #000,0 0 8px rgba(0,0,0,.7)") + '">' + t[0] + "</span>";
       var pop = new maplibregl.Popup({ offset: 12, className: "tw-pop", maxWidth: "280px" }).setHTML(
         "<h4>" + t[0] + '</h4><div class="m">' + (direct ? T("Direkt am Trail", "Right on the trail") + " · Trail-" + DU() + " " + nf(distV(s ? s.km : 0))
-          : (acc ? T("Zugang: ", "Access: ") + acc[0] : T("Nächster Trailpunkt", "Nearest trail point")) + " · Trail-" + DU() + " " + nf(distV(s ? s.km : 0)) + "<br>" + T("ca. ", "approx. ") + nf(distV(off), off < 10 ? 1 : 0) + " " + DU() + T(" Luftlinie bis in den Ort", " to town (straight line)")) + "</div>" +
+          : (acc ? T("Zugang: ", "Access: ") + acc[0] : T("Nächster Trailpunkt", "Nearest trail point")) + " · Trail-" + DU() + " " + nf(distV(s ? s.km : 0)) + "<br>" + T("ca. ", "approx. ") + nf(distV(off), off < 10 ? 1 : 0) + " " + DU() + (via ? T(" bis in den Ort (über die Straße)", " to town (by road)") : T(" Luftlinie bis in den Ort", " to town (straight line)"))) + "</div>" +
         t[3] + '<div class="n">' + T("Stand Planung, vor Ort gilt FarOut.", "From planning, check FarOut on trail.") + "</div>");
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-6, 0] }).setLngLat([t[2], t[1]]).setPopup(pop).addTo(map);
     });
