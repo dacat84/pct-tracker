@@ -24,8 +24,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .head .who{font-size:12.5px;letter-spacing:.3em;text-transform:uppercase;color:#cfd8de;margin-top:16px}
 .card{position:fixed;right:36px;top:64px;z-index:2;width:300px;background:rgba(255,255,255,.95);color:#14202a;border-radius:4px;padding:14px 20px 10px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
 .card .top{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
-.card .top .t{font-family:'Playfair Display';font-size:46px;font-weight:700;line-height:1}
-.card .top .d{font-size:13px;color:#56636d}
+.card .top .t{font-family:'Playfair Display';font-size:46px;font-weight:700;line-height:1;white-space:nowrap;flex:none}
+.card .top .d{font-size:13px;color:#56636d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .card .km{font-size:15px;color:#56636d;margin:-2px 0 10px}.card .km b{font-size:20px;color:#e0452f;font-weight:700}
 .card .top .t svg{width:34px;height:24px;margin-right:6px;vertical-align:-2px}
 .card .r{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid #e4e8eb;font-size:14px}
@@ -170,6 +170,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       } else {
         $("cDay").textContent = T("Tag ", "Day ") + (i + 1);
         $("cDate").textContent = L.dfmt(d.date + "T12:00", { weekday: "short", day: "numeric", month: "long" });
+        var cd = $("cDate"); if (cd.scrollWidth > cd.clientWidth + 1) cd.textContent = L.dfmt(d.date + "T12:00", { weekday: "short", day: "numeric", month: "short" });   // "16. Nov." when the long month doesn't fit
         $("cToday").textContent = L.dist(d.km, 1); $("cTodayL").textContent = T("gelaufen", "hiked");
         if (d.nero) $("cTodayL").textContent = T("gelaufen · Nero, Nacht in ", "hiked · nero, night in ") + d.nero;
       }
