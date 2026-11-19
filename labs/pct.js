@@ -449,7 +449,8 @@
       var w = document.createElement("div"); w.className = "maplibregl-ctrl maplibregl-ctrl-group";
       var b = document.createElement("button"); b.type = "button"; b.title = T("Zu meiner Position", "Where am I");
       b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" style="display:block;margin:auto"><circle cx="12" cy="12" r="4" fill="#e0452f"/><circle cx="12" cy="12" r="8" fill="none" stroke="#333" stroke-width="2"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="#333" stroke-width="2" stroke-linecap="round"/></svg>';
-      b.onclick = function () { scrubResets.forEach(function (f) { f(); }); var ll = getLngLat(); if (ll) map.flyTo({ center: ll, zoom: Math.max(map.getZoom(), 12), duration: 1200 }); };
+      b.onclick = function () {   // back to the newest tracked position (also after dragging the profile or a replay)
+        scrubResets.forEach(function (f) { f(); }); if (activeReplay && activeReplay.toEnd) activeReplay.toEnd(); var ll = getLngLat(); if (ll) map.flyTo({ center: ll, zoom: Math.max(map.getZoom(), 12), duration: 1200 }); };
       w.appendChild(b); return w;
     };
     C.prototype.onRemove = function () {};
@@ -682,7 +683,7 @@
     if (o.ui.slider) { o.ui.slider.max = 1000; o.ui.slider.oninput = function () { stop(); var p = show(+o.ui.slider.value / 1000 * END, false, true); if (p) o.map.jumpTo({ center: p.c }); }; }
     document.addEventListener("keydown", function (e) { if (e.code === "Space" && !(e.target.closest && e.target.closest("input,select,textarea,button"))) { e.preventDefault(); o.ui.play.click(); } });
     show(END, false, true);
-    activeReplay = { stop: stop, seekTrail: seekTrail, maxTrail: maxTrail };
+    activeReplay = { stop: stop, seekTrail: seekTrail, maxTrail: maxTrail, toEnd: function () { stop(); if (N) show(END, false, true); } };
     return { stop: stop, toDate: function (date) {
       var k = -1; seq.forEach(function (s, j) { if (D.track.features[s.f].properties.day <= date) k = j; });
       if (k < 0) return null; stop(); show(seq[k].km, false, true); return seq[k].c; } };
