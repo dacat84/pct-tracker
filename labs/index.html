@@ -229,7 +229,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     bubEl.innerHTML = '<div class="bub">' + bubTxt(D.dayNo, D.today) + '</div>';
     var bubPos = pos.slice(), bubT = performance.now(), bubMk = new maplibregl.Marker({ element: bubEl, anchor: "bottom", offset: [0, -34] }).setLngLat(pos).addTo(map);
     bubMk.getElement().style.zIndex = 2; meMk.getElement().style.zIndex = 3;   // the dot always stays on top of its label
-    function moveBub(ll) { var now = performance.now(), a = Math.min(1, (now - bubT) / 350); bubT = now; bubPos = [bubPos[0] + (ll[0] - bubPos[0]) * a, bubPos[1] + (ll[1] - bubPos[1]) * a]; bubMk.setLngLat(bubPos); }
+    function moveBub(ll) { bubPos = ll.slice(); bubMk.setLngLat(bubPos); }   // fixed above the dot (any lag lets the dot run into the label)
     L.addLocate(map, function () { return meMk.getLngLat().toArray(); }, "bottom-left");
 
     // --- start view: last day + position ---
