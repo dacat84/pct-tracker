@@ -85,8 +85,10 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
   .card .top{margin-bottom:2px}.card .top .t{font-size:24px}.card .km{margin:0;font-size:13px}.card .km b{font-size:16px}
   .card .r{display:none;padding:5px 0;font-size:13px}.card.open .r{display:flex}.card.open .r.hide-m{display:none}.card .src{display:none}
   .card .more{display:block;position:absolute;right:12px;top:10px;font-size:12px;color:#8a959d}.card.open .more{transform:rotate(180deg)}
-  .maplibregl-ctrl-bottom-left{bottom:350px;left:25.5px}
-  .maplibregl-ctrl-bottom-right{bottom:350px}
+  .maplibregl-ctrl-bottom-left{bottom:262px;left:25.5px}
+  .card{display:none!important}               /* phone: no day card, the bar and the label at the tent are enough */
+  #prof{pointer-events:none}                   /* phone: profile not touchable, so pinching the map can't jump to Oregon */
+  .maplibregl-ctrl-bottom-right{bottom:262px}
   body.card-open .maplibregl-ctrl-bottom-left,body.card-open .maplibregl-ctrl-bottom-right{display:none}
 }
 </style>
@@ -242,7 +244,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     function hideBub() { bubEl.style.display = "none"; }
     (function place() {
       var p = map.project(pinLL);
-      bubEl.style.transform = "translate(" + (p.x + 24).toFixed(1) + "px," + (p.y - 14).toFixed(1) + "px) translate(0,-50%)";
+      var w = bubEl.offsetWidth, cw = map.getContainer().clientWidth, x = p.x + 24 + w > cw - 8 ? p.x - 24 - w : p.x + 24;   // flip to the left at the screen edge
+      bubEl.style.transform = "translate(" + Math.max(8, x).toFixed(1) + "px," + (p.y - 14).toFixed(1) + "px) translate(0,-50%)";
       requestAnimationFrame(place);
     })();
     meMk.getElement().style.zIndex = 5;   // dot and label above tents and badges
