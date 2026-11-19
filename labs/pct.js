@@ -480,7 +480,9 @@
       return { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: coords } };
     });
     map.addSource("closures", { type: "geojson", data: { type: "FeatureCollection", features: feats } });
-    map.addLayer({ id: "closures", type: "line", source: "closures", paint: { "line-color": "#ff3b1f", "line-width": 5, "line-opacity": .75, "line-dasharray": [1.5, 1] }, layout: { "line-cap": "round" } });
+    // yellow/black like a barrier tape, so it can't be mixed up with the walked (red/orange) track
+    map.addLayer({ id: "closures-bg", type: "line", source: "closures", paint: { "line-color": "#111", "line-width": 8, "line-opacity": .9 }, layout: { "line-cap": "butt", "line-join": "round" } });
+    map.addLayer({ id: "closures", type: "line", source: "closures", paint: { "line-color": "#ffd400", "line-width": 6, "line-dasharray": [1.4, 1.4] }, layout: { "line-cap": "butt", "line-join": "round" } });
   }
 
   // ---- What zero / nero / hero mean (tooltips) ----
