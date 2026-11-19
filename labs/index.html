@@ -76,6 +76,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .maplibregl-ctrl-bottom-left{bottom:300px;left:53.5px;display:flex;flex-direction:column-reverse;z-index:3}   /* centred over the 48px play button */
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group{background:#fff!important;opacity:1}.maplibregl-ctrl-bottom-left .maplibregl-ctrl{margin:0 0 8px 0}
 .card .more{display:none}
+.card .note{display:none;font-size:13px;color:#56636d;margin:-6px 0 10px;white-space:nowrap}.card .note.on{display:block}.card .note b{color:#14202a;font-weight:600}
 /* phone: everything stacked above the bottom switcher, small day card that opens on tap */
 @media(max-width:820px){
   .head{left:16px;top:20px;right:16px}.head .k{font-size:10.5px;letter-spacing:.18em}.head h1{font-size:34px;margin:6px 0 4px}.head p{font-size:15px}.head .who{display:none}
@@ -105,6 +106,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
   <span class="more">▾</span>
   <div class="top"><span class="t" id="cDay">–</span><span class="d" id="cDate"></span></div>
   <div class="km"><b id="cToday">–</b> <span id="cTodayL"></span></div>
+  <div class="note" id="cNote"></div>
   <div class="r"><span data-de="Gesamt gelaufen" data-en="Total hiked">Gesamt gelaufen</span><b id="cTotal">–</b></div>
   <div class="r"><span data-de="Position am Trail" data-en="Trail position">Position am Trail</span><b id="cKm">–</b></div>
   <div class="r"><span data-de="Bis Kanada" data-en="To Canada">Bis Kanada</span><b id="cLeft">–</b></div>
@@ -176,15 +178,15 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       if (zero) {
         $("cDay").innerHTML = L.BED + "Zero";
         $("cDate").textContent = (zero.town ? T("in ", "in ") + zero.town.name + " · " : "") + T("nach Tag ", "after day ") + (i + 1);
-        $("cToday").textContent = zero.zero + (zero.zero === 1 ? T(" Ruhetag", " rest day") : T(" Ruhetage", " rest days")); $("cTodayL").textContent = "";
+        $("cToday").textContent = zero.zero + (zero.zero === 1 ? T(" Ruhetag", " rest day") : T(" Ruhetage", " rest days")); $("cTodayL").textContent = ""; $("cNote").classList.remove("on");
       } else {
         $("cDay").textContent = T("Tag ", "Day ") + (i + 1);
         $("cDate").textContent = L.dfmt(d.date + "T12:00", { weekday: "short", day: "numeric", month: "long" });
         var cd = $("cDate"); if (cd.scrollWidth > cd.clientWidth + 1) cd.textContent = L.dfmt(d.date + "T12:00", { weekday: "short", day: "numeric", month: "short" });   // "16. Nov." when the long month doesn't fit
         $("cToday").textContent = L.dist(d.km, 1); $("cTodayL").textContent = T("gelaufen", "hiked") + (d.up ? " · ↑ " + L.elev(d.up) : "");
-        if (d.nero) $("cTodayL").textContent = T("gelaufen · Nero, Nacht in ", "hiked · nero, night in ") + d.nero;
-        if (d.hero) $("cTodayL").textContent = T("gelaufen · Hero in ", "hiked · hero in ") + d.hero;
-        $("cTodayL").title = d.nero ? L.TERMS.nero : d.hero ? L.TERMS.hero : "";
+        // nero / hero on a line of its own, so nothing gets broken up
+        $("cNote").innerHTML = d.nero ? "<b>Nero</b> · " + T("Nacht in ", "night in ") + d.nero : d.hero ? "<b>Hero</b> · " + T("rein und raus in ", "in and out of ") + d.hero : "";
+        $("cNote").classList.toggle("on", !!(d.nero || d.hero)); $("cNote").title = d.nero ? L.TERMS.nero : d.hero ? L.TERMS.hero : "";
       }
       $("cTotal").textContent = L.dist(tot);
       $("cKm").textContent = L.DU() + " " + nf(L.distV(tp.km)) + " · " + nf(tp.km / D.total * 100, 1) + " %";
