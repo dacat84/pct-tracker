@@ -71,7 +71,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .maplibregl-ctrl-group{background:rgba(255,255,255,.92)!important}
 .maplibregl-ctrl-attrib{font-size:10px}
 .maplibregl-ctrl-bottom-right{bottom:300px}
-@media(max-width:820px){.maplibregl-ctrl-bottom-right{bottom:auto;top:110px}}
+.maplibregl-ctrl-bottom-left{bottom:300px;left:44px;display:flex;flex-direction:column-reverse}.maplibregl-ctrl-bottom-left .maplibregl-ctrl{margin:0 0 8px 0}
+@media(max-width:820px){.maplibregl-ctrl-bottom-right{bottom:auto;top:110px}.maplibregl-ctrl-bottom-left{bottom:auto;top:110px;left:auto;right:10px}}
 @media(max-width:820px){
   .head{left:18px;top:64px;right:18px}.head h1{font-size:40px}.head p{font-size:16px}.head .who{display:none}
   .card{left:18px;right:18px;top:auto;bottom:212px;width:auto;padding:8px 14px 6px}
@@ -120,7 +121,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=30"></script>
+<script src="pct.js?v=31"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -132,7 +133,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       sat: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, attribution: "Esri, Maxar, Earthstar Geographics" } },
       layers: [{ id: "sat", type: "raster", source: "sat", paint: { "raster-saturation": -0.25, "raster-brightness-max": 0.85 } }] }
   });
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-left");
   window.__map = map;   // handy for testing in the browser console
   function zoomClass() { var z = map.getZoom(), el = $("map"); el.classList.toggle("z-lo", z < 7.5); el.classList.toggle("z-mid", z >= 7.5 && z < 10); }
   map.on("zoom", zoomClass);
@@ -214,7 +215,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     bubEl.innerHTML = '<div class="bub">' + T("Tag ", "Day ") + (D.dayNo || 0) + ' · <b>' + L.dist(D.today ? D.today.km : 0, 1) + '</b></div>';
     var bubPos = pos.slice(), bubT = performance.now(), bubMk = new maplibregl.Marker({ element: bubEl, anchor: "left", offset: [16, 0] }).setLngLat(pos).addTo(map);
     function moveBub(ll) { var now = performance.now(), a = Math.min(1, (now - bubT) / 900); bubT = now; bubPos = [bubPos[0] + (ll[0] - bubPos[0]) * a, bubPos[1] + (ll[1] - bubPos[1]) * a]; bubMk.setLngLat(bubPos); }
-    L.addLocate(map, function () { return meMk.getLngLat().toArray(); });
+    L.addLocate(map, function () { return meMk.getLngLat().toArray(); }, "bottom-left");
 
     // --- start view: last day + position ---
     var lastDay = D.today ? D.track.features.filter(function (f) { return String(f.properties.start_date).slice(0, 10) === D.today.date; }) : [];
@@ -267,7 +268,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       '<line id="prvL" x1="0" x2="0" y1="0" y2="' + H + '" stroke="#7aa2ff" stroke-width="1.5" vector-effect="non-scaling-stroke" visibility="hidden"/></svg>';
     function strip(km) { strip.km = km; var x = sx(km); $("doneR").setAttribute("width", x); $("curL").setAttribute("x1", x); $("curL").setAttribute("x2", x); }
     strip(here.km);
-    L.scrubProfile($("prof"), map, D, function (km) { var x = sx(km), l = $("prvL"); l.setAttribute("x1", x); l.setAttribute("x2", x); l.setAttribute("visibility", "visible"); });
+    L.scrubProfile($("prof"), map, D, function (km) { var x = sx(km), l = $("prvL"); l.setAttribute("x1", x); l.setAttribute("x2", x); l.setAttribute("visibility", "visible"); }, function () { $("prvL").setAttribute("visibility", "hidden"); });
 
     // --- photos: strip + on the map where they were taken ---
     L.photos().then(function (ph) {
