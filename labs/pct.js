@@ -499,6 +499,22 @@
     var dayEnds = [], dayOf = function (s) { return String(D.track.features[s.f].properties.start_date).slice(0, 10); };
     for (var q = 0; q < N - 1; q++) if (dayOf(seq[q]) !== dayOf(seq[q + 1])) dayEnds.push(seq[q].km);
     var restUntil = 0, resting = false;
+    // trail km of every replay point, for jumping there from the elevation profile
+    (function () {
+      var P = D.pts, j = -1;
+      seq.forEach(function (s) {
+        var lo = j < 0 ? 0 : Math.max(0, j - 40), hi = j < 0 ? P.length - 1 : Math.min(P.length - 1, j + 40), bd = 1e18, bj = lo;
+        for (var i = lo; i <= hi; i++) { var d = hav(s.c[1], s.c[0], P[i].lat, P[i].lon); if (d < bd) { bd = d; bj = i; } }
+        if (bd > 30 && j >= 0) { for (i = 0; i < P.length; i++) { d = hav(s.c[1], s.c[0], P[i].lat, P[i].lon); if (d < bd) { bd = d; bj = i; } } }
+        j = bj; s.tk = bd <= 50 ? P[bj].km : null;
+      });
+    })();
+    var maxTrail = seq.reduce(function (m, s) { return s.tk != null && s.tk > m ? s.tk : m; }, 0);
+    function seekTrail(km) {   // replay position at the first moment you were at this trail km
+      if (!N) return; stop(); var best = null, bd = 1e18;
+      for (var i = 0; i < N; i++) { if (seq[i].tk == null) continue; var d = Math.abs(seq[i].tk - km); if (d < bd) { bd = d; best = i; } }
+      if (best != null) show(seq[best].km, false, true);
+    }
     function idxAt(km) { var lo = 0, hi = N - 1; while (hi - lo > 1) { var m = (lo + hi) >> 1; if (seq[m].km <= km) lo = m; else hi = m; } return lo; }
     function pointAt(km) {
       var i = idxAt(km), a = seq[i], b = seq[Math.min(N - 1, i + 1)];
@@ -558,7 +574,7 @@
     if (o.ui.slider) { o.ui.slider.max = 1000; o.ui.slider.oninput = function () { stop(); var p = show(+o.ui.slider.value / 1000 * END, false, true); if (p) o.map.jumpTo({ center: p.c }); }; }
     document.addEventListener("keydown", function (e) { if (e.code === "Space" && !(e.target.closest && e.target.closest("input,select,textarea,button"))) { e.preventDefault(); o.ui.play.click(); } });
     show(END, false, true);
-    activeReplay = { stop: stop };
+    activeReplay = { stop: stop, seekTrail: seekTrail, maxTrail: maxTrail };
     return { stop: stop, toDate: function (date) {
       var k = -1; seq.forEach(function (s, j) { if (String(D.track.features[s.f].properties.start_date).slice(0, 10) <= date) k = j; });
       if (k < 0) return null; stop(); show(seq[k].km, false, true); return seq[k].c; } };
@@ -582,9 +598,15 @@
     scrubResets.push(function () { if (mk) { mk.remove(); mk = null; } if (onReset) onReset(); });
     function at(e) {
       var r = el.getBoundingClientRect(), x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left, km = Math.max(0, Math.min(1, x / r.width)) * D.total, p = atKm(D.pts, km);
-      if (!mk) { var d = document.createElement("div"); d.style.cssText = "width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #2235d6;box-shadow:0 0 0 2px rgba(255,255,255,.6)"; mk = new maplibregl.Marker({ element: d }).setLngLat([p.lon, p.lat]).addTo(map); }
-      mk.setLngLat([p.lon, p.lat]); map.easeTo({ center: [p.lon, p.lat], zoom: Math.max(map.getZoom(), 9.5), duration: down ? 0 : 600 });
-      if (onKm) onKm(km, p);
+      var R = activeReplay, walked = R && R.seekTrail && km <= R.maxTrail;
+      if (R && R.seekTrail) R.seekTrail(walked ? km : R.maxTrail);   // own marker: back/forward along where you walked, else it waits at the farthest point
+      if (walked) { if (mk) { mk.remove(); mk = null; } }
+      else {
+        if (!mk) { var d = document.createElement("div"); d.style.cssText = "width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #2235d6;box-shadow:0 0 0 2px rgba(255,255,255,.6)"; mk = new maplibregl.Marker({ element: d }).setLngLat([p.lon, p.lat]).addTo(map); }
+        mk.setLngLat([p.lon, p.lat]);
+      }
+      map.easeTo({ center: [p.lon, p.lat], zoom: Math.max(map.getZoom(), 9.5), duration: down ? 0 : 600 });
+      if (onKm) onKm(km, p, walked);
     }
     el.style.cursor = "ew-resize"; el.style.touchAction = "none"; el.style.userSelect = "none"; el.style.webkitUserSelect = "none";
     el.addEventListener("pointerdown", function (e) { if (activeReplay) activeReplay.stop(); down = true; el.setPointerCapture(e.pointerId); at(e); });

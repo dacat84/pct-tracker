@@ -121,7 +121,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=31"></script>
+<script src="pct.js?v=32"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -269,7 +269,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       '<line id="prvL" x1="0" x2="0" y1="0" y2="' + H + '" stroke="#7aa2ff" stroke-width="1.5" vector-effect="non-scaling-stroke" visibility="hidden"/></svg>';
     function strip(km) { strip.km = km; var x = sx(km); $("doneR").setAttribute("width", x); $("curL").setAttribute("x1", x); $("curL").setAttribute("x2", x); }
     strip(here.km);
-    L.scrubProfile($("prof"), map, D, function (km) { var x = sx(km), l = $("prvL"); l.setAttribute("x1", x); l.setAttribute("x2", x); l.setAttribute("visibility", "visible"); }, function () { $("prvL").setAttribute("visibility", "hidden"); });
+    L.scrubProfile($("prof"), map, D, function (km, p, walked) { var x = sx(km), l = $("prvL"); l.setAttribute("x1", x); l.setAttribute("x2", x); l.setAttribute("visibility", walked ? "hidden" : "visible"); if (walked) strip(km); }, function () { $("prvL").setAttribute("visibility", "hidden"); });
 
     // --- photos: strip + on the map where they were taken ---
     L.photos().then(function (ph) {
