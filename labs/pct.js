@@ -448,9 +448,15 @@
     C.prototype.onAdd = function () {
       var w = document.createElement("div"); w.className = "maplibregl-ctrl maplibregl-ctrl-group";
       var b = document.createElement("button"); b.type = "button"; b.title = T("Zu meiner Position", "Where am I");
-      b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" style="display:block;margin:auto"><circle cx="12" cy="12" r="4" fill="#e0452f"/><circle cx="12" cy="12" r="8" fill="none" stroke="#333" stroke-width="2"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="#333" stroke-width="2" stroke-linecap="round"/></svg>';
+      // looks like the position marker on the map (red dot, white rim, pulsing ring)
+      if (!document.getElementById("loc-css")) { var cs = document.createElement("style"); cs.id = "loc-css";
+        cs.textContent = ".loc-dot{position:relative;display:block;width:12px;height:12px;margin:auto;border-radius:50%;background:#e0452f;border:2.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35)}" +
+          ".loc-dot::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid #e0452f;animation:locPulse 2s ease-out infinite}" +
+          "@keyframes locPulse{from{transform:scale(1);opacity:.9}to{transform:scale(2.4);opacity:0}}";
+        document.head.appendChild(cs); }
+      b.innerHTML = '<span class="loc-dot"></span>';
       b.onclick = function () {   // back to the newest tracked position (also after dragging the profile or a replay)
-        scrubResets.forEach(function (f) { f(); }); if (activeReplay && activeReplay.toEnd) activeReplay.toEnd(); var ll = getLngLat(); if (ll) map.flyTo({ center: ll, zoom: Math.max(map.getZoom(), 12), duration: 1200 }); };
+        scrubResets.forEach(function (f) { f(); }); if (activeReplay && activeReplay.toEnd) activeReplay.toEnd(); var ll = getLngLat(); if (ll) map.flyTo({ center: ll, zoom: 13, duration: 1200 }); };
       w.appendChild(b); return w;
     };
     C.prototype.onRemove = function () {};

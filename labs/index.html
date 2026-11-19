@@ -128,7 +128,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=45"></script>
+<script src="pct.js?v=46"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -237,7 +237,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     lastDay.forEach(function (f) { f.geometry.coordinates.forEach(function (c) { b.extend(c); }); });
     // zoom so the last day fits, but keep the hiker in the open middle of the screen (not under the text boxes)
     var mob = innerWidth < 820, cam = map.cameraForBounds(b, { padding: mob ? 40 : { top: 200, bottom: 240, left: 120, right: 380 } });
-    var z = Math.max(9, Math.min(12.5, cam ? cam.zoom : 11));
+    var z = D.track.features.length ? 13 : Math.max(9, Math.min(12.5, cam ? cam.zoom : 11));   // close to the newest tracked point
     map.jumpTo({ center: pos, zoom: z });
     map.panBy(mob ? [0, 60] : [-130, 30], { duration: 0 });
     zoomClass();
