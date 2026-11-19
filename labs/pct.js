@@ -360,7 +360,9 @@
         nwList(t[3]) + '<div class="n">' + T("Stand Planung, vor Ort gilt FarOut.", "From planning, check FarOut on trail.") + "</div>");
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-6, 0] }).setLngLat([t[2], t[1]]).setPopup(pop).addTo(map);
     });
-    D.landmarks.forEach(function (l) { if (l.side) lines.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: [[l.lon, l.lat], l.trail] } }); });
+    // link line only for real side trips (a few km, e.g. Whitney); far landmarks like Shasta or Rainier
+    // are just seen from the trail, a long line to them would only clutter the map
+    D.landmarks.forEach(function (l) { if (l.side && l.off <= 8) lines.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: [[l.lon, l.lat], l.trail] } }); });
     map.addSource("tw-links", { type: "geojson", data: lines });
     map.addLayer({ id: "tw-links", type: "line", source: "tw-links", paint: { "line-color": theme.link || "#f5b301", "line-width": 1.3, "line-opacity": .8, "line-dasharray": [2, 2] } });
   }
@@ -375,7 +377,8 @@
       if (l.type === "peak" && !theme.dot) el.firstChild.style.background = "transparent";
       var pop = new maplibregl.Popup({ offset: 10, className: "tw-pop", maxWidth: "300px" }).setHTML(
         "<h4>" + l.name + '</h4><div class="m">' + Ty[LANG] + " · " + elev(l.m) + "</div>" +
-        (l.side ? nw(T("Abseits vom Trail, ca. ", "Off the trail, approx. ") + dist(l.off, l.off < 10 ? 1 : 0) + T(" Luftlinie", " straight line")) + "<br>" + nw(T("nächster Trailpunkt: Trail-", "nearest trail point: trail ") + DU() + "\u00a0" + nf(distV(l.km)))
+        (l.side && l.off > 8 ? nw(T("Vom Trail aus zu sehen, ca. ", "Seen from the trail, approx. ") + dist(l.off) + T(" entfernt", " away")) + "<br>" + nw(T("nächster Trailpunkt: Trail-", "nearest trail point: trail ") + DU() + "\u00a0" + nf(distV(l.km)))
+        : l.side ? nw(T("Abseits vom Trail, ca. ", "Off the trail, approx. ") + dist(l.off, l.off < 10 ? 1 : 0) + T(" Luftlinie", " straight line")) + "<br>" + nw(T("nächster Trailpunkt: Trail-", "nearest trail point: trail ") + DU() + "\u00a0" + nf(distV(l.km)))
           : nw(T("Am Trail bei Trail-", "On the trail at trail ") + DU() + "\u00a0" + nf(distV(l.km)))) +
         (l.type === "term" ? "" : "<br>" + nw(dist(l.km) + T(" ab Campo", " from Campo")) + "<br>" + nw(dist(D.total - l.km) + T(" bis Kanada", " to Canada"))));
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-5, 0] }).setLngLat([l.lon, l.lat]).setPopup(pop).addTo(map);
