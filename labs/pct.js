@@ -388,17 +388,17 @@
   var BED = '<svg viewBox="0 0 24 16" width="18" height="12" style="vertical-align:-1px"><path d="M2 2v12M2 10h20v4M22 10V7a2 2 0 0 0-2-2H11v5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="7" r="2" fill="currentColor"/></svg>';
 
   // ---- "Where am I" button next to + / - ----
-  function addLocate(map, getLngLat) {
+  function addLocate(map, getLngLat, pos) {
     function C() {}
     C.prototype.onAdd = function () {
       var w = document.createElement("div"); w.className = "maplibregl-ctrl maplibregl-ctrl-group";
       var b = document.createElement("button"); b.type = "button"; b.title = T("Zu meiner Position", "Where am I");
       b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" style="display:block;margin:auto"><circle cx="12" cy="12" r="4" fill="#e0452f"/><circle cx="12" cy="12" r="8" fill="none" stroke="#333" stroke-width="2"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="#333" stroke-width="2" stroke-linecap="round"/></svg>';
-      b.onclick = function () { var ll = getLngLat(); if (ll) map.flyTo({ center: ll, zoom: Math.max(map.getZoom(), 12), duration: 1200 }); };
+      b.onclick = function () { scrubResets.forEach(function (f) { f(); }); var ll = getLngLat(); if (ll) map.flyTo({ center: ll, zoom: Math.max(map.getZoom(), 12), duration: 1200 }); };
       w.appendChild(b); return w;
     };
     C.prototype.onRemove = function () {};
-    map.addControl(new C(), "bottom-right");
+    map.addControl(new C(), pos || "bottom-right");
   }
 
   // ---- Tents where each day ended (except the current position) ----
@@ -576,8 +576,10 @@
   }
   // make an elevation profile element scrubbable: press/drag shows that trail point on the map
   var activeReplay = null;
-  function scrubProfile(el, map, D, onKm) {
+  var scrubResets = [];   // "where am I" clears the blue preview from the profile
+  function scrubProfile(el, map, D, onKm, onReset) {
     var mk = null, down = false;
+    scrubResets.push(function () { if (mk) { mk.remove(); mk = null; } if (onReset) onReset(); });
     function at(e) {
       var r = el.getBoundingClientRect(), x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left, km = Math.max(0, Math.min(1, x / r.width)) * D.total, p = atKm(D.pts, km);
       if (!mk) { var d = document.createElement("div"); d.style.cssText = "width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #2235d6;box-shadow:0 0 0 2px rgba(255,255,255,.6)"; mk = new maplibregl.Marker({ element: d }).setLngLat([p.lon, p.lat]).addTo(map); }
