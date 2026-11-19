@@ -36,12 +36,12 @@
     "Subway Cave": [40.6839, -121.4186], "Goat Rocks": [46.5150, -121.4547],
     "Washington Border": [45.6623, -121.8986]   // Bridge of the Gods over the Columbia
   };
-  // Positions of passes and road crossings, snapped to the trail. For the high Sierra passes
-  // ("high") and the low crossings ("low") the marker goes to the highest / lowest trail point nearby.
+  // Positions of passes and road crossings (summit coordinates), snapped to the nearest point of the
+  // PCT line. Only the low crossings ("low") look for the lowest trail point nearby.
   var PASS = {
     "Scissors Crossing": [33.0998, -116.4700, "low"], "San Gorgonio Pass": [33.9230, -116.6930, "low"], "Cajon Pass": [34.3070, -117.4660, "low"],
-    "Walker Pass": [35.6633, -118.0270], "Cottonwood Pass": [36.4530, -118.2140, "high"], "Forester Pass": [36.6946, -118.3716, "high"], "Glen Pass": [36.7888, -118.4126, "high"],
-    "Pinchot Pass": [36.9369, -118.4057, "high"], "Mather Pass": [37.0263, -118.4628, "high"], "Muir Pass": [37.1120, -118.6703, "high"], "Sonora Pass": [38.3286, -119.6368],
+    "Walker Pass": [35.6633, -118.0270], "Cottonwood Pass": [36.4530, -118.2140], "Forester Pass": [36.6944, -118.3714], "Glen Pass": [36.7888, -118.4126],
+    "Pinchot Pass": [36.9358, -118.4056], "Mather Pass": [37.0263, -118.4628], "Muir Pass": [37.1120, -118.6703], "Sonora Pass": [38.3286, -119.6368],
     "Ebbetts Pass": [38.5446, -119.8131], "Carson Pass": [38.6947, -119.9890], "Donner Pass": [39.3170, -120.3290], "Bucks Summit": [39.8999, -121.1186],
     "Willamette Pass": [43.5966, -122.0373], "McKenzie Pass": [44.2603, -121.8100], "Santiam Pass": [44.4253, -121.8546], "White Pass": [46.6440, -121.3810],
     "Snoqualmie Pass": [47.4243, -121.4135], "Stevens Pass": [47.7463, -121.0857], "Rainy Pass": [48.5157, -120.7357], "Harts Pass": [48.7210, -120.6690]
