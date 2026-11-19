@@ -127,7 +127,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=33"></script>
+<script src="pct.js?v=34"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -226,7 +226,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     L.addLocate(map, function () { return meMk.getLngLat().toArray(); }, "bottom-left");
 
     // --- start view: last day + position ---
-    var lastDay = D.today ? D.track.features.filter(function (f) { return String(f.properties.start_date).slice(0, 10) === D.today.date; }) : [];
+    var lastDay = D.today ? D.track.features.filter(function (f) { return f.properties.day === D.today.date; }) : [];
     var b = new maplibregl.LngLatBounds(pos, pos);
     lastDay.forEach(function (f) { f.geometry.coordinates.forEach(function (c) { b.extend(c); }); });
     // zoom so the last day fits, but keep the hiker in the open middle of the screen (not under the text boxes)
@@ -268,13 +268,15 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     var sx = function (km) { return km / D.total * W; }, sy = function (m) { return H - 4 - m / mx * (H - 10); };
     var spath = D.pts.filter(function (_, i) { return i % 2 === 0; }).map(function (p, i) { return (i ? "L" : "M") + sx(p.km).toFixed(1) + " " + sy(p.m).toFixed(1); }).join("");
     $("prof").innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none">' +
-      '<defs><clipPath id="done"><rect id="doneR" x="0" y="0" width="0" height="' + H + '"/></clipPath></defs>' +
+      '<defs><clipPath id="done"></clipPath></defs>' +
       '<path d="' + spath + "L" + W + " " + H + "L0 " + H + 'Z" fill="rgba(255,255,255,.10)"/>' +
       '<path d="' + spath + '" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1" vector-effect="non-scaling-stroke"/>' +
       '<g clip-path="url(#done)"><path d="' + spath + "L" + W + " " + H + "L0 " + H + 'Z" fill="rgba(224,69,47,.35)"/><path d="' + spath + '" fill="none" stroke="#ff6b4f" stroke-width="2" vector-effect="non-scaling-stroke"/></g>' +
       '<line id="curL" x1="0" x2="0" y1="0" y2="' + H + '" stroke="#fff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>' +
       '<line id="prvL" x1="0" x2="0" y1="0" y2="' + H + '" stroke="#7aa2ff" stroke-width="1.5" vector-effect="non-scaling-stroke" visibility="hidden"/></svg>';
-    function strip(km) { strip.km = km; var x = sx(km); $("doneR").setAttribute("width", x); $("curL").setAttribute("x1", x); $("curL").setAttribute("x2", x); }
+    function strip(km) {   // only the trail sections actually walked up to km are highlighted
+      strip.km = km; var x = sx(km);
+      $("done").innerHTML = D.covered.map(function (c) { var a = Math.min(c[0], km), b = Math.min(c[1], km); return b > a ? '<rect x="' + sx(a) + '" y="0" width="' + (sx(b) - sx(a)) + '" height="' + H + '"/>' : ""; }).join(""); $("curL").setAttribute("x1", x); $("curL").setAttribute("x2", x); }
     strip(here.km);
     L.scrubProfile($("prof"), map, D, function (km, p, walked) { var x = sx(km), l = $("prvL"); l.setAttribute("x1", x); l.setAttribute("x2", x); l.setAttribute("visibility", walked ? "hidden" : "visible"); if (walked) strip(km); }, function () { $("prvL").setAttribute("visibility", "hidden"); });
 
