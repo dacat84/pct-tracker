@@ -70,10 +70,11 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .me-bub{position:absolute;left:0;top:0;z-index:4;will-change:transform}
 .me-bub .bub{white-space:nowrap;font:600 12px/1 Inter,system-ui,sans-serif;background:#fff;color:#14202a;padding:5px 9px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
 .me-bub .bub b{color:#e0452f}.me-bub .bub .up{color:#56636d;font-weight:500}.me-bub{pointer-events:none}
-.maplibregl-ctrl-group{background:rgba(255,255,255,.92)!important}
+.maplibregl-ctrl-group{background:#fff!important}
 .maplibregl-ctrl-attrib{font-size:10px}
 .maplibregl-ctrl-bottom-right{bottom:300px}
-.maplibregl-ctrl-bottom-left{bottom:300px;left:44px;display:flex;flex-direction:column-reverse}.maplibregl-ctrl-bottom-left .maplibregl-ctrl{margin:0 0 8px 0}
+.maplibregl-ctrl-bottom-left{bottom:300px;left:53.5px;display:flex;flex-direction:column-reverse;z-index:3}   /* centred over the 48px play button */
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl-group{background:#fff!important;opacity:1}.maplibregl-ctrl-bottom-left .maplibregl-ctrl{margin:0 0 8px 0}
 .card .more{display:none}
 /* phone: everything stacked above the bottom switcher, small day card that opens on tap */
 @media(max-width:820px){
@@ -83,7 +84,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
   .card .top{margin-bottom:2px}.card .top .t{font-size:24px}.card .km{margin:0;font-size:13px}.card .km b{font-size:16px}
   .card .r{display:none;padding:5px 0;font-size:13px}.card.open .r{display:flex}.card.open .r.hide-m{display:none}.card .src{display:none}
   .card .more{display:block;position:absolute;right:12px;top:10px;font-size:12px;color:#8a959d}.card.open .more{transform:rotate(180deg)}
-  .maplibregl-ctrl-bottom-left{bottom:350px;left:6px}
+  .maplibregl-ctrl-bottom-left{bottom:350px;left:25.5px}
   .maplibregl-ctrl-bottom-right{bottom:350px}
   body.card-open .maplibregl-ctrl-bottom-left,body.card-open .maplibregl-ctrl-bottom-right{display:none}
 }
