@@ -290,6 +290,22 @@
     });
   }
 
+  var BED = '<svg viewBox="0 0 24 16" width="18" height="12" style="vertical-align:-1px"><path d="M2 2v12M2 10h20v4M22 10V7a2 2 0 0 0-2-2H11v5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="7" r="2" fill="currentColor"/></svg>';
+
+  // ---- "Where am I" button next to + / - ----
+  function addLocate(map, getLngLat) {
+    function C() {}
+    C.prototype.onAdd = function () {
+      var w = document.createElement("div"); w.className = "maplibregl-ctrl maplibregl-ctrl-group";
+      var b = document.createElement("button"); b.type = "button"; b.title = T("Zu meiner Position", "Where am I");
+      b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" style="display:block;margin:auto"><circle cx="12" cy="12" r="4" fill="#e0452f"/><circle cx="12" cy="12" r="8" fill="none" stroke="#333" stroke-width="2"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="#333" stroke-width="2" stroke-linecap="round"/></svg>';
+      b.onclick = function () { var ll = getLngLat(); if (ll) map.flyTo({ center: ll, zoom: Math.max(map.getZoom(), 12), duration: 1200 }); };
+      w.appendChild(b); return w;
+    };
+    C.prototype.onRemove = function () {};
+    map.addControl(new C(), "bottom-right");
+  }
+
   // ---- Tents where each day ended (except the current position) ----
   function addCamps(map, D, theme) {
     theme = theme || {};
@@ -304,7 +320,7 @@
         var z = document.createElement("div"); z.className = "camp"; z.dataset.day = c.day;
         z.title = c.zero + (c.zero === 1 ? " Zero-" + T("Tag", "day") : " Zero-" + T("Tage", "days")) + (c.town ? " in " + c.town.name : "");
         z.style.cssText = "background:" + fill + ";color:" + ink + ";border:2px solid " + ink + ";border-radius:12px;padding:2px 7px;font:700 11px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
-        z.textContent = c.zero + " × Zero";
+        z.innerHTML = BED + " ×" + c.zero;
         new maplibregl.Marker({ element: z, anchor: c.town ? "top" : "bottom", offset: c.town ? [0, 10] : [0, -28] }).setLngLat(c.town ? c.town.lnglat : c.lnglat).addTo(map);
       }
       return mk;
@@ -379,7 +395,7 @@
     // km where each day ends (last point before the date changes)
     var dayEnds = [], dayOf = function (s) { return String(D.track.features[s.f].properties.start_date).slice(0, 10); };
     for (var q = 0; q < N - 1; q++) if (dayOf(seq[q]) !== dayOf(seq[q + 1])) dayEnds.push(seq[q].km);
-    var restUntil = 0;
+    var restUntil = 0, resting = false;
     function idxAt(km) { var lo = 0, hi = N - 1; while (hi - lo > 1) { var m = (lo + hi) >> 1; if (seq[m].km <= km) lo = m; else hi = m; } return lo; }
     function pointAt(km) {
       var i = idxAt(km), a = seq[i], b = seq[Math.min(N - 1, i + 1)];
@@ -414,13 +430,14 @@
       var last = performance.now();
       function frame(now) {
         var dt = Math.min(64, now - last), p2; last = now;
+        if (now >= restUntil && resting) { resting = false; if (o.onCamp) o.onCamp(null); }
         if (now < restUntil) { p2 = pointAt(cur); }                       // sleeping at the tent
         else {
           var p = pointAt(cur), f = D.track.features[seq[p.i].f], dayKm = Math.max(5, (f.properties.distance_m || 10000) / 1000);
           var nxt = cur + dayKm * dt * SPEEDS[sp] / DAY_MS;
           var stopAt = dayEnds.find(function (k) { return k > cur + 1e-9 && k <= nxt; });
           var camp = stopAt !== undefined ? (D.camps || [])[dayEnds.indexOf(stopAt)] : null, zero = camp ? camp.zero : 0;
-          if (stopAt !== undefined) { nxt = stopAt; restUntil = now + NIGHT_MS * (1 + zero) / SPEEDS[sp]; }
+          if (stopAt !== undefined) { nxt = stopAt; restUntil = now + NIGHT_MS * (1 + zero) / SPEEDS[sp]; if (zero && o.onCamp) { o.onCamp(camp); resting = true; } }
           p2 = show(nxt, true);
           if (stopAt !== undefined && o.ui.clock) o.ui.clock.textContent = zero ? zero + " Zero-" + (zero === 1 ? T("Tag", "day") : T("Tage", "days")) + (camp.town ? " in " + camp.town.name : "") + " · Zzz" : T("Nachtlager", "Camp") + " · Zzz";
         }
@@ -476,6 +493,6 @@
   function regS(g) { return EN ? g.en_s : g.short; }
 
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, scrubProfile: scrubProfile, BASE: BASE, START: START,
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();
