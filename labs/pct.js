@@ -150,12 +150,19 @@
           days[d] = days[d] || { date: d, km: 0, up: 0, sec: 0 }; days[d].km += (f.properties.distance_m || 0) / 1000; days[d].up += f.properties.elevation_gain_m || 0; days[d].sec += f.properties.moving_time_s || 0;
         });
         var dayList = Object.keys(days).sort().map(function (k) { return days[k]; });
+        var dayIx = {}; dayList.forEach(function (d, i) { dayIx[d.date] = i; });
+        feats.forEach(function (f) { f.properties.dayIdx = dayIx[String(f.properties.start_date).slice(0, 10)]; });
+        // camp = last point of the last activity of each day
+        var camps = dayList.map(function (d, i) {
+          var fs = feats.filter(function (f) { return f.properties.dayIdx === i; }), last = fs[fs.length - 1], c = last.geometry.coordinates;
+          return { day: i + 1, date: d.date, km: d.km, lnglat: c[c.length - 1] };
+        });
         var totalKm = dayList.reduce(function (s, d) { return s + d.km; }, 0);
         var next = lms.filter(function (l) { return (l.type === "town" || l.type === "term") && l.km > here.km + 0.5; })[0] || null;
         return {
           src: SRC, pts: pts, total: prof.total_km, line: line, track: { type: "FeatureCollection", features: feats }, latest: latest,
           here: here, landmarks: lms, regions: regs, region: reg, days: dayList, today: dayList[dayList.length - 1] || null,
-          dayNo: dayList.length, walkedKm: totalKm, next: next, diary: diary
+          dayNo: dayList.length, walkedKm: totalKm, next: next, diary: diary, camps: camps
         };
       });
   }
@@ -233,8 +240,23 @@
     map.addLayer({ id: "tw-links", type: "line", source: "tw-links", paint: { "line-color": theme.link || "#f5b301", "line-width": 1.3, "line-opacity": .8, "line-dasharray": [2, 2] } });
   }
 
+  // ---- Tents where each day ended (except the current position) ----
+  function addCamps(map, D, theme) {
+    theme = theme || {};
+    var fill = theme.fill || "#f5b301", ink = theme.ink || "#14202a", list = D.camps.slice(0, -1);
+    return list.map(function (c) {
+      var el = document.createElement("div"); el.className = "camp"; el.dataset.day = c.day;
+      el.title = "Nacht nach Tag " + c.day + " · " + new Date(c.date + "T12:00").toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }) + " · " + nf(c.km, 1) + " km";
+      el.style.cssText = "width:22px;height:18px;cursor:default;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))";
+      el.innerHTML = '<svg viewBox="0 0 22 18" width="22" height="18"><path d="M1.5 16.5 L11 2 L20.5 16.5 Z" fill="' + fill + '" stroke="' + ink + '" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 2 L11 16.5" stroke="' + ink + '" stroke-width="1.1"/><path d="M8.2 16.5 L11 10.5 L13.8 16.5 Z" fill="' + ink + '"/></svg>';
+      return new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(c.lnglat).addTo(map);
+    });
+  }
+  // alternating colours per day for a line layer
+  function dayColor(a, b) { return ["case", ["==", ["%", ["coalesce", ["get", "dayIdx"], 0], 2], 0], a, b]; }
+
   // ---- Design switcher (Reportage / Tagebuch / Instrumente) + data source ----
-  var DESIGNS = [["", "Reportage"], ["tagebuch/", "Tagebuch"], ["instrumente/", "Instrumente"]];
+  var DESIGNS = [["", "Reportage"], ["tagebuch/", "Tagebuch"], ["statistik/", "Statistik"]];
   function switcher(active) {
     var css = document.createElement("style");
     css.textContent = ".lab{position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:9000;display:flex;align-items:center;gap:2px;background:rgba(14,18,22,.88);color:#fff;border-radius:22px;padding:4px;font:500 13px/1 system-ui,-apple-system,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.25);backdrop-filter:blur(6px)}" +
@@ -290,7 +312,11 @@
       base += real;
     });
     var N = seq.length, END = N ? seq[N - 1].km : 0, cur = END, raf = null, sp = 0, lastDraw = 0, cam = null, zoom = null;
-    var SPEEDS = [1, 2, 4], ZOOM = [12, 10.6, 9.2], DAY_MS = 6000;      // 1x: one day of walking in ~6 s
+    var SPEEDS = [1, 2, 4], ZOOM = [12, 10.6, 9.2], DAY_MS = 6000, NIGHT_MS = 1600;  // 1x: a day in ~6 s, then a short night at the tent
+    // km where each day ends (last point before the date changes)
+    var dayEnds = [], dayOf = function (s) { return String(D.track.features[s.f].properties.start_date).slice(0, 10); };
+    for (var q = 0; q < N - 1; q++) if (dayOf(seq[q]) !== dayOf(seq[q + 1])) dayEnds.push(seq[q].km);
+    var restUntil = 0;
     function idxAt(km) { var lo = 0, hi = N - 1; while (hi - lo > 1) { var m = (lo + hi) >> 1; if (seq[m].km <= km) lo = m; else hi = m; } return lo; }
     function pointAt(km) {
       var i = idxAt(km), a = seq[i], b = seq[Math.min(N - 1, i + 1)];
@@ -311,6 +337,8 @@
       if (o.ui.slider) o.ui.slider.value = Math.round(cur / (END || 1) * 1000);
       if (o.ui.clock) o.ui.clock.textContent = new Date(p.t).toLocaleString("de-DE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Los_Angeles" }) + " Uhr";
       var f = D.track.features[s.f], day = String(f.properties.start_date).slice(0, 10), dn = D.days.findIndex(function (d) { return d.date === day; });
+      var dnow = dn + 1, done = cur >= END;   // tents only where the night is already behind (or reached)
+      document.querySelectorAll(".camp").forEach(function (c) { var d = +c.dataset.day; c.style.visibility = (done || d < dnow || (d === dnow && dayEnds.some(function (k) { return Math.abs(k - cur) < 1e-6; }))) ? "visible" : "hidden"; });
       if (o.onUpdate) o.onUpdate({ km: cur, lnglat: p.c, feature: f, date: day, dayNo: dn + 1, day: D.days[dn], end: cur >= END });
       return p;
     }
@@ -322,9 +350,16 @@
       o.ui.play.innerHTML = "❚❚"; o.ui.play.classList.add("on");
       var last = performance.now();
       function frame(now) {
-        var dt = Math.min(64, now - last); last = now;
-        var p = pointAt(cur), f = D.track.features[seq[p.i].f], dayKm = Math.max(5, (f.properties.distance_m || 10000) / 1000);
-        var p2 = show(cur + dayKm * dt * SPEEDS[sp] / DAY_MS, true);
+        var dt = Math.min(64, now - last), p2; last = now;
+        if (now < restUntil) { p2 = pointAt(cur); }                       // sleeping at the tent
+        else {
+          var p = pointAt(cur), f = D.track.features[seq[p.i].f], dayKm = Math.max(5, (f.properties.distance_m || 10000) / 1000);
+          var nxt = cur + dayKm * dt * SPEEDS[sp] / DAY_MS;
+          var stopAt = dayEnds.find(function (k) { return k > cur + 1e-9 && k <= nxt; });
+          if (stopAt !== undefined) { nxt = stopAt; restUntil = now + NIGHT_MS / SPEEDS[sp]; }
+          p2 = show(nxt, true);
+          if (stopAt !== undefined && o.ui.clock) o.ui.clock.textContent = "Nachtlager · Zzz";
+        }
         var a = Math.min(1, dt / 650), za = Math.min(1, dt / 900);      // smoothing for camera and zoom
         cam = [cam[0] + (p2.c[0] - cam[0]) * a, cam[1] + (p2.c[1] - cam[1]) * a];
         zoom = zoom + (ZOOM[sp] - zoom) * za;
@@ -345,5 +380,5 @@
   }
 
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, BASE: BASE };
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, BASE: BASE };
 })();
