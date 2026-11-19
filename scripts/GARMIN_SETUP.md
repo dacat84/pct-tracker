@@ -41,6 +41,40 @@ on login again, repeat step 1 and update `GARMIN_TOKENS`.
 
 The old secret `GARMIN_TOKENS_B64` is no longer used and can be deleted.
 
+## When the sync breaks on the trail
+
+- You get notified: a failed scheduled run opens an issue "Garmin-Sync klappt
+  nicht" (GitHub app push notification). It closes itself once a run works again.
+- After a fresh login only `GARMIN_TOKENS` needs replacing. The sync tries the
+  cached tokens first and then the secret, so the new secret is picked up on the
+  next run without touching the cache.
+- Meanwhile positions can be reported by message and go into `data/manual.json`
+  (`data/test/manual.json` in test mode), e.g.
+  `[{"ts": "2027-05-03T18:00:00-07:00", "lat": 33.74, "lon": -116.72, "note": "Idyllwild"}]`.
+  A report newer than the last Garmin data becomes the current position.
+
+### New login from the phone (GitHub Codespaces)
+
+A Codespace is a small computer in the browser with a terminal, so the login
+works from the iPhone too (Safari, github.com, desktop site view helps):
+
+1. Repo -> green "Code" button -> "Codespaces" -> "Create codespace on main".
+2. In the terminal at the bottom:
+
+   ```bash
+   pip install -q garminconnect==0.3.20 && python scripts/garmin_login.py --print
+   ```
+
+   E-mail, password and the MFA code are typed there (never into a chat).
+3. The script prints the token JSON between two marker lines. Select it, copy,
+   and paste it into the `GARMIN_TOKENS` secret (Settings -> Secrets and
+   variables -> Actions -> GARMIN_TOKENS -> Update).
+4. Delete the Codespace afterwards (github.com/codespaces -> ... -> Delete),
+   so no tokens stay lying around.
+
+Someone at home can do the same on a Mac with the steps above, but they need
+the Garmin password and the MFA code (which arrives by e-mail or SMS).
+
 ## Options (optional env / repo variables)
 
 - `GARMIN_ACTIVITY_TYPES` - comma list of Garmin type keys to include
