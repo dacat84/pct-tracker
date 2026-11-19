@@ -7,6 +7,7 @@
   var SRC = qs.get("data") || "demo";
   var DIR = { demo: "data/demo/", test: "data/test/", live: "data/" }[SRC] || "data/demo/";
   var NOMINAL = 4265, MI2KM = 1.60934;
+  var START = "2027-04-22";   // official start (PCTA permit), same as tracker.start in _config.yml
   // Language: same setting as the live site (localStorage pctLang). EN shows miles and feet.
   var LANG = "de"; try { LANG = localStorage.getItem("pctLang") === "en" ? "en" : "de"; } catch (e) {}
   var EN = LANG === "en", LOC = EN ? "en-US" : "de-DE";
@@ -449,6 +450,6 @@
   function regS(g) { return EN ? g.en_s : g.short; }
 
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, BASE: BASE,
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();
