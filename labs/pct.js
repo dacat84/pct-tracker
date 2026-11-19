@@ -182,11 +182,16 @@
           return { day: i + 1, date: d.date, km: d.km, lnglat: ll, zero: zero, town: town ? { name: town[0], lnglat: [town[2], town[1]] } : null };
         });
         var totalKm = dayList.reduce(function (s, d) { return s + d.km; }, 0);
-        var next = lms.filter(function (l) { return (l.type === "town" || l.type === "term") && l.km > here.km + 0.5; })[0] || null;
+        // towns with the trail km of the point where you leave the trail for them (same data as on the map)
+        var towns = TOWNS.map(function (tw) {
+          var acc = ACCESS[tw[0]], s = acc ? snap(pts, acc[1], acc[2]) : snap(pts, tw[1], tw[2]);
+          return { name: tw[0], km: s.km, lat: tw[1], lon: tw[2], access: acc ? acc[0] : null };
+        }).sort(function (a, b) { return a.km - b.km; });
+        var next = towns.filter(function (tw) { return tw.km > here.km + 0.5; })[0] || null;
         return {
           src: SRC, pts: pts, total: prof.total_km, line: line, track: { type: "FeatureCollection", features: feats }, latest: latest,
           here: here, landmarks: lms, regions: regs, region: reg, days: dayList, today: dayList[dayList.length - 1] || null,
-          dayNo: dayList.length, walkedKm: totalKm, next: next, diary: diary, camps: camps
+          dayNo: dayList.length, walkedKm: totalKm, next: next, towns: towns, diary: diary, camps: camps
         };
       });
   }
