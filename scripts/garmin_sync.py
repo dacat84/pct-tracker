@@ -118,7 +118,7 @@ def iso_from_garmin(s):
 
 
 def parse_gpx(gpx_bytes):
-    """Return list of (lat, lon, ele|None) from GPX bytes, namespace-agnostic."""
+    """Return list of (lat, lon, ele|None, unix_time|None) from GPX bytes, namespace-agnostic."""
     root = ET.fromstring(gpx_bytes)
     pts = []
     for el in root.iter():
@@ -128,14 +128,20 @@ def parse_gpx(gpx_bytes):
             lat = float(el.get("lat")); lon = float(el.get("lon"))
         except (TypeError, ValueError):
             continue
-        ele = None
+        ele, ts = None, None
         for ch in el:
-            if ch.tag.split("}")[-1] == "ele":
+            tag = ch.tag.split("}")[-1]
+            if tag == "ele":
                 try:
                     ele = float(ch.text)
                 except (TypeError, ValueError):
                     ele = None
-        pts.append((lat, lon, ele))
+            elif tag == "time" and ch.text:
+                try:
+                    ts = datetime.datetime.fromisoformat(ch.text.strip().replace("Z", "+00:00")).timestamp()
+                except ValueError:
+                    ts = None
+        pts.append((lat, lon, ele, ts))
     return pts
 
 
@@ -180,6 +186,10 @@ def init_api():
     return g
 
 
+def iso_from_ts(ts):
+    return datetime.datetime.fromtimestamp(ts, datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 # ---------------------------------------------------------------- activity -> feature
 def build_feature(api, act):
     act_id = act.get("activityId")
@@ -203,6 +213,8 @@ def build_feature(api, act):
     # Simplified map coordinates ([lon, lat]).
     pts_ds = downsample(pts, COORDS_MAX_POINTS)
     coords = [[p[1], p[0]] for p in pts_ds]
+    # Seconds since the first point for every map point (used to place photos without GPS by time).
+    times = [int(round(p[3] - pts[0][3])) for p in pts_ds] if all(p[3] is not None for p in pts_ds) and pts[0][3] is not None else None
 
     # Elevation profile (cumulative distance vs. elevation), computed from full pts.
     has_alt = all(p[2] is not None for p in pts)
@@ -235,6 +247,7 @@ def build_feature(api, act):
             "elevation_gain_m": float(total_up),
             "profile_dist_m": prof_d,
             "profile_elev_m": prof_e,
+            **({"t0": iso_from_ts(pts[0][3]), "t": times} if times else {}),
         },
         "geometry": {"type": "LineString", "coordinates": coords},
         "_last_latlon": [pts[-1][0], pts[-1][1]],     # temp, stripped before write
@@ -298,6 +311,22 @@ def main():
             known.add(str(act_id))
             added += 1
             print(f"  + added activity {act_id} ({type_key}, {feat['properties']['start_date']}).")
+
+    # Backfill point times for activities imported before times were stored (a few per run).
+    by_id = {str(a.get("activityId")): a for a in activities}
+    filled = 0
+    for f in track["features"]:
+        pr = f.get("properties", {})
+        aid = str(pr.get("strava_id"))
+        if "t" in pr or aid not in by_id or filled >= 25:
+            continue
+        nf = build_feature(api, by_id[aid])
+        if nf and "t" in nf["properties"]:
+            pr["t0"], pr["t"] = nf["properties"]["t0"], nf["properties"]["t"]
+            f["geometry"] = nf["geometry"]   # same thinning, so coordinates and times line up
+            filled += 1
+    if filled:
+        print(f"  backfilled point times for {filled} activity(ies).")
 
     track["features"].sort(key=lambda f: f.get("properties", {}).get("start_date", ""))
     latest = None

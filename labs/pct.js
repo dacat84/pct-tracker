@@ -165,8 +165,13 @@
   }
   function placePhotos(ph, D) {
     var acts = D.track.features.map(function (f) {
-      var s = Date.parse(f.properties.start_date), c = f.geometry.coordinates;
-      return { s: s, e: s + (f.properties.moving_time_s || 0) * 1000 * 1.25, c: c };   // a bit longer than moving time for breaks
+      var pr = f.properties, c = f.geometry.coordinates;
+      if (pr.t && pr.t.length === c.length) {   // exact: the sync stores the time of every map point
+        var t0 = Date.parse(pr.t0 || pr.start_date);
+        return { s: t0, e: t0 + pr.t[pr.t.length - 1] * 1000, c: c, t: pr.t.map(function (x) { return t0 + x * 1000; }) };
+      }
+      var s = Date.parse(pr.start_date);
+      return { s: s, e: s + (pr.moving_time_s || 0) * 1000 * 1.25, c: c };   // old data: guess from moving time
     });
     if (!acts.length) return ph;
     ph.forEach(function (p) {
@@ -177,7 +182,10 @@
       acts.forEach(function (a) {
         var d = t < a.s ? a.s - t : t > a.e ? t - a.e : 0, ll;
         if (d < bd) { bd = d;
-          if (!d) { var r = (t - a.s) / (a.e - a.s || 1), k = Math.min(a.c.length - 1, Math.round(r * (a.c.length - 1))); ll = a.c[k]; }
+          if (!d && a.t) { var j = 0; while (j < a.t.length - 1 && a.t[j + 1] <= t) j++;
+            var j2 = Math.min(a.t.length - 1, j + 1), f2 = a.t[j2] > a.t[j] ? (t - a.t[j]) / (a.t[j2] - a.t[j]) : 0;
+            ll = [a.c[j][0] + (a.c[j2][0] - a.c[j][0]) * f2, a.c[j][1] + (a.c[j2][1] - a.c[j][1]) * f2]; }
+          else if (!d) { var r = (t - a.s) / (a.e - a.s || 1), k = Math.min(a.c.length - 1, Math.round(r * (a.c.length - 1))); ll = a.c[k]; }
           else ll = t < a.s ? a.c[0] : a.c[a.c.length - 1];
           best = ll; }
       });
