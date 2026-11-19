@@ -90,7 +90,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
   <div class="panel"><h3><span data-de="Höhenprofil · Campo → Kanada" data-en="Elevation profile · Campo → Canada">Höhenprofil · Campo → Kanada</span><span id="profInfo"></span></h3><div class="prof" id="prof"></div><div class="tip" id="tip"></div></div>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../pct.js?v=40"></script>
+<script src="../pct.js?v=42"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -171,6 +171,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
       var s = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" style="height:' + H + 'px">';
       for (var m = 0; m <= mxh; m += 1000) s += '<line x1="0" x2="' + W + '" y1="' + Y(m) + '" y2="' + Y(m) + '" stroke="#1f252b"/><text x="4" y="' + (Y(m) - 3) + '" font-family="JetBrains Mono" font-size="10" fill="#55606a">' + L.elev(m) + "</text>";
       D.regions.forEach(function (g) { s += '<line x1="' + X(g.ka) + '" x2="' + X(g.ka) + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#262d34"/><text x="' + (X(g.ka) + 4) + '" y="' + (H - 9) + '" font-family="JetBrains Mono" font-size="10" letter-spacing="1" fill="#7d8790">' + L.regS(g).toUpperCase() + "</text>"; });
+      s += L.closureBands(D, X, padT, H - padB);
       s += '<path d="' + path + "L" + W + " " + (H - padB) + "L0 " + (H - padB) + 'Z" fill="#1a2026"/><path d="' + path + '" fill="none" stroke="#3a8f9a" stroke-width="1.2" vector-effect="non-scaling-stroke"/>';
       s += '<clipPath id="dn">' + D.covered.map(function (c) { var a = Math.min(c[0], curKm), b = Math.min(c[1], curKm); return b > a ? '<rect x="' + X(a) + '" y="0" width="' + (X(b) - X(a)) + '" height="' + H + '"/>' : ""; }).join("") + '</clipPath><g clip-path="url(#dn)"><path d="' + path + "L" + W + " " + (H - padB) + "L0 " + (H - padB) + 'Z" fill="rgba(255,176,32,.18)"/><path d="' + path + '" fill="none" stroke="' + AMB + '" stroke-width="2" vector-effect="non-scaling-stroke"/></g>';
       var lastX = -1e9;
