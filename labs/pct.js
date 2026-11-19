@@ -127,6 +127,38 @@
     return (Date.now() - t) > 3 * 3600 * 1000 ? "sleep" : "walk";
   }
 
+  // ---- Photos without GPS: put them on the track by the time they were taken ----
+  // Flickr gives the camera's local time without a zone, so it is read in the zone of the
+  // track (Pacific on the PCT, Berlin for the test walks at home). Inside an activity the
+  // position is interpolated by time; outside one (pause, camp) the nearest end is used.
+  function tzOffset(zone, ms) {
+    var p = {}; new Intl.DateTimeFormat("en-US", { timeZone: zone, hour12: false, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
+      .formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
+    return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second) - ms;
+  }
+  function placePhotos(ph, D) {
+    var acts = D.track.features.map(function (f) {
+      var s = Date.parse(f.properties.start_date), c = f.geometry.coordinates;
+      return { s: s, e: s + (f.properties.moving_time_s || 0) * 1000 * 1.25, c: c };   // a bit longer than moving time for breaks
+    });
+    if (!acts.length) return ph;
+    ph.forEach(function (p) {
+      if ((p.lat && p.lon) || !p.taken) return;
+      var c0 = acts[0].c[0], zone = c0[0] < -30 ? "America/Los_Angeles" : "Europe/Berlin";
+      var loc = Date.parse(p.taken.replace(" ", "T") + "Z"), t = loc - tzOffset(zone, loc);
+      var best = null, bd = 6 * 3600 * 1000;   // only within 6 h of a recorded walk
+      acts.forEach(function (a) {
+        var d = t < a.s ? a.s - t : t > a.e ? t - a.e : 0, ll;
+        if (d < bd) { bd = d;
+          if (!d) { var r = (t - a.s) / (a.e - a.s || 1), k = Math.min(a.c.length - 1, Math.round(r * (a.c.length - 1))); ll = a.c[k]; }
+          else ll = t < a.s ? a.c[0] : a.c[a.c.length - 1];
+          best = ll; }
+      });
+      if (best) { p.lon = best[0]; p.lat = best[1]; p.est = true; }
+    });
+    return ph;
+  }
+
   // ---- Flickr photos of the PCT album, with geo where the phone saved it ----
   var FLICKR = { key: "a8b28521e8527042f868d9b98b567ff3", user: "35469735@N03", set: "72177720331905792" };
   function photos() {
@@ -513,6 +545,6 @@
   function regS(g) { return EN ? g.en_s : g.short; }
 
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();
