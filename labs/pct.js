@@ -179,38 +179,38 @@
   // ---- Resupply towns at their real position (not on the trail), with a short note ----
   // Notes are from planning, not checked on site: services change, always look at FarOut.
   var TOWNS = [
-    ["Mount Laguna", 32.8686, -116.4211, "Laden · Lodge · Post. Direkt am Trail."],
-    ["Julian", 33.0786, -116.6020, "Supermarkt · Post. Hitch ab Scissors Crossing. Bei Mom's Pie gibt's für Hiker ein Stück Kuchen."],
-    ["Warner Springs", 33.2828, -116.6339, "Hiker-Station im Community Center · Post. Kaum Einkauf."],
-    ["Idyllwild", 33.7400, -116.7189, "Supermarkt · Outfitter · Post · Cafés."],
-    ["Big Bear Lake", 34.2439, -116.9114, "Supermärkte · Outfitter · Post · viele Unterkünfte."],
-    ["Wrightwood", 34.3608, -117.6334, "Kleiner Supermarkt · Post. Im Baumarkt Mountain Hardware gibt es ein Hiker-Register."],
-    ["Agua Dulce", 34.4964, -118.3256, "Trail geht durch den Ort. Kleiner Supermarkt · Restaurants."],
-    ["Tehachapi", 35.1322, -118.4490, "Große Stadt · Supermärkte · Post. Gut für den Großeinkauf vor der Sierra."],
-    ["Kennedy Meadows", 35.9823, -118.1242, "General Store · Paketannahme · Bärenkanister. Tor zur Sierra."],
-    ["Lone Pine", 36.6060, -118.0629, "Supermarkt · Outfitter · Post. Über Cottonwood oder Kearsarge Pass."],
-    ["Bishop", 37.3635, -118.3951, "Supermärkte · Outfitter · Bäckerei. Größte Stadt an der Ostsierra."],
-    ["Mammoth Lakes", 37.6485, -118.9721, "Supermärkte · Outfitter · Post. Bus ab Reds Meadow."],
-    ["Tuolumne Meadows", 37.8735, -119.3590, "Laden · Post (nur im Sommer). Im Yosemite-Nationalpark."],
-    ["South Lake Tahoe", 38.9399, -119.9772, "Große Stadt, alles da. Bus ab Echo Summit."],
-    ["Truckee", 39.3280, -120.1833, "Supermärkte · Outfitter. Ab Donner Pass."],
-    ["Sierra City", 39.5657, -120.6324, "Kleiner Laden · Post."],
-    ["Belden", 40.0058, -121.2483, "Winziger Ort am Trail. Kaum Einkauf."],
-    ["Chester", 40.3063, -121.2316, "Supermarkt · Post."],
-    ["Burney", 40.8824, -121.6608, "Supermarkt · Post."],
-    ["Mount Shasta", 41.3099, -122.3106, "Supermärkte · Outfitter · Post."],
-    ["Etna", 41.4568, -122.8948, "Laden · Post · Brauerei."],
-    ["Seiad Valley", 41.8418, -123.1964, "Laden mit Café am Trail. Bekannt für die Pancake Challenge."],
-    ["Ashland", 42.1946, -122.7095, "Supermärkte · Outfitter · Post."],
-    ["Mazama Village", 42.8668, -122.1675, "Laden · Campingplatz · Paketannahme. Am Crater Lake."],
-    ["Sisters", 44.2910, -121.5492, "Supermarkt · Outfitter. Ab Santiam oder McKenzie Pass."],
-    ["Cascade Locks", 45.6696, -121.8909, "Laden · Post. Trail geht durch den Ort, dann über die Bridge of the Gods."],
-    ["Trout Lake", 45.9968, -121.5287, "Laden · Post. Ab Forest Road 23."],
-    ["White Pass", 46.6378, -121.3913, "Laden mit Paketannahme direkt am Pass."],
-    ["Snoqualmie Pass", 47.4243, -121.4135, "Kleiner Laden · Unterkünfte am Pass."],
-    ["Skykomish", 47.7090, -121.3590, "Kleiner Ort unterhalb von Stevens Pass."],
-    ["Stehekin", 48.3093, -120.6545, "Post · berühmte Bäckerei. Nur per Bus oder Boot."],
-    ["Mazama", 48.5926, -120.4039, "Kleiner Laden. Letzte Versorgung vor Kanada, ab Rainy Pass."]
+    ["Mount Laguna", 32.8686, -116.4211, "General Store · Lodge · Post Office"],
+    ["Julian", 33.0786, -116.6020, "Grocery · Post Office · Mom's Pie (free pie for hikers)"],
+    ["Warner Springs", 33.2828, -116.6339, "Community Center · Post Office"],
+    ["Idyllwild", 33.7400, -116.7189, "Grocery · Outfitter · Post Office · Cafés"],
+    ["Big Bear Lake", 34.2439, -116.9114, "Grocery · Outfitter · Post Office · Hostel"],
+    ["Wrightwood", 34.3608, -117.6334, "Grocery · Post Office · Mountain Hardware"],
+    ["Agua Dulce", 34.4964, -118.3256, "Grocery · Restaurants"],
+    ["Tehachapi", 35.1322, -118.4490, "Grocery · Post Office · Restaurants"],
+    ["Kennedy Meadows", 35.9823, -118.1242, "General Store · Resupply · Bear Canister"],
+    ["Lone Pine", 36.6060, -118.0629, "Grocery · Outfitter · Post Office"],
+    ["Bishop", 37.3635, -118.3951, "Grocery · Outfitter · Bakery"],
+    ["Mammoth Lakes", 37.6485, -118.9721, "Grocery · Outfitter · Post Office"],
+    ["Tuolumne Meadows", 37.8735, -119.3590, "Store · Post Office (Sommer)"],
+    ["South Lake Tahoe", 38.9399, -119.9772, "Grocery · Outfitter · Post Office"],
+    ["Truckee", 39.3280, -120.1833, "Grocery · Outfitter"],
+    ["Sierra City", 39.5657, -120.6324, "General Store · Post Office"],
+    ["Belden", 40.0058, -121.2483, "Restaurant · Lodge"],
+    ["Chester", 40.3063, -121.2316, "Grocery · Post Office"],
+    ["Burney", 40.8824, -121.6608, "Grocery · Post Office"],
+    ["Mount Shasta", 41.3099, -122.3106, "Grocery · Outfitter · Post Office"],
+    ["Etna", 41.4568, -122.8948, "Grocery · Post Office · Brewery"],
+    ["Seiad Valley", 41.8418, -123.1964, "Store · Café · Post Office"],
+    ["Ashland", 42.1946, -122.7095, "Grocery · Outfitter · Post Office"],
+    ["Mazama Village", 42.8668, -122.1675, "Store · Campground · Resupply"],
+    ["Sisters", 44.2910, -121.5492, "Grocery · Outfitter"],
+    ["Cascade Locks", 45.6696, -121.8909, "Store · Post Office · Restaurants"],
+    ["Trout Lake", 45.9968, -121.5287, "General Store · Post Office"],
+    ["White Pass", 46.6378, -121.3913, "Store · Resupply"],
+    ["Snoqualmie Pass", 47.4243, -121.4135, "Store · Lodge"],
+    ["Skykomish", 47.7090, -121.3590, "Store · Lodge"],
+    ["Stehekin", 48.3093, -120.6545, "Post Office · Bakery"],
+    ["Mazama", 48.5926, -120.4039, "Store · Resupply"]
   ];
   // Where you leave the trail for a town: [name of the access point, lat, lon], snapped to the trail.
   // Towns not listed use the nearest trail point.
@@ -257,8 +257,8 @@
     return list.map(function (c) {
       var el = document.createElement("div"); el.className = "camp"; el.dataset.day = c.day;
       el.title = "Nacht nach Tag " + c.day + " · " + new Date(c.date + "T12:00").toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }) + " · " + nf(c.km, 1) + " km";
-      el.style.cssText = "width:22px;height:18px;cursor:default;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))";
-      el.innerHTML = '<svg viewBox="0 0 22 18" width="22" height="18"><path d="M1.5 16.5 L11 2 L20.5 16.5 Z" fill="' + fill + '" stroke="' + ink + '" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 2 L11 16.5" stroke="' + ink + '" stroke-width="1.1"/><path d="M8.2 16.5 L11 10.5 L13.8 16.5 Z" fill="' + ink + '"/></svg>';
+      el.style.cssText = "width:32px;height:26px;cursor:default;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))";
+      el.innerHTML = '<svg viewBox="0 0 22 18" width="32" height="26"><path d="M1.5 16.5 L11 2 L20.5 16.5 Z" fill="' + fill + '" stroke="' + ink + '" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 2 L11 16.5" stroke="' + ink + '" stroke-width="1.1"/><path d="M8.2 16.5 L11 10.5 L13.8 16.5 Z" fill="' + ink + '"/></svg>';
       return new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(c.lnglat).addTo(map);
     });
   }
