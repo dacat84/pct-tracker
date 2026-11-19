@@ -242,15 +242,20 @@
         });
         var regs = REGIONS.map(function (g) { return Object.assign({}, g, { ka: g.a * F, kb: g.b * F }); });
         var reg = regs.find(function (g) { return here.km >= g.ka && here.km < g.kb; }) || regs[regs.length - 1];
-        // days: group activities by local date of their start
+        // local calendar day of every activity (Pacific on the PCT, Berlin for test walks at home):
+        // start_date is UTC, and from 17:00 in California UTC is already the next day
+        feats.forEach(function (f) {
+          var c0 = f.geometry.coordinates[0], zone = c0[0] < -30 ? "America/Los_Angeles" : "Europe/Berlin";
+          f.properties.day = new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(f.properties.start_date));
+        });
         var days = {};
         feats.forEach(function (f) {
-          var d = String(f.properties.start_date).slice(0, 10);
+          var d = f.properties.day;
           days[d] = days[d] || { date: d, km: 0, up: 0, sec: 0 }; days[d].km += (f.properties.distance_m || 0) / 1000; days[d].up += f.properties.elevation_gain_m || 0; days[d].sec += f.properties.moving_time_s || 0;
         });
         var dayList = Object.keys(days).sort().map(function (k) { return days[k]; });
         var dayIx = {}; dayList.forEach(function (d, i) { dayIx[d.date] = i; });
-        feats.forEach(function (f) { f.properties.dayIdx = dayIx[String(f.properties.start_date).slice(0, 10)]; });
+        feats.forEach(function (f) { f.properties.dayIdx = dayIx[f.properties.day]; });
         // camp = last point of the last activity of each day
         var camps = dayList.map(function (d, i) {
           var fs = feats.filter(function (f) { return f.properties.dayIdx === i; }), last = fs[fs.length - 1], c = last.geometry.coordinates;
@@ -271,6 +276,23 @@
           c.nero = d.nero;
           if (d.nero && !c.town) { var tw = TOWNS.find(function (x) { return x[0] === d.nero; }); c.town = { name: tw[0], lnglat: [tw[2], tw[1]] }; }
         });
+        // trail sections actually walked (fire closures, skips or a flip-flop leave gaps)
+        var tks = [];
+        feats.forEach(function (f) {
+          var j = -1;
+          f.geometry.coordinates.forEach(function (c, ci) {
+            if (ci % 3 && ci !== f.geometry.coordinates.length - 1) return;
+            var lo = j < 0 ? 0 : Math.max(0, j - 30), hi = j < 0 ? pts.length - 1 : Math.min(pts.length - 1, j + 30), bd = 1e18, bj = lo, i, d;
+            for (i = lo; i <= hi; i++) { d = hav(c[1], c[0], pts[i].lat, pts[i].lon); if (d < bd) { bd = d; bj = i; } }
+            if (bd > 20) for (i = 0; i < pts.length; i++) { d = hav(c[1], c[0], pts[i].lat, pts[i].lon); if (d < bd) { bd = d; bj = i; } }
+            j = bj; if (bd <= 5) tks.push(pts[bj].km);
+          });
+        });
+        tks.sort(function (a, b) { return a - b; });
+        var covered = [];
+        tks.forEach(function (k) { var l = covered[covered.length - 1]; if (l && k - l[1] <= 6) l[1] = Math.max(l[1], k); else covered.push([k, k]); });
+        if (covered.length && covered[0][0] < 6) covered[0][0] = 0;   // from the terminus
+        var coveredKm = covered.reduce(function (s, c) { return s + c[1] - c[0]; }, 0);
         var totalKm = dayList.reduce(function (s, d) { return s + d.km; }, 0);
         // towns with the trail km of the point where you leave the trail for them (same data as on the map)
         var towns = TOWNS.map(function (tw) {
@@ -281,7 +303,7 @@
         return {
           src: SRC, pts: pts, total: prof.total_km, line: line, track: { type: "FeatureCollection", features: feats }, latest: latest,
           here: here, landmarks: lms, regions: regs, region: reg, days: dayList, today: dayList[dayList.length - 1] || null,
-          dayNo: dayList.length, walkedKm: totalKm, next: next, towns: towns, diary: diary, camps: camps
+          dayNo: dayList.length, walkedKm: totalKm, covered: covered, coveredKm: coveredKm, next: next, towns: towns, diary: diary, camps: camps
         };
       });
   }
@@ -499,7 +521,7 @@
     var N = seq.length, END = N ? seq[N - 1].km : 0, cur = END, raf = null, sp = 0, lastDraw = 0, cam = null, zoom = null;
     var SPEEDS = [1, 2, 4], ZOOM = [12, 10.6, 9.2], DAY_MS = 6000, NIGHT_MS = 1600;  // 1x: a day in ~6 s, then a short night at the tent
     // km where each day ends (last point before the date changes)
-    var dayEnds = [], dayOf = function (s) { return String(D.track.features[s.f].properties.start_date).slice(0, 10); };
+    var dayEnds = [], dayOf = function (s) { return D.track.features[s.f].properties.day; };
     for (var q = 0; q < N - 1; q++) if (dayOf(seq[q]) !== dayOf(seq[q + 1])) dayEnds.push(seq[q].km);
     var restUntil = 0, resting = false;
     // trail km of every replay point, for jumping there from the elevation profile
@@ -537,7 +559,7 @@
       if (o.marker) o.marker.setLngLat(p.c);
       if (o.ui.slider) o.ui.slider.value = Math.round(cur / (END || 1) * 1000);
       if (o.ui.clock) o.ui.clock.textContent = dfmt(p.t, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Los_Angeles" }) + T(" Uhr", "");
-      var f = D.track.features[s.f], day = String(f.properties.start_date).slice(0, 10), dn = D.days.findIndex(function (d) { return d.date === day; });
+      var f = D.track.features[s.f], day = f.properties.day, dn = D.days.findIndex(function (d) { return d.date === day; });
       var dnow = dn + 1, done = cur >= END;   // tents only where the night is already behind (or reached)
       document.querySelectorAll(".camp").forEach(function (c) { var d = +c.dataset.day; c.style.visibility = (done || d < dnow || (d === dnow && dayEnds.some(function (k) { return Math.abs(k - cur) < 1e-6; }))) ? "visible" : "hidden"; });
       if (o.onUpdate) o.onUpdate({ km: cur, lnglat: p.c, feature: f, date: day, dayNo: dn + 1, day: D.days[dn], end: cur >= END });
@@ -579,7 +601,7 @@
     show(END, false, true);
     activeReplay = { stop: stop, seekTrail: seekTrail, maxTrail: maxTrail };
     return { stop: stop, toDate: function (date) {
-      var k = -1; seq.forEach(function (s, j) { if (String(D.track.features[s.f].properties.start_date).slice(0, 10) <= date) k = j; });
+      var k = -1; seq.forEach(function (s, j) { if (D.track.features[s.f].properties.day <= date) k = j; });
       if (k < 0) return null; stop(); show(seq[k].km, false, true); return seq[k].c; } };
   }
 
@@ -587,7 +609,7 @@
   function fitDay(map, D, date, pad) {
     var b = null;
     D.track.features.forEach(function (f) {
-      if (String(f.properties.start_date).slice(0, 10) !== date) return;
+      if (f.properties.day !== date) return;
       f.geometry.coordinates.forEach(function (c) { if (!b) b = new maplibregl.LngLatBounds(c, c); else b.extend(c); });
     });
     if (b) map.fitBounds(b, { padding: pad || 50, maxZoom: 13, duration: 900 });

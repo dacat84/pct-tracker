@@ -88,7 +88,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
   <div class="panel"><h3><span data-de="Höhenprofil · Campo → Kanada" data-en="Elevation profile · Campo → Canada">Höhenprofil · Campo → Kanada</span><span id="profInfo"></span></h3><div class="prof" id="prof"></div><div class="tip" id="tip"></div></div>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../pct.js?v=33"></script>
+<script src="../pct.js?v=34"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -114,8 +114,8 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     function two(km, d) { return L.EN ? [nf(km * KM2MI, d) + " mi", nf(km, d) + " km"] : [nf(km, d) + " km", nf(km * KM2MI, d) + " mi"]; }
     function twoE(m) { return L.EN ? [nf(m * 3.28084) + " ft", nf(m) + " m"] : [nf(m) + " m", nf(m * 3.28084) + " ft"]; }
     var h2 = two(D.walkedKm, 1); $("hTot").innerHTML = h2[0] + "<small>" + h2[1] + "</small>";
-    var pct = D.walkedKm / D.total * 100; $("hBar").style.width = Math.min(100, pct) + "%";
-    $("hPct").textContent = nf(pct, 1) + T(" % des PCT", " % of the PCT"); $("hLeft").textContent = T("noch ", "") + L.dist(Math.max(0, D.total - D.walkedKm)) + T("", " to go");
+    var pct = D.coveredKm / D.total * 100;   // trail actually covered (skipped sections don't count) $("hBar").style.width = Math.min(100, pct) + "%";
+    $("hPct").textContent = nf(pct, 1) + T(" % des PCT", " % of the PCT"); $("hLeft").textContent = T("noch ", "") + L.dist(Math.max(0, D.total - D.coveredKm)) + T("", " to go");
     var u2 = twoE(up); $("tUp").textContent = u2[0]; $("tUp2").textContent = u2[1];
     $("tTime").textContent = hm(sec); $("tTime2").textContent = acts + T(" Aktivitäten", " activities");
     var a2 = two(n ? D.walkedKm / n : 0, 1); $("tAvg").textContent = a2[0]; $("tAvg2").textContent = a2[1];
@@ -166,7 +166,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
       for (var m = 0; m <= mxh; m += 1000) s += '<line x1="0" x2="' + W + '" y1="' + Y(m) + '" y2="' + Y(m) + '" stroke="#1f252b"/><text x="4" y="' + (Y(m) - 3) + '" font-family="JetBrains Mono" font-size="10" fill="#55606a">' + L.elev(m) + "</text>";
       D.regions.forEach(function (g) { s += '<line x1="' + X(g.ka) + '" x2="' + X(g.ka) + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#262d34"/><text x="' + (X(g.ka) + 4) + '" y="' + (H - 9) + '" font-family="JetBrains Mono" font-size="10" letter-spacing="1" fill="#7d8790">' + L.regS(g).toUpperCase() + "</text>"; });
       s += '<path d="' + path + "L" + W + " " + (H - padB) + "L0 " + (H - padB) + 'Z" fill="#1a2026"/><path d="' + path + '" fill="none" stroke="#3a8f9a" stroke-width="1.2" vector-effect="non-scaling-stroke"/>';
-      s += '<clipPath id="dn"><rect x="0" y="0" width="' + X(curKm) + '" height="' + H + '"/></clipPath><g clip-path="url(#dn)"><path d="' + path + "L" + W + " " + (H - padB) + "L0 " + (H - padB) + 'Z" fill="rgba(255,176,32,.18)"/><path d="' + path + '" fill="none" stroke="' + AMB + '" stroke-width="2" vector-effect="non-scaling-stroke"/></g>';
+      s += '<clipPath id="dn">' + D.covered.map(function (c) { var a = Math.min(c[0], curKm), b = Math.min(c[1], curKm); return b > a ? '<rect x="' + X(a) + '" y="0" width="' + (X(b) - X(a)) + '" height="' + H + '"/>' : ""; }).join("") + '</clipPath><g clip-path="url(#dn)"><path d="' + path + "L" + W + " " + (H - padB) + "L0 " + (H - padB) + 'Z" fill="rgba(255,176,32,.18)"/><path d="' + path + '" fill="none" stroke="' + AMB + '" stroke-width="2" vector-effect="non-scaling-stroke"/></g>';
       var lastX = -1e9;
       D.landmarks.filter(function (l) { return l.tier === 1; }).sort(function (a, b) { return a.km - b.km; }).forEach(function (l) {
         if (X(l.km) - lastX < 95) return; lastX = X(l.km);
