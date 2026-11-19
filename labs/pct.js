@@ -182,6 +182,14 @@
           TOWNS.forEach(function (tw) { var dd = hav(ll[1], ll[0], tw[1], tw[2]); if (dd < bd) { bd = dd; town = tw; } });
           return { day: i + 1, date: d.date, km: d.km, lnglat: ll, zero: zero, town: town ? { name: town[0], lnglat: [town[2], town[1]] } : null };
         });
+        // nero = short day (under ~10 mi) that starts or ends at a town access point
+        var accPts = TOWNS.map(function (tw) { var a = ACCESS[tw[0]]; return { name: tw[0], lat: a ? a[1] : tw[1], lon: a ? a[2] : tw[2], tlat: tw[1], tlon: tw[2] }; });
+        dayList.forEach(function (d, i) {
+          d.nero = null; if (d.km >= 16) return;
+          var fs = feats.filter(function (f) { return f.properties.dayIdx === i; }), a = fs[0].geometry.coordinates[0], lc = fs[fs.length - 1].geometry.coordinates, b = lc[lc.length - 1];
+          accPts.forEach(function (tw) { [a, b].forEach(function (p) { if (!d.nero && (hav(p[1], p[0], tw.lat, tw.lon) < 6 || hav(p[1], p[0], tw.tlat, tw.tlon) < 6)) d.nero = tw.name; }); });
+          if (camps[i]) camps[i].nero = d.nero;
+        });
         var totalKm = dayList.reduce(function (s, d) { return s + d.km; }, 0);
         // towns with the trail km of the point where you leave the trail for them (same data as on the map)
         var towns = TOWNS.map(function (tw) {
@@ -315,13 +323,20 @@
       el.title = T("Nacht nach Tag ", "Night after day ") + c.day + " · " + dfmt(c.date + "T12:00", { weekday: "short", day: "numeric", month: "short" }) + " · " + dist(c.km, 1);
       el.style.cssText = "width:32px;height:26px;cursor:default;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))";
       el.innerHTML = '<svg viewBox="0 0 22 18" width="32" height="26"><path d="M1.5 16.5 L11 2 L20.5 16.5 Z" fill="' + fill + '" stroke="' + ink + '" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 2 L11 16.5" stroke="' + ink + '" stroke-width="1.1"/><path d="M8.2 16.5 L11 10.5 L13.8 16.5 Z" fill="' + ink + '"/></svg>';
-      var mk = new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(c.lnglat).addTo(map);
+      // before a zero you sleep in town: no tent, the track just ends where you left the trail
+      var mk = c.zero ? null : new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(c.lnglat).addTo(map);
       if (c.zero) {   // rest days: counter at the nearby town (or at the tent if there is none)
         var z = document.createElement("div"); z.className = "camp"; z.dataset.day = c.day;
         z.title = c.zero + (c.zero === 1 ? " Zero-" + T("Tag", "day") : " Zero-" + T("Tage", "days")) + (c.town ? " in " + c.town.name : "");
         z.style.cssText = "background:" + fill + ";color:" + ink + ";border:2px solid " + ink + ";border-radius:12px;padding:2px 7px;font:700 11px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
         z.innerHTML = BED + " ×" + c.zero;
-        new maplibregl.Marker({ element: z, anchor: c.town ? "top" : "bottom", offset: c.town ? [0, 10] : [0, -28] }).setLngLat(c.town ? c.town.lnglat : c.lnglat).addTo(map);
+        new maplibregl.Marker({ element: z, anchor: c.town ? "top" : "bottom", offset: c.town ? [0, 10] : [0, -4] }).setLngLat(c.town ? c.town.lnglat : c.lnglat).addTo(map);
+      } else if (c.nero) {   // short town day: small badge above the tent
+        var nz = document.createElement("div"); nz.className = "camp"; nz.dataset.day = c.day;
+        nz.title = "Nero" + T(" in ", " in ") + c.nero + " · " + dist(c.km, 1);
+        nz.style.cssText = "background:" + ink + ";color:" + fill + ";border:1.5px solid " + fill + ";border-radius:10px;padding:1px 6px;font:700 10px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
+        nz.textContent = "Nero";
+        new maplibregl.Marker({ element: nz, anchor: "bottom", offset: [0, -28] }).setLngLat(c.lnglat).addTo(map);
       }
       return mk;
     });
@@ -455,6 +470,7 @@
     if (o.ui.slider) { o.ui.slider.max = 1000; o.ui.slider.oninput = function () { stop(); var p = show(+o.ui.slider.value / 1000 * END, false, true); if (p) o.map.jumpTo({ center: p.c }); }; }
     document.addEventListener("keydown", function (e) { if (e.code === "Space" && !(e.target.closest && e.target.closest("input,select,textarea,button"))) { e.preventDefault(); o.ui.play.click(); } });
     show(END, false, true);
+    activeReplay = { stop: stop };
     return { stop: stop, toDate: function (date) {
       var k = -1; seq.forEach(function (s, j) { if (String(D.track.features[s.f].properties.start_date).slice(0, 10) <= date) k = j; });
       if (k < 0) return null; stop(); show(seq[k].km, false, true); return seq[k].c; } };
@@ -471,6 +487,7 @@
     return !!b;
   }
   // make an elevation profile element scrubbable: press/drag shows that trail point on the map
+  var activeReplay = null;
   function scrubProfile(el, map, D, onKm) {
     var mk = null, down = false;
     function at(e) {
@@ -480,7 +497,7 @@
       if (onKm) onKm(km, p);
     }
     el.style.cursor = "ew-resize"; el.style.touchAction = "none"; el.style.userSelect = "none"; el.style.webkitUserSelect = "none";
-    el.addEventListener("pointerdown", function (e) { down = true; el.setPointerCapture(e.pointerId); at(e); });
+    el.addEventListener("pointerdown", function (e) { if (activeReplay) activeReplay.stop(); down = true; el.setPointerCapture(e.pointerId); at(e); });
     el.addEventListener("pointermove", function (e) { if (down) at(e); });
     el.addEventListener("pointerup", function () { down = false; });
     el.addEventListener("pointercancel", function () { down = false; });

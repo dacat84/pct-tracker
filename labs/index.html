@@ -120,7 +120,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=21"></script>
+<script src="pct.js?v=22"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -171,6 +171,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         $("cDay").textContent = T("Tag ", "Day ") + (i + 1);
         $("cDate").textContent = L.dfmt(d.date + "T12:00", { weekday: "short", day: "numeric", month: "long" });
         $("cToday").textContent = L.dist(d.km, 1); $("cTodayL").textContent = T("gelaufen", "hiked");
+        if (d.nero) $("cTodayL").textContent = T("gelaufen · Nero in ", "hiked · nero in ") + d.nero;
       }
       $("cTotal").textContent = L.dist(tot);
       $("cKm").textContent = L.DU() + " " + nf(L.distV(tp.km)) + " · " + nf(tp.km / D.total * 100, 1) + " %";
