@@ -33,8 +33,7 @@
     "Mt. McLoughlin": [42.4451, -122.3155], "Diamond Peak": [43.5207, -122.1496], "Three Fingered Jack": [44.4767, -121.8441],
     "Crater Lake": [42.9446, -122.1090], "Lake Tahoe": [39.0968, -120.0324], "Sierra Buttes": [39.5943, -120.6406],
     "Deep Creek Hot Springs": [34.3394, -117.1769], "Tunnel Falls": [45.5849, -121.8520], "Burney Falls": [41.0122, -121.6513],
-    "Subway Cave": [40.6839, -121.4186], "Goat Rocks": [46.5150, -121.4547],
-    "Washington Border": [45.6623, -121.8986]   // Bridge of the Gods over the Columbia
+    "Subway Cave": [40.6839, -121.4186], "Goat Rocks": [46.5150, -121.4547]
   };
   // Positions of passes and road crossings (summit coordinates), snapped to the nearest point of the
   // PCT line. Only the low crossings ("low") look for the lowest trail point nearby.
@@ -44,7 +43,11 @@
     "Pinchot Pass": [36.9358, -118.4056], "Mather Pass": [37.0263, -118.4628], "Muir Pass": [37.1120, -118.6703], "Sonora Pass": [38.3286, -119.6368],
     "Ebbetts Pass": [38.5446, -119.8131], "Carson Pass": [38.6947, -119.9890], "Donner Pass": [39.3170, -120.3290], "Bucks Summit": [39.8999, -121.1186],
     "Willamette Pass": [43.5966, -122.0373], "McKenzie Pass": [44.2603, -121.8100], "Santiam Pass": [44.4253, -121.8546], "White Pass": [46.6440, -121.3810],
-    "Snoqualmie Pass": [47.4243, -121.4135], "Stevens Pass": [47.7463, -121.0857], "Rainy Pass": [48.5157, -120.7357], "Harts Pass": [48.7210, -120.6690]
+    "Snoqualmie Pass": [47.4243, -121.4135], "Stevens Pass": [47.7463, -121.0857], "Rainy Pass": [48.5157, -120.7357], "Harts Pass": [48.7210, -120.6690],
+    // other points right on the trail (checked against komoot / Wikipedia / the state lines)
+    "Campo": [32.5897, -116.4670], "Lake Morena": [32.6858, -116.5193], "Agua Caliente": [33.3017, -116.6287], "Vasquez Rocks": [34.4878, -118.3197],
+    "Halfway Point": [40.2099, -121.3559], "Castle Crags": [41.1478, -122.3197], "Oregon Border": [42.0001, -122.9112], "Olallie Lake": [44.8079, -121.7883],
+    "Washington Border": [45.6623, -121.8986], "Kendall Katwalk": [47.4518, -121.3787], "Northern Terminus": [49.0003, -120.8021]
   };
   // Real heights (m) of summits, passes and lakes; everything else uses the trail height at that point.
   var ELEV = {
@@ -382,7 +385,7 @@
     "Tehachapi": ["Hwy 58", 35.1010, -118.2870], "Lone Pine": ["Cottonwood Pass / Horseshoe Meadows", 36.4537, -118.1734, [[36.4501, -118.1694], [36.5560, -118.1100]]],
     "Bishop": ["Kearsarge Pass / Onion Valley", 36.7735, -118.3768, [[36.7726, -118.3409], [36.8027, -118.1999], [37.0500, -118.2500]]], "Mammoth Lakes": ["Reds Meadow", 37.6153, -119.0747],
     "South Lake Tahoe": ["Echo Summit", 38.8125, -120.0302], "Truckee": ["Donner Pass (I-80)", 39.3390, -120.3440],
-    "Mount Shasta": ["I-5 bei Castle Crags", 41.1500, -122.3100], "Ashland": ["I-5 bei Callahan's", 42.0900, -122.6010],
+    "Mount Shasta": ["I-5 at Castle Crags", 41.1500, -122.3100], "Ashland": ["I-5 at Callahan's", 42.0900, -122.6010],
     "Sisters": ["Santiam Pass", 44.4253, -121.8546], "Skykomish": ["Stevens Pass", 47.7463, -121.0857],
     "Stehekin": ["High Bridge", 48.3880, -120.8410], "Mazama": ["Rainy Pass", 48.5157, -120.7357]
   };
