@@ -167,6 +167,20 @@ def init_api():
         except Exception as e:
             print(f"::warning::Token resume failed: {type(e).__name__}: {str(e)[:300]}")
 
+    # 1b) The GARMIN_TOKENS secret as a second option: after a fresh login the
+    #     cached tokens may be dead while the new secret works. On success the
+    #     secret's tokens become the cached copy for the next runs.
+    secret_store = os.path.expanduser("~/.garminconnect-secret")
+    if os.path.isfile(os.path.join(secret_store, "garmin_tokens.json")):
+        try:
+            g = Garmin()
+            g.login(secret_store)
+            print("Logged in via the GARMIN_TOKENS secret.")
+            os.makedirs(TOKENSTORE, exist_ok=True)
+            return g
+        except Exception as e:
+            print(f"::warning::Login with the GARMIN_TOKENS secret failed too: {type(e).__name__}: {str(e)[:300]}")
+
     # 2) Fallback: email + password.
     email = os.environ.get("GARMIN_EMAIL")
     password = os.environ.get("GARMIN_PASSWORD")

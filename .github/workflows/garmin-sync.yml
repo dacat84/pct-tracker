@@ -21,6 +21,7 @@ on:
 
 permissions:
   contents: write
+  issues: write   # open an issue (push notification in the GitHub app) when the sync breaks
 
 # Never two syncs at once (they would both try to commit the same files).
 concurrency:
@@ -67,6 +68,13 @@ jobs:
             echo "No Garmin tokens configured."
           fi
           [ -f ~/.garminconnect/garmin_tokens.json ] && chmod 600 ~/.garminconnect/garmin_tokens.json || true
+          # The secret is always kept as a second option: after a fresh login (new GARMIN_TOKENS)
+          # the sync falls back to it when the cached tokens no longer work.
+          if [ -n "$GARMIN_TOKENS" ]; then
+            mkdir -p ~/.garminconnect-secret && chmod 700 ~/.garminconnect-secret
+            printf '%s' "$GARMIN_TOKENS" > ~/.garminconnect-secret/garmin_tokens.json
+            chmod 600 ~/.garminconnect-secret/garmin_tokens.json
+          fi
 
       - name: Sync from Garmin Connect
         env:
@@ -103,3 +111,26 @@ jobs:
           git commit -m "Auto-update track from Garmin" || exit 0
           git pull --rebase origin main   # another commit may have landed meanwhile
           git push
+
+      # Problems show up as an issue in the repo (the GitHub app sends a push
+      # notification), and the issue closes itself once a sync works again.
+      - name: Report a broken sync
+        if: ${{ failure() && github.event_name != 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create garmin-sync --color d93f0b --description "Garmin sync problems" 2>/dev/null || true
+          if [ "$(gh issue list --label garmin-sync --state open --json number --jq length)" = "0" ]; then
+            gh issue create --label garmin-sync --title "Garmin-Sync klappt nicht" --body "Der Garmin-Sync ist fehlgeschlagen: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Meistens ist der Garmin-Login abgelaufen. Neu einloggen und das Secret GARMIN_TOKENS ersetzen, siehe scripts/GARMIN_SETUP.md (auch vom Handy aus, Abschnitt Codespaces). Bis dahin kann die Position per Chat in data/manual.json eingetragen werden."
+          fi
+
+      - name: Close the issue when the sync works again
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list --label garmin-sync --state open --json number --jq '.[].number' 2>/dev/null); do
+            gh issue close "$n" --comment "Sync läuft wieder: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          done
