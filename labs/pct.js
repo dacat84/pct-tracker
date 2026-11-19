@@ -7,15 +7,19 @@
   var SRC = qs.get("data") || "demo";
   var DIR = { demo: "data/demo/", test: "data/test/", live: "data/" }[SRC] || "data/demo/";
   var NOMINAL = 4265, MI2KM = 1.60934;
+  // Language: same setting as the live site (localStorage pctLang). EN shows miles and feet.
+  var LANG = "de"; try { LANG = localStorage.getItem("pctLang") === "en" ? "en" : "de"; } catch (e) {}
+  var EN = LANG === "en", LOC = EN ? "en-US" : "de-DE";
+  function T(de, en) { return EN ? en : de; }
 
   // Sections of the trail (km on the nominal 4265 km scale) and landmarks [mile, name, type, tier].
   var REGIONS = [
-    { de: "Südkalifornien", en: "Southern California", short: "Wüste", a: 0, b: 1130, c: "#e0a06a" },
-    { de: "Zentralsierra", en: "Central Sierra", short: "Sierra", a: 1130, b: 1637, c: "#9dbf78" },
-    { de: "Nördliche Sierra", en: "Northern Sierra", short: "Nördl. Sierra", a: 1637, b: 2270, c: "#7fb08a" },
-    { de: "Nordkalifornien", en: "Northern California", short: "Nordkalifornien", a: 2270, b: 2720, c: "#6fae9e" },
-    { de: "Oregon", en: "Oregon", short: "Oregon", a: 2720, b: 3455, c: "#8aa4c0" },
-    { de: "Washington", en: "Washington", short: "Washington", a: 3455, b: 4265, c: "#b39ac8" }
+    { de: "Südkalifornien", en: "Southern California", short: "Wüste", en_s: "Desert", a: 0, b: 1130, c: "#e0a06a" },
+    { de: "Zentralsierra", en: "Central Sierra", short: "Sierra", en_s: "Sierra", a: 1130, b: 1637, c: "#9dbf78" },
+    { de: "Nördliche Sierra", en: "Northern Sierra", short: "Nördl. Sierra", en_s: "N. Sierra", a: 1637, b: 2270, c: "#7fb08a" },
+    { de: "Nordkalifornien", en: "Northern California", short: "Nordkalifornien", en_s: "NorCal", a: 2270, b: 2720, c: "#6fae9e" },
+    { de: "Oregon", en: "Oregon", short: "Oregon", en_s: "Oregon", a: 2720, b: 3455, c: "#8aa4c0" },
+    { de: "Washington", en: "Washington", short: "Washington", en_s: "Washington", a: 3455, b: 4265, c: "#b39ac8" }
   ];
   var LM = [[0,"Campo","term",1],[20,"Lake Morena","water",3],[42,"Mt. Laguna","town",2],[77,"Scissors Crossing","pass",3],[109,"Warner Springs","town",3],[127,"Agua Caliente","park",3],[152,"Paradise Valley Café","town",3],[179,"Idyllwild","town",2],[187,"San Jacinto Peak","peak",2],[210,"San Gorgonio Pass","pass",2],[266,"Big Bear","town",2],[308,"Deep Creek Hot Springs","water",2],[342,"Cajon Pass","pass",2],[369,"Wrightwood","town",2],[379,"Mt. Baden-Powell","peak",1],[444,"Acton","town",3],[452,"Vasquez Rocks","park",3],[454,"Agua Dulce","town",2],[517,"Mojave Desert","desert",2],[566,"Tehachapi","town",2],[652,"Walker Pass","pass",2],[702,"Kennedy Meadows S","town",1],[750,"Cottonwood Pass","pass",3],[767,"Mt. Whitney","peak",1],[779,"Forester Pass","pass",1],[792,"Glen Pass","pass",2],[807,"Pinchot Pass","pass",3],[815,"Mather Pass","pass",2],[843,"Muir Pass","pass",2],[857,"Muir Trail Ranch","town",3],[878,"Vermilion Valley Resort","town",3],[906,"Reds Meadow","town",3],[910,"Mammoth Lakes","town",2],[942,"Tuolumne Meadows","town",1],[1017,"Sonora Pass","pass",2],[1032,"Ebbetts Pass","pass",3],[1077,"Carson Pass","pass",3],[1090,"Lake Tahoe","water",1],[1094,"South Lake Tahoe","town",2],[1153,"Donner Pass","pass",2],[1195,"Sierra Buttes","peak",3],[1250,"Bucks Summit","pass",3],[1287,"Belden","town",3],[1325,"Halfway Point","term",1],[1352,"Lassen Peak","peak",2],[1378,"Subway Cave","water",3],[1410,"Burney","town",3],[1418,"Burney Falls","water",2],[1500,"Mt. Shasta","peak",1],[1501,"Castle Crags","park",2],[1599,"Etna","town",3],[1656,"Seiad Valley","town",2],[1690,"Oregon Border","term",1],[1726,"Ashland","town",2],[1775,"Mt. McLoughlin","peak",3],[1820,"Crater Lake","water",1],[1880,"Diamond Peak","peak",3],[1907,"Willamette Pass","pass",3],[1965,"Three Sisters","peak",2],[1990,"McKenzie Pass","pass",3],[2001,"Santiam Pass","pass",3],[2005,"Three Fingered Jack","peak",3],[2030,"Mt. Jefferson","peak",2],[2045,"Olallie Lake","water",3],[2097,"Mt. Hood","peak",1],[2098,"Timberline Lodge","town",2],[2120,"Tunnel Falls","water",3],[2144,"Cascade Locks","town",1],[2225,"Mt. Adams","peak",2],[2265,"Goat Rocks","peak",2],[2295,"White Pass","pass",3],[2320,"Mt. Rainier","peak",2],[2393,"Snoqualmie Pass","pass",2],[2400,"Kendall Katwalk","peak",3],[2461,"Stevens Pass","pass",2],[2530,"Glacier Peak","peak",2],[2572,"Stehekin","town",2],[2591,"Rainy Pass","pass",3],[2620,"Harts Pass","pass",3],[2650,"Northern Terminus","term",1]];
   // Features that are not on the trail itself: real position. side = a side trip from the trail (dashed link).
@@ -27,10 +31,10 @@
     "Crater Lake": [42.9446, -122.1090], "Lake Tahoe": [39.0968, -120.0324], "Sierra Buttes": [39.5943, -120.6406]
   };
   var TYPE = {
-    term: { de: "Terminus", c: "#ff4d2e", i: "★" }, town: { de: "Ort / Resupply", c: "#f5b301", i: "⌂" },
-    pass: { de: "Pass", c: "#7ed6a5", i: "⋀" }, peak: { de: "Gipfel", c: "#ffffff", i: "▲" },
-    water: { de: "Wasser", c: "#6ec6ff", i: "≈" }, park: { de: "Park / Wildnis", c: "#9dbf78", i: "♣" },
-    desert: { de: "Wüste", c: "#e0a06a", i: "☀" }
+    term: { de: "Terminus", en: "Terminus", c: "#ff4d2e", i: "★" }, town: { de: "Ort / Resupply", en: "Town / resupply", c: "#f5b301", i: "⌂" },
+    pass: { de: "Pass", en: "Pass", c: "#7ed6a5", i: "⋀" }, peak: { de: "Gipfel", en: "Peak", c: "#ffffff", i: "▲" },
+    water: { de: "Wasser / Sehenswert", en: "Water / feature", c: "#6ec6ff", i: "≈" }, park: { de: "Park / Wildnis", en: "Park / wilderness", c: "#9dbf78", i: "♣" },
+    desert: { de: "Wüste", en: "Desert", c: "#e0a06a", i: "☀" }
   };
 
   function hav(a, b, c, d) {
@@ -38,7 +42,13 @@
     return 2 * R * Math.asin(Math.sqrt(Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2));
   }
   function J(p) { return fetch(BASE + p, { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error(p); return r.json(); }); }
-  function nf(v, d) { return Number(v).toLocaleString("de-DE", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function nf(v, d) { return Number(v).toLocaleString(LOC, { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  // distances / elevations in the right unit: dist(km) -> "12 km" | "7.5 mi", elev(m) -> "1.600 m" | "5,249 ft"
+  function distV(km) { return EN ? km / MI2KM : km; } function DU() { return EN ? "mi" : "km"; }
+  function dist(km, d) { return nf(distV(km), d || 0) + " " + DU(); }
+  function elevV(m) { return EN ? m * 3.28084 : m; } function EU() { return EN ? "ft" : "m"; }
+  function elev(m) { return nf(elevV(m), 0) + " " + EU(); }
+  function dfmt(d, o) { return new Date(d).toLocaleString(LOC, o); }
 
   function snap(pts, lat, lon) {
     var best = null, bd = 1e18;
@@ -245,14 +255,30 @@
       var el = document.createElement("div"); el.className = "tw";
       el.innerHTML = '<i style="background:' + (theme.dot || "#f5b301") + '"></i><span style="color:' + (theme.text || "#fff") + ";text-shadow:" + (theme.halo || "0 1px 3px #000,0 0 8px rgba(0,0,0,.7)") + '">' + t[0] + "</span>";
       var pop = new maplibregl.Popup({ offset: 12, className: "tw-pop", maxWidth: "280px" }).setHTML(
-        "<h4>" + t[0] + '</h4><div class="m">' + (direct ? "Direkt am Trail · Trail-km " + nf(s ? s.km : 0)
-          : (acc ? "Zugang: " + acc[0] : "Nächster Trailpunkt") + " · Trail-km " + nf(s ? s.km : 0) + "<br>ca. " + nf(off, off < 10 ? 1 : 0) + " km Luftlinie bis in den Ort") + "</div>" +
-        t[3] + '<div class="n">Stand Planung, vor Ort gilt FarOut.</div>');
+        "<h4>" + t[0] + '</h4><div class="m">' + (direct ? T("Direkt am Trail", "Right on the trail") + " · Trail-" + DU() + " " + nf(distV(s ? s.km : 0))
+          : (acc ? T("Zugang: ", "Access: ") + acc[0] : T("Nächster Trailpunkt", "Nearest trail point")) + " · Trail-" + DU() + " " + nf(distV(s ? s.km : 0)) + "<br>" + T("ca. ", "approx. ") + nf(distV(off), off < 10 ? 1 : 0) + " " + DU() + T(" Luftlinie bis in den Ort", " to town (straight line)")) + "</div>" +
+        t[3] + '<div class="n">' + T("Stand Planung, vor Ort gilt FarOut.", "From planning, check FarOut on trail.") + "</div>");
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-6, 0] }).setLngLat([t[2], t[1]]).setPopup(pop).addTo(map);
     });
     D.landmarks.forEach(function (l) { if (l.side) lines.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: [[l.lon, l.lat], l.trail] } }); });
     map.addSource("tw-links", { type: "geojson", data: lines });
     map.addLayer({ id: "tw-links", type: "line", source: "tw-links", paint: { "line-color": theme.link || "#f5b301", "line-width": 1.3, "line-opacity": .8, "line-dasharray": [2, 2] } });
+  }
+
+  // ---- Trail landmarks (peaks, passes, water, parks, termini), clickable ----
+  function addLandmarks(map, D, theme) {
+    theme = theme || {};
+    D.landmarks.filter(function (l) { return l.type !== "town"; }).forEach(function (l) {
+      var Ty = TYPE[l.type] || TYPE.town, el = document.createElement("div");
+      el.className = "lm " + l.type + " t" + l.tier; el.style.cursor = "pointer"; el.style.pointerEvents = "auto";
+      el.innerHTML = "<i style='background:" + (theme.dot ? theme.dot(l) : Ty.c) + "'></i><span>" + l.name + "</span>";
+      if (l.type === "peak" && !theme.dot) el.firstChild.style.background = "transparent";
+      var pop = new maplibregl.Popup({ offset: 10, className: "tw-pop", maxWidth: "260px" }).setHTML(
+        "<h4>" + l.name + '</h4><div class="m">' + Ty[LANG] + " · " + elev(l.m) + "</div>" +
+        (l.side ? T("Abstecher vom Trail bei ", "Side trip from the trail at ") : T("Am Trail bei ", "On the trail at ")) + "Trail-" + DU() + " " + nf(distV(l.km)) +
+        (l.type === "term" ? "" : "<br>" + T("Ab Campo ", "From Campo ") + dist(l.km) + T(", bis Kanada ", ", to Canada ") + dist(D.total - l.km)));
+      new maplibregl.Marker({ element: el, anchor: "left", offset: [-5, 0] }).setLngLat([l.lon, l.lat]).setPopup(pop).addTo(map);
+    });
   }
 
   // ---- Tents where each day ended (except the current position) ----
@@ -261,13 +287,13 @@
     var fill = theme.fill || "#f5b301", ink = theme.ink || "#14202a", list = D.camps.slice(0, -1);
     return list.map(function (c) {
       var el = document.createElement("div"); el.className = "camp"; el.dataset.day = c.day;
-      el.title = "Nacht nach Tag " + c.day + " · " + new Date(c.date + "T12:00").toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }) + " · " + nf(c.km, 1) + " km";
+      el.title = T("Nacht nach Tag ", "Night after day ") + c.day + " · " + dfmt(c.date + "T12:00", { weekday: "short", day: "numeric", month: "short" }) + " · " + dist(c.km, 1);
       el.style.cssText = "width:32px;height:26px;cursor:default;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))";
       el.innerHTML = '<svg viewBox="0 0 22 18" width="32" height="26"><path d="M1.5 16.5 L11 2 L20.5 16.5 Z" fill="' + fill + '" stroke="' + ink + '" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 2 L11 16.5" stroke="' + ink + '" stroke-width="1.1"/><path d="M8.2 16.5 L11 10.5 L13.8 16.5 Z" fill="' + ink + '"/></svg>';
       var mk = new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(c.lnglat).addTo(map);
       if (c.zero) {   // rest days: counter at the nearby town (or at the tent if there is none)
         var z = document.createElement("div"); z.className = "camp"; z.dataset.day = c.day;
-        z.title = c.zero + (c.zero === 1 ? " Zero-Tag" : " Zero-Tage") + (c.town ? " in " + c.town.name : "");
+        z.title = c.zero + (c.zero === 1 ? " Zero-" + T("Tag", "day") : " Zero-" + T("Tage", "days")) + (c.town ? " in " + c.town.name : "");
         z.style.cssText = "background:" + fill + ";color:" + ink + ";border:2px solid " + ink + ";border-radius:12px;padding:2px 7px;font:700 11px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
         z.textContent = c.zero + " × Zero";
         new maplibregl.Marker({ element: z, anchor: c.town ? "top" : "bottom", offset: c.town ? [0, 10] : [0, -28] }).setLngLat(c.town ? c.town.lnglat : c.lnglat).addTo(map);
@@ -279,21 +305,26 @@
   function dayColor(a, b) { return ["case", ["==", ["%", ["coalesce", ["get", "dayIdx"], 0], 2], 0], a, b]; }
 
   // ---- Design switcher (Reportage / Tagebuch / Instrumente) + data source ----
-  var DESIGNS = [["", "Reportage"], ["tagebuch/", "Tagebuch"], ["statistik/", "Statistik"]];
+  var DESIGNS = [["", "Reportage", "Story"], ["tagebuch/", "Tagebuch", "Journal"], ["statistik/", "Statistik", "Statistics"]];
   function switcher(active) {
     var css = document.createElement("style");
     css.textContent = ".lab{position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:9000;display:flex;align-items:center;gap:2px;background:rgba(14,18,22,.88);color:#fff;border-radius:22px;padding:4px;font:500 13px/1 system-ui,-apple-system,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.25);backdrop-filter:blur(6px)}" +
       ".lab a{color:#fff;text-decoration:none;padding:7px 13px;border-radius:16px;white-space:nowrap}.lab a:hover{background:rgba(255,255,255,.12)}.lab a.on{background:#e0452f}" +
-      ".lab select{background:transparent;color:#ffd2c4;border:0;font:600 12px system-ui;margin:0 6px;cursor:pointer}.lab select option{color:#000}" +
+      ".lab .lg{border:1px solid rgba(255,255,255,.35);font-weight:700;padding:6px 10px}.lab select{background:transparent;color:#ffd2c4;border:0;font:600 12px system-ui;margin:0 6px;cursor:pointer}.lab select option{color:#000}" +
       "@media(max-width:700px){.lab{top:auto;bottom:10px}.lab select{display:none}}";
     document.head.appendChild(css);
     var q = SRC !== "demo" ? "?data=" + SRC : "";
     var el = document.createElement("div"); el.className = "lab";
-    el.innerHTML = DESIGNS.map(function (d, i) { return '<a href="' + BASE + "labs/" + d[0] + q + '" class="' + (i === active ? "on" : "") + '">' + d[1] + "</a>"; }).join("") +
-      '<select title="Datenquelle"><option value="demo">Demo-Daten</option><option value="test">Meine Testrunden</option><option value="live">Live</option></select>';
+    el.innerHTML = DESIGNS.map(function (d, i) { return '<a href="' + BASE + "labs/" + d[0] + q + '" class="' + (i === active ? "on" : "") + '">' + (EN ? d[2] : d[1]) + "</a>"; }).join("") +
+      '<select title="' + T("Datenquelle", "Data source") + '"><option value="demo">' + T("Demo-Daten", "Demo data") + '</option><option value="test">' + T("Meine Testrunden", "My test hikes") + '</option><option value="live">Live</option></select>' +
+      '<a href="#" class="lg">' + (EN ? "DE" : "EN") + "</a>";
     var sel = el.querySelector("select"); sel.value = SRC;
     sel.onchange = function () { var u = new URL(location.href); u.searchParams.set("data", sel.value); location.href = u; };
+    el.querySelector(".lg").onclick = function (e) { e.preventDefault(); try { localStorage.setItem("pctLang", EN ? "de" : "en"); } catch (x) {} location.reload(); };
     document.body.appendChild(el);
+    document.documentElement.lang = LANG;
+    // static texts: <x data-de="…" data-en="…">
+    document.querySelectorAll("[data-en]").forEach(function (n) { n.innerHTML = EN ? n.getAttribute("data-en") : (n.getAttribute("data-de") || n.innerHTML); });
   }
 
   // ---- Photo pop-up (no jump to Flickr) ----
@@ -307,7 +338,7 @@
       document.head.appendChild(css); }
     var lb = document.createElement("div"); lb.className = "lb";
     function show() {
-      var p = list[i], d = p.taken ? new Date(p.taken.replace(" ", "T")).toLocaleString("de-DE", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) + " Uhr" : "";
+      var p = list[i], d = p.taken ? dfmt(p.taken.replace(" ", "T"), { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) + T(" Uhr", "") : "";
       lb.innerHTML = '<span class="x">×</span>' + (list.length > 1 ? '<button class="p">‹</button><button class="n">›</button>' : "") +
         '<img src="' + (p.l || p.m) + '" alt=""><div class="cap">' + [p.title, d].filter(Boolean).join(" · ") + "</div>";
       var pb = lb.querySelector(".p"), nb = lb.querySelector(".n");
@@ -358,7 +389,7 @@
       if (force || now - lastDraw > 140 || cur >= END) { var src = o.map.getSource(o.source || "trk"); if (src) src.setData(cur >= END ? D.track : trackUpTo(p)); lastDraw = now; }
       if (o.marker) o.marker.setLngLat(p.c);
       if (o.ui.slider) o.ui.slider.value = Math.round(cur / (END || 1) * 1000);
-      if (o.ui.clock) o.ui.clock.textContent = new Date(p.t).toLocaleString("de-DE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Los_Angeles" }) + " Uhr";
+      if (o.ui.clock) o.ui.clock.textContent = dfmt(p.t, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Los_Angeles" }) + T(" Uhr", "");
       var f = D.track.features[s.f], day = String(f.properties.start_date).slice(0, 10), dn = D.days.findIndex(function (d) { return d.date === day; });
       var dnow = dn + 1, done = cur >= END;   // tents only where the night is already behind (or reached)
       document.querySelectorAll(".camp").forEach(function (c) { var d = +c.dataset.day; c.style.visibility = (done || d < dnow || (d === dnow && dayEnds.some(function (k) { return Math.abs(k - cur) < 1e-6; }))) ? "visible" : "hidden"; });
@@ -382,7 +413,7 @@
           var camp = stopAt !== undefined ? (D.camps || [])[dayEnds.indexOf(stopAt)] : null, zero = camp ? camp.zero : 0;
           if (stopAt !== undefined) { nxt = stopAt; restUntil = now + NIGHT_MS * (1 + zero) / SPEEDS[sp]; }
           p2 = show(nxt, true);
-          if (stopAt !== undefined && o.ui.clock) o.ui.clock.textContent = zero ? zero + (zero === 1 ? " Zero-Tag" : " Zero-Tage") + (camp.town ? " in " + camp.town.name : "") + " · Zzz" : "Nachtlager · Zzz";
+          if (stopAt !== undefined && o.ui.clock) o.ui.clock.textContent = zero ? zero + " Zero-" + (zero === 1 ? T("Tag", "day") : T("Tage", "days")) + (camp.town ? " in " + camp.town.name : "") + " · Zzz" : T("Nachtlager", "Camp") + " · Zzz";
         }
         var a = Math.min(1, dt / 650), za = Math.min(1, dt / 900);      // smoothing for camera and zoom
         cam = [cam[0] + (p2.c[0] - cam[0]) * a, cam[1] + (p2.c[1] - cam[1]) * a];
@@ -406,6 +437,10 @@
   // trail point for a position, or null when it is more than 50 km off the trail
   function trailPoint(D, ll) { var s = snap(D.pts, ll[1], ll[0]); return s && s.off <= 50 ? s : null; }
 
+  function reg(g) { return EN ? g.en : g.de; }
+  function regS(g) { return EN ? g.en_s : g.short; }
+
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, BASE: BASE };
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, BASE: BASE,
+    EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();

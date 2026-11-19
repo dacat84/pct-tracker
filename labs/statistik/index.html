@@ -56,36 +56,36 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
 <body>
 <div class="wrap">
   <header>
-    <div><h1>Statistik</h1><div class="sub"><span class="tag" id="dayTag">TAG –</span><span>PACIFIC CREST TRAIL · CAMPO → KANADA</span></div></div>
-    <div class="ctl"><button id="play" title="Abspielen (Leertaste)">▶</button><button id="speed">1×</button><span id="clock"></span></div>
+    <div><h1 data-de="Statistik" data-en="Statistics">Statistik</h1><div class="sub"><span class="tag" id="dayTag">TAG –</span><span data-de="PACIFIC CREST TRAIL · CAMPO → KANADA" data-en="PACIFIC CREST TRAIL · CAMPO → CANADA">PACIFIC CREST TRAIL · CAMPO → KANADA</span></div></div>
+    <div class="ctl"><button id="play">▶</button><button id="speed">1×</button><span id="clock"></span></div>
   </header>
   <div class="hero">
-    <div class="l">Gelaufen</div>
+    <div class="l" data-de="Gelaufen" data-en="Hiked">Gelaufen</div>
     <div class="v" id="hTot">–</div>
     <div class="bar"><i id="hBar" style="width:0"></i></div>
     <div class="r"><b id="hPct">–</b><span id="hLeft">–</span></div>
   </div>
   <div class="tiles">
-    <div class="tile"><span>Höhenmeter</span><b id="tUp">–</b><em id="tUp2"></em></div>
-    <div class="tile"><span>Gesamtzeit</span><b id="tTime">–</b><em id="tTime2"></em></div>
-    <div class="tile"><span>Ø pro Tag</span><b id="tAvg">–</b><em id="tAvg2"></em></div>
-    <div class="tile"><span>Ø Tempo</span><b id="tPace">–</b><em id="tPace2"></em></div>
-    <div class="tile"><span>Tage unterwegs</span><b id="tDays">–</b><em>aktive Tage</em></div>
-    <div class="tile"><span>Zero-Tage</span><b id="tZero">–</b><em>Ruhetage</em></div>
-    <div class="tile"><span>Längster Tag</span><b id="tMax">–</b><em id="tMax2"></em></div>
-    <div class="tile"><span>Kürzester Tag</span><b id="tMin">–</b><em id="tMin2"></em></div>
+    <div class="tile"><span data-de="Höhenmeter" data-en="Elevation gain">Höhenmeter</span><b id="tUp">–</b><em id="tUp2"></em></div>
+    <div class="tile"><span data-de="Gesamtzeit" data-en="Total time">Gesamtzeit</span><b id="tTime">–</b><em id="tTime2"></em></div>
+    <div class="tile"><span data-de="Ø pro Tag" data-en="Ø per day">Ø pro Tag</span><b id="tAvg">–</b><em id="tAvg2"></em></div>
+    <div class="tile"><span data-de="Ø Tempo" data-en="Ø pace">Ø Tempo</span><b id="tPace">–</b><em id="tPace2"></em></div>
+    <div class="tile"><span data-de="Tage unterwegs" data-en="Days on trail">Tage unterwegs</span><b id="tDays">–</b><em data-de="aktive Tage" data-en="active days">aktive Tage</em></div>
+    <div class="tile"><span data-de="Zero-Tage" data-en="Zero days">Zero-Tage</span><b id="tZero">–</b><em data-de="Ruhetage" data-en="rest days">Ruhetage</em></div>
+    <div class="tile"><span data-de="Längster Tag" data-en="Longest day">Längster Tag</span><b id="tMax">–</b><em id="tMax2"></em></div>
+    <div class="tile"><span data-de="Kürzester Tag" data-en="Shortest day">Kürzester Tag</span><b id="tMin">–</b><em id="tMin2"></em></div>
   </div>
   <div class="grid">
     <div class="panel"><div id="map"></div></div>
-    <div class="panel"><h3><span>Tag für Tag</span><span>antippen zeigt den Tag</span></h3><div class="days"><div class="dl" id="days"></div></div></div>
+    <div class="panel"><h3><span data-de="Tag für Tag" data-en="Day by day">Tag für Tag</span><span data-de="antippen zeigt den Tag" data-en="tap to show the day">antippen zeigt den Tag</span></h3><div class="days"><div class="dl" id="days"></div></div></div>
   </div>
-  <div class="panel"><h3><span>Höhenprofil · Campo → Kanada</span><span id="profInfo"></span></h3><div class="prof" id="prof"></div><div class="tip" id="tip"></div></div>
+  <div class="panel"><h3><span data-de="Höhenprofil · Campo → Kanada" data-en="Elevation profile · Campo → Canada">Höhenprofil · Campo → Kanada</span><span id="profInfo"></span></h3><div class="prof" id="prof"></div><div class="tip" id="tip"></div></div>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../pct.js?v=14"></script>
+<script src="../pct.js?v=16"></script>
 <script>
 (function () {
-  var L = PCTLab, nf = L.nf, $ = function (id) { return document.getElementById(id); };
+  var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
   L.switcher(2);
   var AMB = "#ffb020", KM2MI = 0.621371;
   var map = new maplibregl.Map({
@@ -96,7 +96,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
   function hm(sec) { var h = Math.floor(sec / 3600), m = Math.round(sec % 3600 / 60); return (h ? h + " h " : "") + m + " min"; }
-  function dShort(d) { return new Date(d + "T12:00").toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }); }
+  function dShort(d) { return L.dfmt(d + "T12:00", { weekday: "short", day: "numeric", month: "short" }); }
 
   Promise.all([L.load(), new Promise(function (r) { map.on("load", r); })]).then(function (r) {
     var D = r[0], days = D.days;
@@ -105,16 +105,18 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     var mx = days.reduce(function (m, d) { return !m || d.km > m.km ? d : m; }, null), mn = days.reduce(function (m, d) { return !m || d.km < m.km ? d : m; }, null);
     var span = n ? Math.round((Date.parse(days[n - 1].date) - Date.parse(days[0].date)) / 86400000) + 1 : 0;
 
-    $("hTot").innerHTML = nf(D.walkedKm, 1) + " km<small>" + nf(D.walkedKm * KM2MI, 1) + " mi</small>";
+    function two(km, d) { return L.EN ? [nf(km * KM2MI, d) + " mi", nf(km, d) + " km"] : [nf(km, d) + " km", nf(km * KM2MI, d) + " mi"]; }
+    function twoE(m) { return L.EN ? [nf(m * 3.28084) + " ft", nf(m) + " m"] : [nf(m) + " m", nf(m * 3.28084) + " ft"]; }
+    var h2 = two(D.walkedKm, 1); $("hTot").innerHTML = h2[0] + "<small>" + h2[1] + "</small>";
     var pct = D.walkedKm / D.total * 100; $("hBar").style.width = Math.min(100, pct) + "%";
-    $("hPct").textContent = nf(pct, 1) + " % des PCT"; $("hLeft").textContent = "noch " + nf(Math.max(0, D.total - D.walkedKm)) + " km";
-    $("tUp").textContent = nf(up) + " m"; $("tUp2").textContent = nf(up * 3.28084) + " ft";
-    $("tTime").textContent = hm(sec); $("tTime2").textContent = acts + " Aktivitäten";
-    $("tAvg").textContent = (n ? nf(D.walkedKm / n, 1) : "0") + " km"; $("tAvg2").textContent = (n ? nf(D.walkedKm / n * KM2MI, 1) : "0") + " mi";
-    $("tPace").textContent = (sec ? nf(D.walkedKm / (sec / 3600), 1) : "0") + " km/h"; $("tPace2").textContent = (sec ? nf(D.walkedKm / (sec / 3600) * KM2MI, 1) : "0") + " mph";
+    $("hPct").textContent = nf(pct, 1) + T(" % des PCT", " % of the PCT"); $("hLeft").textContent = T("noch ", "") + L.dist(Math.max(0, D.total - D.walkedKm)) + T("", " to go");
+    var u2 = twoE(up); $("tUp").textContent = u2[0]; $("tUp2").textContent = u2[1];
+    $("tTime").textContent = hm(sec); $("tTime2").textContent = acts + T(" Aktivitäten", " activities");
+    var a2 = two(n ? D.walkedKm / n : 0, 1); $("tAvg").textContent = a2[0]; $("tAvg2").textContent = a2[1];
+    var v = sec ? D.walkedKm / (sec / 3600) : 0; $("tPace").textContent = L.EN ? nf(v * KM2MI, 1) + " mph" : nf(v, 1) + " km/h"; $("tPace2").textContent = L.EN ? nf(v, 1) + " km/h" : nf(v * KM2MI, 1) + " mph";
     $("tDays").textContent = n; $("tZero").textContent = Math.max(0, span - n);
-    $("tMax").textContent = mx ? nf(mx.km, 1) + " km" : "–"; $("tMax2").textContent = mx ? nf(mx.km * KM2MI, 1) + " mi · " + hm(mx.sec) + " · " + dShort(mx.date) : "";
-    $("tMin").textContent = mn ? nf(mn.km, 1) + " km" : "–"; $("tMin2").textContent = mn ? nf(mn.km * KM2MI, 1) + " mi · " + hm(mn.sec) + " · " + dShort(mn.date) : "";
+    $("tMax").textContent = mx ? two(mx.km, 1)[0] : "–"; $("tMax2").textContent = mx ? two(mx.km, 1)[1] + " · " + hm(mx.sec) + " · " + dShort(mx.date) : "";
+    $("tMin").textContent = mn ? two(mn.km, 1)[0] : "–"; $("tMin2").textContent = mn ? two(mn.km, 1)[1] + " · " + hm(mn.sec) + " · " + dShort(mn.date) : "";
 
     map.addSource("pct", { type: "geojson", data: D.line });
     map.addLayer({ id: "pct", type: "line", source: "pct", paint: { "line-color": "#3a8f9a", "line-width": 1.2, "line-dasharray": [2, 2] } });
@@ -130,8 +132,8 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     // day by day (newest first), click = show that day
     var mxk = mx ? mx.km : 1;
     $("days").innerHTML = n ? days.slice().reverse().map(function (d) {
-      return '<div class="row" data-d="' + d.date + '"><div class="d">' + dShort(d.date) + '</div><div class="b"><i style="width:' + (d.km / mxk * 100) + '%"></i></div><div class="k">' + nf(d.km, 1) + " km <small>· ↑ " + nf(d.up) + " m</small></div></div>";
-    }).join("") : '<div class="d" style="grid-column:1/-1">Noch keine Etappen. Start am 22. April 2027.</div>';
+      return '<div class="row" data-d="' + d.date + '"><div class="d">' + dShort(d.date) + '</div><div class="b"><i style="width:' + (d.km / mxk * 100) + '%"></i></div><div class="k">' + L.dist(d.km, 1) + " <small>· ↑ " + L.elev(d.up) + "</small></div></div>";
+    }).join("") : '<div class="d" style="grid-column:1/-1">' + T("Noch keine Etappen. Start am 22. April 2027.", "No stages yet. Start on April 22, 2027.") + "</div>";
     $("days").querySelectorAll(".row").forEach(function (r) { r.onclick = function () { var c = rp.toDate(r.dataset.d); if (c) map.flyTo({ center: c, zoom: 11 }); }; });
     function markDay(date) { $("days").querySelectorAll(".row").forEach(function (r) { r.classList.toggle("on", r.dataset.d === date); }); }
 
@@ -141,8 +143,8 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     var path = pts.map(function (p, i) { return (i ? "L" : "M") + X(p.km).toFixed(1) + " " + Y(p.m).toFixed(1); }).join("");
     function drawProf(curKm) {
       var s = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" style="height:' + H + 'px">';
-      for (var m = 0; m <= mxh; m += 1000) s += '<line x1="0" x2="' + W + '" y1="' + Y(m) + '" y2="' + Y(m) + '" stroke="#1f252b"/><text x="4" y="' + (Y(m) - 3) + '" font-family="JetBrains Mono" font-size="10" fill="#55606a">' + m + " m</text>";
-      D.regions.forEach(function (g) { s += '<line x1="' + X(g.ka) + '" x2="' + X(g.ka) + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#262d34"/><text x="' + (X(g.ka) + 4) + '" y="' + (H - 9) + '" font-family="JetBrains Mono" font-size="10" letter-spacing="1" fill="#7d8790">' + g.short.toUpperCase() + "</text>"; });
+      for (var m = 0; m <= mxh; m += 1000) s += '<line x1="0" x2="' + W + '" y1="' + Y(m) + '" y2="' + Y(m) + '" stroke="#1f252b"/><text x="4" y="' + (Y(m) - 3) + '" font-family="JetBrains Mono" font-size="10" fill="#55606a">' + L.elev(m) + "</text>";
+      D.regions.forEach(function (g) { s += '<line x1="' + X(g.ka) + '" x2="' + X(g.ka) + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#262d34"/><text x="' + (X(g.ka) + 4) + '" y="' + (H - 9) + '" font-family="JetBrains Mono" font-size="10" letter-spacing="1" fill="#7d8790">' + L.regS(g).toUpperCase() + "</text>"; });
       s += '<path d="' + path + "L" + W + " " + (H - padB) + "L0 " + (H - padB) + 'Z" fill="#1a2026"/><path d="' + path + '" fill="none" stroke="#3a8f9a" stroke-width="1.2" vector-effect="non-scaling-stroke"/>';
       s += '<clipPath id="dn"><rect x="0" y="0" width="' + X(curKm) + '" height="' + H + '"/></clipPath><g clip-path="url(#dn)"><path d="' + path + "L" + W + " " + (H - padB) + "L0 " + (H - padB) + 'Z" fill="rgba(255,176,32,.18)"/><path d="' + path + '" fill="none" stroke="' + AMB + '" stroke-width="2" vector-effect="non-scaling-stroke"/></g>';
       var lastX = -1e9;
@@ -152,25 +154,25 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
       });
       var cp = L.atKm(pts, curKm);
       s += '<line x1="' + X(curKm) + '" x2="' + X(curKm) + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#ff4d2e" stroke-width="1.5" vector-effect="non-scaling-stroke"/><circle cx="' + X(curKm) + '" cy="' + Y(cp.m) + '" r="5" fill="#ff4d2e" stroke="#fff" stroke-width="2"/></svg>';
-      $("prof").innerHTML = s; $("profInfo").textContent = "km " + nf(curKm) + " · " + nf(cp.m) + " m";
+      $("prof").innerHTML = s; $("profInfo").textContent = L.DU() + " " + nf(L.distV(curKm)) + " · " + L.elev(cp.m);
     }
     $("prof").onmousemove = function (e) {
       var r = $("prof").getBoundingClientRect(), km = (e.clientX - r.left) / r.width * D.total, p = L.atKm(pts, km), tip = $("tip");
       var near = D.landmarks.filter(function (l) { return Math.abs(l.km - km) < D.total / 120; })[0];
       tip.style.display = "block"; tip.style.left = (e.clientX - r.left) + "px"; tip.style.top = (e.clientY - r.top + 34) + "px";
-      tip.textContent = "km " + nf(km) + " · " + nf(p.m) + " m" + (near ? " · " + near.name : "");
+      tip.textContent = L.DU() + " " + nf(L.distV(km)) + " · " + L.elev(p.m) + (near ? " · " + near.name : "");
     };
     $("prof").onmouseleave = function () { $("tip").style.display = "none"; };
 
     var lastKm = -1e9;
     var rp = L.replay({ map: map, D: D, marker: mk, ui: { play: $("play"), speed: $("speed"), clock: $("clock") },
       onUpdate: function (s) {
-        $("dayTag").textContent = "TAG " + (s.dayNo || 0);
+        $("dayTag").textContent = T("TAG ", "DAY ") + (s.dayNo || 0);
         var sn = L.trailPoint(D, s.lnglat) || D.here;
         var km = sn ? sn.km : 0; if (Math.abs(km - lastKm) > 2 || s.end) { drawProf(km); lastKm = km; }
         if (s.date !== markDay.cur) { markDay.cur = s.date; markDay(s.date); }
       } });
-    if (!D.track.features.length) { drawProf(0); $("clock").textContent = "Start am 22. April 2027"; $("dayTag").textContent = "TAG 0"; }
+    if (!D.track.features.length) { drawProf(0); $("clock").textContent = T("Start am 22. April 2027", "Start on April 22, 2027"); $("dayTag").textContent = T("TAG 0", "DAY 0"); }
   });
 })();
 </script>
