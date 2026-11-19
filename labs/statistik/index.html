@@ -88,7 +88,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
   <div class="panel"><h3><span data-de="Höhenprofil · Campo → Kanada" data-en="Elevation profile · Campo → Canada">Höhenprofil · Campo → Kanada</span><span id="profInfo"></span></h3><div class="prof" id="prof"></div><div class="tip" id="tip"></div></div>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../pct.js?v=31"></script>
+<script src="../pct.js?v=32"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -161,7 +161,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     var W = 1400, H = 230, padB = 26, padT = 34, pts = D.pts, mxh = 0; pts.forEach(function (p) { if (p.m > mxh) mxh = p.m; }); mxh = Math.ceil(mxh / 500) * 500;
     function X(km) { return km / D.total * W; } function Y(m) { return padT + (1 - m / mxh) * (H - padT - padB); }
     var path = pts.map(function (p, i) { return (i ? "L" : "M") + X(p.km).toFixed(1) + " " + Y(p.m).toFixed(1); }).join("");
-    function drawProf(curKm) {
+    function drawProf(curKm, prvKm) {
       var s = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" style="height:' + H + 'px">';
       for (var m = 0; m <= mxh; m += 1000) s += '<line x1="0" x2="' + W + '" y1="' + Y(m) + '" y2="' + Y(m) + '" stroke="#1f252b"/><text x="4" y="' + (Y(m) - 3) + '" font-family="JetBrains Mono" font-size="10" fill="#55606a">' + L.elev(m) + "</text>";
       D.regions.forEach(function (g) { s += '<line x1="' + X(g.ka) + '" x2="' + X(g.ka) + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#262d34"/><text x="' + (X(g.ka) + 4) + '" y="' + (H - 9) + '" font-family="JetBrains Mono" font-size="10" letter-spacing="1" fill="#7d8790">' + L.regS(g).toUpperCase() + "</text>"; });
@@ -173,10 +173,11 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
         s += '<line x1="' + X(l.km) + '" x2="' + X(l.km) + '" y1="' + (Y(l.tm) - 4) + '" y2="' + (padT - 6) + '" stroke="#3a434c" stroke-dasharray="2 2"/><text x="' + X(l.km) + '" y="' + (padT - 10) + '" text-anchor="middle" font-family="Inter" font-size="10.5" fill="#9aa4ad">' + l.name + "</text>";
       });
       var cp = L.atKm(pts, curKm);
-      s += '<line x1="' + X(curKm) + '" x2="' + X(curKm) + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#ff4d2e" stroke-width="1.5" vector-effect="non-scaling-stroke"/><circle cx="' + X(curKm) + '" cy="' + Y(cp.m) + '" r="5" fill="#ff4d2e" stroke="#fff" stroke-width="2"/></svg>';
+      s += '<line x1="' + X(curKm) + '" x2="' + X(curKm) + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#ff4d2e" stroke-width="1.5" vector-effect="non-scaling-stroke"/><circle cx="' + X(curKm) + '" cy="' + Y(cp.m) + '" r="5" fill="#ff4d2e" stroke="#fff" stroke-width="2"/>' +
+        (prvKm != null ? '<line x1="' + X(prvKm) + '" x2="' + X(prvKm) + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#5b7cff" stroke-width="1.5" vector-effect="non-scaling-stroke"/><circle cx="' + X(prvKm) + '" cy="' + Y(L.atKm(pts, prvKm).m) + '" r="5" fill="#fff" stroke="#2235d6" stroke-width="3"/>' : "") + "</svg>";
       $("prof").innerHTML = s; $("profInfo").textContent = L.DU() + " " + nf(L.distV(curKm)) + " · " + L.elev(cp.m);
     }
-    L.scrubProfile($("prof"), map, D, function (km) { drawProf(km); lastKm = km; },
+    L.scrubProfile($("prof"), map, D, function (km, p, walked) { var sn = L.trailPoint(D, mk.getLngLat().toArray()) || D.here; lastKm = walked ? km : sn.km; drawProf(lastKm, walked ? null : km); if (!walked) $("profInfo").textContent = L.DU() + " " + nf(L.distV(km)) + " · " + L.elev(p.m); },
       function () { var sn = L.trailPoint(D, mk.getLngLat().toArray()) || D.here; lastKm = sn ? sn.km : 0; drawProf(lastKm); });   // "where am I": profile back to the position
     $("prof").onmousemove = function (e) {
       var r = $("prof").getBoundingClientRect(), km = (e.clientX - r.left) / r.width * D.total, p = L.atKm(pts, km), tip = $("tip");
