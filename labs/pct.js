@@ -389,6 +389,9 @@
 
   // ---- "Where am I" button next to + / - ----
   function addLocate(map, getLngLat, pos) {
+    // keep the attribution folded to its (i) button, MapLibre opens it on wide-enough maps
+    function fold() { document.querySelectorAll(".maplibregl-compact-show").forEach(function (e) { e.classList.remove("maplibregl-compact-show"); }); }
+    fold(); map.once("idle", fold);
     function C() {}
     C.prototype.onAdd = function () {
       var w = document.createElement("div"); w.className = "maplibregl-ctrl maplibregl-ctrl-group";
