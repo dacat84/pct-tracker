@@ -67,6 +67,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .me i{position:absolute;inset:0;border-radius:50%;background:#e0452f;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)}
 .me i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid #e0452f;animation:mePulse 2s ease-out infinite}
 @keyframes mePulse{from{transform:scale(1);opacity:.9}to{transform:scale(3);opacity:0}}
+.me .me-bub{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);z-index:-1}
 .me-bub .bub{white-space:nowrap;font:600 12px/1 Inter,system-ui,sans-serif;background:#fff;color:#14202a;padding:5px 9px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
 .me-bub .bub b{color:#e0452f}.me-bub .bub .up{color:#56636d;font-weight:500}.me-bub{pointer-events:none}
 .maplibregl-ctrl-group{background:rgba(255,255,255,.92)!important}
@@ -224,12 +225,12 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     me.innerHTML = '<i></i>';
     var meMk = new maplibregl.Marker({ element: me, anchor: "center" }).setLngLat(pos).addTo(map);
     // the label follows the dot smoothly instead of jumping with every bend of the track
+    // label is part of the marker itself, so it can never lag behind or cover the dot
     var bubEl = document.createElement("div"); bubEl.className = "me-bub";
     function bubTxt(n, d) { return T("Tag ", "Day ") + (n || 0) + " · <b>" + L.dist(d ? d.km : 0, 1) + "</b>" + (d && d.up ? ' · <span class="up">↑\u00a0' + L.elev(d.up).replace(" ", "\u00a0") + "</span>" : ""); }
     bubEl.innerHTML = '<div class="bub">' + bubTxt(D.dayNo, D.today) + '</div>';
-    var bubPos = pos.slice(), bubT = performance.now(), bubMk = new maplibregl.Marker({ element: bubEl, anchor: "bottom", offset: [0, -34] }).setLngLat(pos).addTo(map);
-    bubMk.getElement().style.zIndex = 2; meMk.getElement().style.zIndex = 3;   // the dot always stays on top of its label
-    function moveBub(ll) { bubPos = ll.slice(); bubMk.setLngLat(bubPos); }   // fixed above the dot (any lag lets the dot run into the label)
+    me.appendChild(bubEl);
+    meMk.getElement().style.zIndex = 5;   // dot and label above tents and badges
     L.addLocate(map, function () { return meMk.getLngLat().toArray(); }, "bottom-left");
 
     // --- start view: last day + position ---
@@ -251,7 +252,6 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         var sn = L.trailPoint(D, s.lnglat) || D.here;
         $("sLeft").textContent = L.dist(D.total - (sn ? sn.km : 0));
         bubEl.firstChild.innerHTML = bubTxt(s.dayNo, s.day);
-        if (s.end) { bubPos = s.lnglat.slice(); bubMk.setLngLat(bubPos); } else moveBub(s.lnglat);
         if (s.dayNo && s.dayNo - 1 !== card.cur && !card.zeroOn) card(s.dayNo - 1);
         if (sn && Math.abs(sn.km - strip.km) > 0.8) strip(sn.km);
       } });
