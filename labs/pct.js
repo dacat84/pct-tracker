@@ -479,10 +479,47 @@
       }
       return { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: coords } };
     });
+    // closed area: a band of ~3 km on both sides of the trail, hatched like on fire maps
+    var W = 3, zone = feats.map(function (f) {
+      var c = f.geometry.coordinates, L = [], Rr = [];
+      c.forEach(function (p, i) {
+        var a = c[Math.max(0, i - 1)], b = c[Math.min(c.length - 1, i + 1)], kx = 111.32 * Math.cos(p[1] * Math.PI / 180), ky = 110.57;
+        var dx = (b[0] - a[0]) * kx, dy = (b[1] - a[1]) * ky, len = Math.hypot(dx, dy) || 1, nx = -dy / len * W, ny = dx / len * W;
+        L.push([p[0] + nx / kx, p[1] + ny / ky]); Rr.push([p[0] - nx / kx, p[1] - ny / ky]);
+      });
+      function cap(p, q, dir) {   // round end around the first / last trail point
+        var out = [], kx = 111.32 * Math.cos(p[1] * Math.PI / 180), ky = 110.57, a0 = Math.atan2((q[1] - p[1]) * ky, (q[0] - p[0]) * kx);
+        for (var s = 1; s < 12; s++) { var a = a0 + dir * Math.PI * s / 12; out.push([p[0] + Math.cos(a) * W / kx, p[1] + Math.sin(a) * W / ky]); }
+        return out;
+      }
+      var ring = L.concat(cap(c[c.length - 1], L[L.length - 1], -1), Rr.reverse(), cap(c[0], Rr[Rr.length - 1], -1));
+      ring.push(ring[0]);
+      return { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [ring] } };
+    });
+    if (!map.hasImage("hatch")) {
+      var cv = document.createElement("canvas"); cv.width = cv.height = 12; var g = cv.getContext("2d");
+      g.strokeStyle = "rgba(255,212,0,.85)"; g.lineWidth = 1.3;
+      g.beginPath(); g.moveTo(0, 12); g.lineTo(12, 0); g.moveTo(-6, 6); g.lineTo(6, -6); g.moveTo(6, 18); g.lineTo(18, 6);
+      g.moveTo(0, 0); g.lineTo(12, 12); g.moveTo(-6, 6); g.lineTo(6, 18); g.moveTo(6, -6); g.lineTo(18, 6); g.stroke();
+      map.addImage("hatch", g.getImageData(0, 0, 12, 12));
+    }
+    map.addSource("closure-zone", { type: "geojson", data: { type: "FeatureCollection", features: zone } });
+    map.addLayer({ id: "closure-fill", type: "fill", source: "closure-zone", paint: { "fill-color": "rgba(255,212,0,.12)" } });
+    map.addLayer({ id: "closure-hatch", type: "fill", source: "closure-zone", paint: { "fill-pattern": "hatch", "fill-opacity": .9 } });
+    map.addLayer({ id: "closure-edge", type: "line", source: "closure-zone", paint: { "line-color": "#ffd400", "line-width": 2.5 }, layout: { "line-join": "round" } });
     map.addSource("closures", { type: "geojson", data: { type: "FeatureCollection", features: feats } });
     // yellow/black like a barrier tape, so it can't be mixed up with the walked (red/orange) track
     map.addLayer({ id: "closures-bg", type: "line", source: "closures", paint: { "line-color": "#111", "line-width": 8, "line-opacity": .9 }, layout: { "line-cap": "butt", "line-join": "round" } });
     map.addLayer({ id: "closures", type: "line", source: "closures", paint: { "line-color": "#ffd400", "line-width": 6, "line-dasharray": [1.4, 1.4] }, layout: { "line-cap": "butt", "line-join": "round" } });
+  }
+
+  // closed sections as hatched yellow bands for an SVG elevation profile (x = function km -> svg x)
+  function closureBands(D, x, top, bottom) {
+    if (!D.closures || !D.closures.length) return "";
+    return '<defs><pattern id="hzP" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="rgba(255,212,0,.10)"/><line x1="0" y1="0" x2="0" y2="7" stroke="rgba(255,212,0,.75)" stroke-width="2"/></pattern></defs>' +
+      D.closures.map(function (c) { var a = x(Math.min(c.from_km, c.to_km)), b = x(Math.max(c.from_km, c.to_km));
+        return '<rect x="' + a + '" y="' + top + '" width="' + (b - a) + '" height="' + (bottom - top) + '" fill="url(#hzP)"/>' +
+          '<line x1="' + a + '" x2="' + b + '" y1="' + top + '" y2="' + top + '" stroke="#ffd400" stroke-width="2" vector-effect="non-scaling-stroke"/>'; }).join("");
   }
 
   // ---- What zero / nero / hero mean (tooltips) ----
@@ -745,6 +782,6 @@
   function regS(g) { return EN ? g.en_s : g.short; }
 
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, closureBands: closureBands, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();

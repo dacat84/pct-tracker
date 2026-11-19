@@ -127,7 +127,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=40"></script>
+<script src="pct.js?v=42"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -273,6 +273,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     var spath = D.pts.filter(function (_, i) { return i % 2 === 0; }).map(function (p, i) { return (i ? "L" : "M") + sx(p.km).toFixed(1) + " " + sy(p.m).toFixed(1); }).join("");
     $("prof").innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none">' +
       '<defs><clipPath id="done"></clipPath></defs>' +
+      L.closureBands(D, sx, 0, H) +
       '<path d="' + spath + "L" + W + " " + H + "L0 " + H + 'Z" fill="rgba(255,255,255,.10)"/>' +
       '<path d="' + spath + '" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1" vector-effect="non-scaling-stroke"/>' +
       '<g clip-path="url(#done)"><path d="' + spath + "L" + W + " " + H + "L0 " + H + 'Z" fill="rgba(224,69,47,.35)"/><path d="' + spath + '" fill="none" stroke="#ff6b4f" stroke-width="2" vector-effect="non-scaling-stroke"/></g>' +
