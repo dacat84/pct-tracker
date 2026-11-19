@@ -114,7 +114,8 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     function two(km, d) { return L.EN ? [nf(km * KM2MI, d) + " mi", nf(km, d) + " km"] : [nf(km, d) + " km", nf(km * KM2MI, d) + " mi"]; }
     function twoE(m) { return L.EN ? [nf(m * 3.28084) + " ft", nf(m) + " m"] : [nf(m) + " m", nf(m * 3.28084) + " ft"]; }
     var h2 = two(D.walkedKm, 1); $("hTot").innerHTML = h2[0] + "<small>" + h2[1] + "</small>";
-    var pct = D.coveredKm / D.total * 100;   // trail actually covered (skipped sections don't count) $("hBar").style.width = Math.min(100, pct) + "%";
+    // trail actually covered (skipped sections don't count)
+    var pct = D.coveredKm / D.total * 100; $("hBar").style.width = Math.min(100, pct) + "%";
     $("hPct").textContent = nf(pct, 1) + T(" % des PCT", " % of the PCT"); $("hLeft").textContent = T("noch ", "") + L.dist(Math.max(0, D.total - D.coveredKm)) + T("", " to go");
     var u2 = twoE(up); $("tUp").textContent = u2[0]; $("tUp2").textContent = u2[1];
     $("tTime").textContent = hm(sec); $("tTime2").textContent = acts + T(" Aktivitäten", " activities");
