@@ -67,7 +67,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .me i{position:absolute;inset:0;border-radius:50%;background:#e0452f;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)}
 .me i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid #e0452f;animation:mePulse 2s ease-out infinite}
 @keyframes mePulse{from{transform:scale(1);opacity:.9}to{transform:scale(3);opacity:0}}
-.me-bub{position:absolute;left:0;top:0;z-index:4;will-change:transform;transition:opacity .35s}.me-bub.away{opacity:0}
+.me-bub{position:absolute;left:0;top:0;z-index:4;will-change:transform}
 .me-bub .bub{white-space:nowrap;font:600 12px/1 Inter,system-ui,sans-serif;background:#fff;color:#14202a;padding:5px 9px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
 .me-bub .bub b{color:#e0452f}.me-bub .bub .up{color:#56636d;font-weight:500}.me-bub{pointer-events:none}
 .maplibregl-ctrl-group{background:rgba(255,255,255,.92)!important}
@@ -230,16 +230,19 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     function hmm(sec) { var m = Math.round(sec / 60); return Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0") + "\u00a0h"; }
     function bubTxt(n, d) { return T("Tag ", "Day ") + (n || 0) + " · <b>" + L.dist(d ? d.km : 0, 1) + "</b>" + (d && d.sec ? ' · <span class="up">' + hmm(d.sec) + "</span>" : "") + (d && d.up ? ' · <span class="up">↑\u00a0' + L.elev(d.up).replace(" ", "\u00a0") + "</span>" : ""); }
     bubEl.innerHTML = '<div class="bub">' + bubTxt(D.dayNo, D.today) + '</div>';
-    // While the dot moves there is no label (day, km and time are in the bar below); as soon as it
-    // stops, at the tent at night or when paused, the day's numbers appear right next to it.
+    // The label belongs to the tent: when the dot stops (tent at night, pause) the day's numbers are
+    // pinned next to that spot and stay there while the dot walks on, until it stops at the next tent.
     map.getContainer().appendChild(bubEl);
-    var lastLL = null, still = 0;
+    var lastLL = null, still = 0, pinLL = meMk.getLngLat(), pendTxt = null;
     (function place() {
-      var ll = meMk.getLngLat(), p = map.project(ll), now = performance.now();
+      var ll = meMk.getLngLat(), now = performance.now();
       if (!lastLL || Math.abs(ll.lng - lastLL.lng) > 1e-7 || Math.abs(ll.lat - lastLL.lat) > 1e-7) still = now;
       lastLL = ll;
-      bubEl.classList.toggle("away", now - still < 250);
-      bubEl.style.transform = "translate(" + (p.x + 24).toFixed(1) + "px," + (p.y - 14).toFixed(1) + "px) translate(0,-50%)";   // right of the dot / tent
+      if (now - still > 250 && (Math.abs(ll.lng - pinLL.lng) > 1e-7 || Math.abs(ll.lat - pinLL.lat) > 1e-7)) {   // stopped somewhere new
+        pinLL = ll; if (pendTxt) bubEl.firstChild.innerHTML = pendTxt;
+      }
+      var p = map.project(pinLL);
+      bubEl.style.transform = "translate(" + (p.x + 24).toFixed(1) + "px," + (p.y - 14).toFixed(1) + "px) translate(0,-50%)";
       requestAnimationFrame(place);
     })();
     meMk.getElement().style.zIndex = 5;   // dot and label above tents and badges
@@ -263,7 +266,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         $("sDay").textContent = s.dayNo || 0; $("sKm").textContent = L.dist(s.km);
         var sn = L.trailPoint(D, s.lnglat) || D.here;
         $("sLeft").textContent = L.dist(D.total - (sn ? sn.km : 0));
-        bubEl.firstChild.innerHTML = bubTxt(s.dayNo, s.day);
+        pendTxt = bubTxt(s.dayNo, s.day);
         if (s.dayNo && s.dayNo - 1 !== card.cur && !card.zeroOn) card(s.dayNo - 1);
         if (sn && Math.abs(sn.km - strip.km) > 0.8) strip(sn.km);
       } });
