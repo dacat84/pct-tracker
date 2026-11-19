@@ -18,6 +18,14 @@
     { de: "Washington", en: "Washington", short: "Washington", a: 3455, b: 4265, c: "#b39ac8" }
   ];
   var LM = [[0,"Campo","term",1],[20,"Lake Morena","water",3],[42,"Mt. Laguna","town",2],[77,"Scissors Crossing","pass",3],[109,"Warner Springs","town",3],[127,"Agua Caliente","park",3],[152,"Paradise Valley Café","town",3],[179,"Idyllwild","town",2],[187,"San Jacinto Peak","peak",2],[210,"San Gorgonio Pass","pass",2],[266,"Big Bear","town",2],[308,"Deep Creek Hot Springs","water",2],[342,"Cajon Pass","pass",2],[369,"Wrightwood","town",2],[379,"Mt. Baden-Powell","peak",1],[444,"Acton","town",3],[452,"Vasquez Rocks","park",3],[454,"Agua Dulce","town",2],[517,"Mojave Desert","desert",2],[566,"Tehachapi","town",2],[652,"Walker Pass","pass",2],[702,"Kennedy Meadows S","town",1],[750,"Cottonwood Pass","pass",3],[767,"Mt. Whitney","peak",1],[779,"Forester Pass","pass",1],[792,"Glen Pass","pass",2],[807,"Pinchot Pass","pass",3],[815,"Mather Pass","pass",2],[843,"Muir Pass","pass",2],[857,"Muir Trail Ranch","town",3],[878,"Vermilion Valley Resort","town",3],[906,"Reds Meadow","town",3],[910,"Mammoth Lakes","town",2],[942,"Tuolumne Meadows","town",1],[1017,"Sonora Pass","pass",2],[1032,"Ebbetts Pass","pass",3],[1077,"Carson Pass","pass",3],[1090,"Lake Tahoe","water",1],[1094,"South Lake Tahoe","town",2],[1153,"Donner Pass","pass",2],[1195,"Sierra Buttes","peak",3],[1250,"Bucks Summit","pass",3],[1287,"Belden","town",3],[1325,"Halfway Point","term",1],[1352,"Lassen Peak","peak",2],[1378,"Subway Cave","water",3],[1410,"Burney","town",3],[1418,"Burney Falls","water",2],[1500,"Mt. Shasta","peak",1],[1501,"Castle Crags","park",2],[1599,"Etna","town",3],[1656,"Seiad Valley","town",2],[1690,"Oregon Border","term",1],[1726,"Ashland","town",2],[1775,"Mt. McLoughlin","peak",3],[1820,"Crater Lake","water",1],[1880,"Diamond Peak","peak",3],[1907,"Willamette Pass","pass",3],[1965,"Three Sisters","peak",2],[1990,"McKenzie Pass","pass",3],[2001,"Santiam Pass","pass",3],[2005,"Three Fingered Jack","peak",3],[2030,"Mt. Jefferson","peak",2],[2045,"Olallie Lake","water",3],[2097,"Mt. Hood","peak",1],[2098,"Timberline Lodge","town",2],[2120,"Tunnel Falls","water",3],[2144,"Cascade Locks","town",1],[2225,"Mt. Adams","peak",2],[2265,"Goat Rocks","peak",2],[2295,"White Pass","pass",3],[2320,"Mt. Rainier","peak",2],[2393,"Snoqualmie Pass","pass",2],[2400,"Kendall Katwalk","peak",3],[2461,"Stevens Pass","pass",2],[2530,"Glacier Peak","peak",2],[2572,"Stehekin","town",2],[2591,"Rainy Pass","pass",3],[2620,"Harts Pass","pass",3],[2650,"Northern Terminus","term",1]];
+  // Features that are not on the trail itself: real position. side = a side trip from the trail (dashed link).
+  var OFF = {
+    "Mt. Whitney": [36.5785, -118.2923, true], "San Jacinto Peak": [33.8147, -116.6794, true], "Mt. Baden-Powell": [34.3586, -117.7647, true],
+    "Mt. Shasta": [41.4092, -122.1949], "Lassen Peak": [40.4882, -121.5050], "Mt. Hood": [45.3736, -121.6959], "Mt. Rainier": [46.8529, -121.7604],
+    "Mt. Adams": [46.2024, -121.4909], "Mt. Jefferson": [44.6743, -121.7995], "Three Sisters": [44.1488, -121.7838], "Glacier Peak": [48.1125, -121.1139],
+    "Mt. McLoughlin": [42.4451, -122.3155], "Diamond Peak": [43.5207, -122.1496], "Three Fingered Jack": [44.4767, -121.8441],
+    "Crater Lake": [42.9446, -122.1090], "Lake Tahoe": [39.0968, -120.0324], "Sierra Buttes": [39.5943, -120.6406]
+  };
   var TYPE = {
     term: { de: "Terminus", c: "#ff4d2e", i: "★" }, town: { de: "Ort / Resupply", c: "#f5b301", i: "⌂" },
     pass: { de: "Pass", c: "#7ed6a5", i: "⋀" }, peak: { de: "Gipfel", c: "#ffffff", i: "▲" },
@@ -138,8 +146,9 @@
         var here = latest && typeof latest.lat === "number" ? snap(pts, latest.lat, latest.lon) : null;
         if (!here || here.off > 50) here = { km: 0, m: pts[0].m, lat: pts[0].lat, lon: pts[0].lon, off: 0 };
         var lms = LM.map(function (m) {
-          var km = m[0] * MI2KM * F, p = atKm(pts, km);
-          return { name: m[1], type: m[2], tier: m[3], km: km, lat: p.lat, lon: p.lon, m: p.m };
+          var km = m[0] * MI2KM * F, o = OFF[m[1]], p = o ? snap(pts, o[0], o[1]) : atKm(pts, km);
+          if (o) km = p.km;
+          return { name: m[1], type: m[2], tier: m[3], km: km, lat: o ? o[0] : p.lat, lon: o ? o[1] : p.lon, m: p.m, side: o && o[2], trail: [p.lon, p.lat] };
         });
         var regs = REGIONS.map(function (g) { return Object.assign({}, g, { ka: g.a * F, kb: g.b * F }); });
         var reg = regs.find(function (g) { return here.km >= g.ka && here.km < g.kb; }) || regs[regs.length - 1];
@@ -236,6 +245,7 @@
         t[3] + '<div class="n">Stand Planung, vor Ort gilt FarOut.</div>');
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-6, 0] }).setLngLat([t[2], t[1]]).setPopup(pop).addTo(map);
     });
+    D.landmarks.forEach(function (l) { if (l.side) lines.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: [[l.lon, l.lat], l.trail] } }); });
     map.addSource("tw-links", { type: "geojson", data: lines });
     map.addLayer({ id: "tw-links", type: "line", source: "tw-links", paint: { "line-color": theme.link || "#f5b301", "line-width": 1.3, "line-opacity": .8, "line-dasharray": [2, 2] } });
   }
