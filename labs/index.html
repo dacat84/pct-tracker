@@ -67,7 +67,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .me i{position:absolute;inset:0;border-radius:50%;background:#e0452f;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)}
 .me i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid #e0452f;animation:mePulse 2s ease-out infinite}
 @keyframes mePulse{from{transform:scale(1);opacity:.9}to{transform:scale(3);opacity:0}}
-.me .me-bub{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);z-index:-1}
+.me-bub{position:absolute;left:0;top:0;z-index:4;will-change:transform}
 .me-bub .bub{white-space:nowrap;font:600 12px/1 Inter,system-ui,sans-serif;background:#fff;color:#14202a;padding:5px 9px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
 .me-bub .bub b{color:#e0452f}.me-bub .bub .up{color:#56636d;font-weight:500}.me-bub{pointer-events:none}
 .maplibregl-ctrl-group{background:rgba(255,255,255,.92)!important}
@@ -229,7 +229,19 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     var bubEl = document.createElement("div"); bubEl.className = "me-bub";
     function bubTxt(n, d) { return T("Tag ", "Day ") + (n || 0) + " · <b>" + L.dist(d ? d.km : 0, 1) + "</b>" + (d && d.up ? ' · <span class="up">↑\u00a0' + L.elev(d.up).replace(" ", "\u00a0") + "</span>" : ""); }
     bubEl.innerHTML = '<div class="bub">' + bubTxt(D.dayNo, D.today) + '</div>';
-    me.appendChild(bubEl);
+    // The label glides after the dot in screen space (readable while the dot zigzags along the trail),
+    // but is held at least a little above it and not too far to the side, so it never covers the dot.
+    map.getContainer().appendChild(bubEl);
+    var gx = null, gy = null;
+    (function glide() {
+      var p = map.project(meMk.getLngLat()), tx = p.x, ty = p.y - 34;
+      if (gx === null) { gx = tx; gy = ty; }
+      gx += (tx - gx) * .07; gy += (ty - gy) * .07;
+      gy = Math.min(gy, p.y - 24); gy = Math.max(gy, p.y - 70);       // bottom edge between 24 and 70 px above the dot
+      gx = Math.max(p.x - 70, Math.min(p.x + 70, gx));
+      bubEl.style.transform = "translate(" + gx.toFixed(1) + "px," + gy.toFixed(1) + "px) translate(-50%,-100%)";
+      requestAnimationFrame(glide);
+    })();
     meMk.getElement().style.zIndex = 5;   // dot and label above tents and badges
     L.addLocate(map, function () { return meMk.getLngLat().toArray(); }, "bottom-left");
 
