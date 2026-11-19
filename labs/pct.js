@@ -524,7 +524,7 @@
 
   // ---- What zero / nero / hero mean (tooltips) ----
   var TERMS = {
-    zero: T("Zero: ein Tag ohne Trail-Kilometer, also 0 km gelaufen. Meist ein Ruhetag in der Stadt.", "Zero: a day with no trail miles at all, 0 mi hiked. Usually a rest day in town."),
+    zero: T("Zero: ein Tag ohne Trail-Kilometer, also 0 km gelaufen.", "Zero: a day with no trail miles at all, 0 mi hiked."),
     nero: T("Nero: jeden Tag auf dem Trail gelaufen, aber im Ort übernachtet, zum Resupply oder einfach für ein Bett.", "Nero: hiked on the trail that day, but spent the night in town, for a resupply or just a bed."),
     hero: T("Hero: rein in den Ort und am selben Tag wieder raus, alle Erledigungen (Resupply, Wäsche, Essen) an einem Tag, die Nacht wieder auf dem Trail.", "Hero: into town and out again the same day, all chores (resupply, laundry, food) done in one go, the night back on the trail.")
   };
