@@ -216,11 +216,20 @@
   function load() {
     return Promise.all([J("data/pct_profile.json"), J(DIR + "track.geojson").catch(function () { return { features: [] }; }),
       J(DIR + "latest.json").catch(function () { return null; }), J("data/Full_PCT_Simplified.geojson"),
-      J("labs/diary.json").catch(function () { return window.PCT_DIARY || []; })])
+      J("labs/diary.json").catch(function () { return window.PCT_DIARY || []; }),
+      J(DIR + "manual.json").catch(function () { return []; })])
       .then(function (r) {
         var prof = r[0], track = r[1], latest = r[2], line = r[3], diary = r[4] || [], pts = prof.points, F = prof.total_km / NOMINAL;
         var feats = (track.features || []).filter(function (f) { return f.geometry && f.geometry.coordinates && f.geometry.coordinates.length; })
           .sort(function (a, b) { return String(a.properties.start_date).localeCompare(String(b.properties.start_date)); });
+        // Fallback when Garmin is down: positions reported by message, kept in manual.json
+        // ([{ "ts": "2027-05-03T18:00:00-07:00", "lat": .., "lon": .., "note": "Idyllwild" }]).
+        // A report newer than the last Garmin data becomes the current position.
+        var manual = (Array.isArray(r[5]) ? r[5] : []).filter(function (m) { return typeof m.lat === "number" && typeof m.lon === "number" && m.ts; })
+          .sort(function (a, b) { return Date.parse(a.ts) - Date.parse(b.ts); });
+        var lastMan = manual[manual.length - 1];
+        if (lastMan && (!latest || !latest.ts || Date.parse(lastMan.ts) > Date.parse(latest.ts)))
+          latest = { lat: lastMan.lat, lon: lastMan.lon, ts: lastMan.ts, manual: true, note: lastMan.note || "" };
         var here = latest && typeof latest.lat === "number" ? snap(pts, latest.lat, latest.lon) : null;
         if (!here || here.off > 50) here = { km: 0, m: pts[0].m, lat: pts[0].lat, lon: pts[0].lon, off: 0 };
         // fine PCT line (the profile points are ~2 km apart, too coarse to tell "on" from "beside" the trail)
@@ -303,7 +312,7 @@
         return {
           src: SRC, pts: pts, total: prof.total_km, line: line, track: { type: "FeatureCollection", features: feats }, latest: latest,
           here: here, landmarks: lms, regions: regs, region: reg, days: dayList, today: dayList[dayList.length - 1] || null,
-          dayNo: dayList.length, walkedKm: totalKm, covered: covered, coveredKm: coveredKm, next: next, towns: towns, diary: diary, camps: camps
+          manual: manual, dayNo: dayList.length, walkedKm: totalKm, covered: covered, coveredKm: coveredKm, next: next, towns: towns, diary: diary, camps: camps
         };
       });
   }
@@ -424,6 +433,20 @@
     };
     C.prototype.onRemove = function () {};
     map.addControl(new C(), pos || "bottom-right");
+  }
+
+  // ---- Positions reported by message (Garmin fallback): small dots with date and note ----
+  function addManual(map, D, theme) {
+    theme = theme || {};
+    (D.manual || []).forEach(function (m, i) {
+      if (i === D.manual.length - 1 && D.latest && D.latest.manual) return;   // the newest one is the position marker itself
+      var el = document.createElement("div");
+      el.style.cssText = "width:12px;height:12px;border-radius:50%;background:" + (theme.fill || "#fff") + ";border:2px dashed " + (theme.ink || "#e0452f") + ";cursor:pointer";
+      el.title = dfmt(m.ts, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + (m.note ? " · " + m.note : "");
+      new maplibregl.Marker({ element: el }).setLngLat([m.lon, m.lat])
+        .setPopup(new maplibregl.Popup({ offset: 10, className: "tw-pop" }).setHTML("<h4>" + (m.note || T("Gemeldete Position", "Reported position")) + '</h4><div class="m">' + T("per Nachricht · ", "by message · ") + el.title.split(" · ")[0] + "</div>"))
+        .addTo(map);
+    });
   }
 
   // ---- Tents where each day ended (except the current position) ----
@@ -556,7 +579,7 @@
     function show(km, follow, force) {
       if (!N) return; cur = Math.max(0, Math.min(END, km)); var p = pointAt(cur), s = seq[p.i], now = performance.now();
       if (force || now - lastDraw > 140 || cur >= END) { var src = o.map.getSource(o.source || "trk"); if (src) src.setData(cur >= END ? D.track : trackUpTo(p)); lastDraw = now; }
-      if (o.marker) o.marker.setLngLat(p.c);
+      if (o.marker) o.marker.setLngLat(cur >= END && D.latest && D.latest.manual ? [D.latest.lon, D.latest.lat] : p.c);
       if (o.ui.slider) o.ui.slider.value = Math.round(cur / (END || 1) * 1000);
       if (o.ui.clock) o.ui.clock.textContent = dfmt(p.t, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Los_Angeles" }) + T(" Uhr", "");
       var f = D.track.features[s.f], day = f.properties.day, dn = D.days.findIndex(function (d) { return d.date === day; });
@@ -647,6 +670,6 @@
   function regS(g) { return EN ? g.en_s : g.short; }
 
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();
