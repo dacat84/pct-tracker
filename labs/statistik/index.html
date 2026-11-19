@@ -118,7 +118,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     var pct = D.coveredKm / D.total * 100; $("hBar").style.width = Math.min(100, pct) + "%";
     $("hPct").textContent = nf(pct, 1) + T(" % des PCT", " % of the PCT"); $("hLeft").textContent = T("noch ", "") + L.dist(Math.max(0, D.total - D.coveredKm)) + T("", " to go");
     var u2 = twoE(up); $("tUp").textContent = u2[0]; $("tUp2").textContent = u2[1];
-    $("tTime").textContent = hm(sec); $("tTime2").textContent = n + T(n === 1 ? " Aktivität" : " Aktivitäten", n === 1 ? " activity" : " activities");   // one per hiking day, however many recordings
+    $("tTime").textContent = hm(sec); $("tTime2").textContent = "Ø " + hm(n ? sec / n : 0) + T(" pro Tag", " per day");   // the day count is already in "Tage unterwegs"
     var a2 = two(n ? D.walkedKm / n : 0, 1); $("tAvg").textContent = a2[0]; $("tAvg2").textContent = a2[1];
     var v = sec ? D.walkedKm / (sec / 3600) : 0; $("tPace").textContent = L.EN ? nf(v * KM2MI, 1) + " mph" : nf(v, 1) + " km/h"; $("tPace2").textContent = L.EN ? nf(v, 1) + " km/h" : nf(v * KM2MI, 1) + " mph";
     $("tDays").textContent = n; $("tZero").textContent = Math.max(0, span - n);
