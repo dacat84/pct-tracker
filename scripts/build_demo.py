@@ -65,6 +65,8 @@ def trail_km(lat, lon):
     return min(range(len(coords)), key=lambda i: hav(coords[i], (lon, lat)))
 # Julian via Scissors Crossing: a nero (into town in the evening, night there, back on the trail next morning)
 ZEROS = [(cum[trail_km(33.0998, -116.4700)], 0), (cum[trail_km(33.7769, -116.6658)], 1), (cum[trail_km(34.2439, -116.9114)], 2), (cum[trail_km(34.3608, -117.6334)], 1)]
+# Warner Springs: a hero (in and out of town the same day, night back on the trail)
+HERO = cum[trail_km(33.2828, -116.6339)]
 day = datetime.date(2026, 4, 22)
 km, feats = 0.0, []
 for n in range(30):
@@ -84,10 +86,18 @@ for n in range(30):
         prev = e
     start = datetime.datetime.combine(day, datetime.time(13, 30)) + datetime.timedelta(minutes=random.randint(-40, 40))  # ~06:30 Pacific
     moving = int(dist / random.uniform(3.2, 4.0) * 3600)
-    feats.append({"type": "Feature", "properties": {
-        "garmin_id": 900000 + n, "name": "Demo Tag %d" % (n + 1), "start_date": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "distance_m": round(dist * 1000, 1), "moving_time_s": moving, "type": "hiking", "elevation_gain_m": round(up, 1)},
-        "geometry": {"type": "LineString", "coordinates": [[round(x, 6), round(y, 6)] for x, y in pts]}})
+    def feat(gid, name, st, d, mv, upm, p):
+        return {"type": "Feature", "properties": {
+            "garmin_id": gid, "name": name, "start_date": st.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "distance_m": round(d * 1000, 1), "moving_time_s": mv, "type": "hiking", "elevation_gain_m": round(upm, 1)},
+            "geometry": {"type": "LineString", "coordinates": [[round(x, 6), round(y, 6)] for x, y in p]}}
+    if a + 2 < HERO < b - 2:   # hero: recording stops at the town, 3 h of chores, then on again the same day
+        f1 = (HERO - a) / dist
+        st2 = start + datetime.timedelta(seconds=int(moving * f1) + 3 * 3600)
+        feats.append(feat(900000 + n, "Demo Tag %d (bis Warner Springs)" % (n + 1), start, HERO - a, int(moving * f1), up * f1, slice_km(a, HERO)))
+        feats.append(feat(905000 + n, "Demo Tag %d (ab Warner Springs)" % (n + 1), st2, b - HERO, moving - int(moving * f1), up * (1 - f1), slice_km(HERO, b)))
+    else:
+        feats.append(feat(900000 + n, "Demo Tag %d" % (n + 1), start, dist, moving, up, pts))
     km = b
     day += datetime.timedelta(days=1)
     day += datetime.timedelta(days=zero)
