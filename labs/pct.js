@@ -184,7 +184,7 @@
     ["Warner Springs", 33.2828, -116.6339, "Hiker-Station im Community Center · Post. Kaum Einkauf."],
     ["Idyllwild", 33.7400, -116.7189, "Supermarkt · Outfitter · Post · Cafés."],
     ["Big Bear Lake", 34.2439, -116.9114, "Supermärkte · Outfitter · Post · viele Unterkünfte."],
-    ["Wrightwood", 34.3608, -117.6334, "Kleiner Supermarkt · Post. Der Baumarkt im Ort ist Treffpunkt für Hiker."],
+    ["Wrightwood", 34.3608, -117.6334, "Kleiner Supermarkt · Post. Im Baumarkt Mountain Hardware gibt es ein Hiker-Register."],
     ["Agua Dulce", 34.4964, -118.3256, "Trail geht durch den Ort. Kleiner Supermarkt · Restaurants."],
     ["Tehachapi", 35.1322, -118.4490, "Große Stadt · Supermärkte · Post. Gut für den Großeinkauf vor der Sierra."],
     ["Kennedy Meadows", 35.9823, -118.1242, "General Store · Paketannahme · Bärenkanister. Tor zur Sierra."],
