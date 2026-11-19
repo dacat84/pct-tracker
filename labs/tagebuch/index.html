@@ -147,6 +147,23 @@ body{background:#efe8d8;color:#1d2a33;font-family:'Source Serif 4',Georgia,serif
       list.appendChild(el);
     });
 
+    // Desktop: the map follows the reading. The entry at the top of the list decides which day
+    // is shown (entries from before the start show the newest state). Phones: only on tap.
+    var shownDay = null, scrollT = null;
+    list.addEventListener("scroll", function () {
+      if (window.innerWidth <= 820) return;
+      clearTimeout(scrollT); scrollT = setTimeout(function () {
+        var top = list.getBoundingClientRect().top + 40, cur = null;
+        list.querySelectorAll(".e[data-day]").forEach(function (x) { if (x.getBoundingClientRect().top <= top) cur = x; });
+        cur = cur || list.querySelector(".e[data-day]"); if (!cur) return;
+        var day = cur.dataset.day, onTrail = D.days.some(function (d) { return d.date === day; });
+        var target = onTrail ? day : D.days.length ? D.days[D.days.length - 1].date : null;
+        if (!target || target === shownDay) return; shownDay = target;
+        list.querySelectorAll(".e.on").forEach(function (x) { x.classList.remove("on"); }); if (onTrail) cur.classList.add("on");
+        var c = rp.toDate(target); if (c) L.fitDay(map, D, target, 50);
+      }, 200);
+    }, { passive: true });
+
     var rp = L.replay({ map: map, D: D, marker: mk, ui: { play: $("play"), speed: $("speed"), clock: $("clock"), slider: $("slider") },
       onUpdate: function (s) {
         $("sheet").textContent = T("Blatt ", "Page ") + (s.dayNo || 0) + " · " + L.dfmt(s.date + "T12:00", { weekday: "short", day: "numeric", month: "short" });
