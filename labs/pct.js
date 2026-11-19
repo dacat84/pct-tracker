@@ -353,7 +353,7 @@
     ["Wrightwood", 34.3608, -117.6334, "Grocery · Post Office · Mountain Hardware"],
     ["Agua Dulce", 34.4964, -118.3256, "Grocery · Restaurants"],
     ["Tehachapi", 35.1322, -118.4490, "Grocery · Post Office · Restaurants"],
-    ["Kennedy Meadows", 36.0187, -118.1233, "General Store · Resupply · Bear Canister"],
+    ["Kennedy Meadows", 36.0190, -118.1233, "General Store · Resupply · Bear Canister"],
     ["Lone Pine", 36.6060, -118.0629, "Grocery · Outfitter · Post Office"],
     ["Bishop", 37.3635, -118.3951, "Grocery · Outfitter · Bakery"],
     ["Mammoth Lakes", 37.6485, -118.9721, "Grocery · Outfitter · Post Office"],
