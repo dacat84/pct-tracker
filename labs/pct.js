@@ -761,6 +761,8 @@
       raf = requestAnimationFrame(frame);
     }
     o.ui.play.onclick = function () { raf ? stop() : play(); };
+    // touching the map while it plays pauses the replay; play goes on from the same spot
+    ["mousedown", "touchstart", "wheel"].forEach(function (ev) { o.map.getCanvasContainer().addEventListener(ev, function () { if (raf) stop(); }, { passive: true }); });
     if (o.ui.speed) o.ui.speed.onclick = function () { sp = (sp + 1) % SPEEDS.length; o.ui.speed.textContent = SPEEDS[sp] + "×"; };
     if (o.ui.slider) { o.ui.slider.max = 1000; o.ui.slider.oninput = function () { stop(); var p = show(+o.ui.slider.value / 1000 * END, false, true); if (p) o.map.jumpTo({ center: p.c }); }; }
     document.addEventListener("keydown", function (e) { if (e.code === "Space" && !(e.target.closest && e.target.closest("input,select,textarea,button"))) { e.preventDefault(); o.ui.play.click(); } });

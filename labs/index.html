@@ -129,7 +129,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=51"></script>
+<script src="pct.js?v=52"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -207,11 +207,11 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     L.declutter(map);
     map.addLayer({ id: "trk-sel", type: "line", source: "trk", filter: ["==", ["get", "dayIdx"], -1], paint: { "line-color": "#fff", "line-width": 6, "line-opacity": .9 }, layout: { "line-cap": "round", "line-join": "round" } }, "trk");
     map.addLayer({ id: "trk-hit", type: "line", source: "trk", paint: { "line-color": "#000", "line-width": 18, "line-opacity": 0 } });
-    function pickDay(i) { card(i); map.setFilter("trk-sel", ["==", ["get", "dayIdx"], i]); }
+    function pickDay(i) { card(i); map.setFilter("trk-sel", ["==", ["get", "dayIdx"], i]); if (D.camps[i]) pinBub(D.camps[i].lnglat, bubTxt(i + 1, D.days[i])); }
     map.on("click", function (e) {   // a day on the map: show it in the card; elsewhere: back to the latest day
       var f = map.queryRenderedFeatures(e.point, { layers: ["trk-hit"] })[0];
       if (f && f.properties.dayIdx != null) pickDay(+f.properties.dayIdx);
-      else if (card.cur !== D.days.length - 1 || map.getFilter("trk-sel")[2] !== -1) { card(D.days.length - 1); map.setFilter("trk-sel", ["==", ["get", "dayIdx"], -1]); }
+      else if (card.cur !== D.days.length - 1 || map.getFilter("trk-sel")[2] !== -1) { card(D.days.length - 1); map.setFilter("trk-sel", ["==", ["get", "dayIdx"], -1]); pinBub(meMk.getLngLat(), bubTxt(D.dayNo, D.today)); }
     });
     map.on("mouseenter", "trk-hit", function () { map.getCanvas().style.cursor = "pointer"; });
     map.on("mouseleave", "trk-hit", function () { map.getCanvas().style.cursor = ""; });
@@ -233,13 +233,14 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     // The label belongs to the tent: when the dot stops (tent at night, pause) the day's numbers are
     // pinned next to that spot and stay there while the dot walks on, until it stops at the next tent.
     map.getContainer().appendChild(bubEl);
-    var lastLL = null, still = 0, pinLL = meMk.getLngLat(), pendTxt = null;
+    var lastLL = null, still = 0, pinLL = meMk.getLngLat(), pendTxt = null, moved = false;
+    function pinBub(ll, txt) { pinLL = maplibregl.LngLat.convert(ll); bubEl.firstChild.innerHTML = txt; moved = false; }   // e.g. a day picked on the map
     (function place() {
       var ll = meMk.getLngLat(), now = performance.now();
-      if (!lastLL || Math.abs(ll.lng - lastLL.lng) > 1e-7 || Math.abs(ll.lat - lastLL.lat) > 1e-7) still = now;
+      if (!lastLL || Math.abs(ll.lng - lastLL.lng) > 1e-7 || Math.abs(ll.lat - lastLL.lat) > 1e-7) { still = now; if (lastLL) moved = true; }
       lastLL = ll;
-      if (now - still > 250 && (Math.abs(ll.lng - pinLL.lng) > 1e-7 || Math.abs(ll.lat - pinLL.lat) > 1e-7)) {   // stopped somewhere new
-        pinLL = ll; if (pendTxt) bubEl.firstChild.innerHTML = pendTxt;
+      if (moved && now - still > 250) {   // the dot walked and stopped again: label to the new spot
+        pinLL = ll; moved = false; if (pendTxt) bubEl.firstChild.innerHTML = pendTxt;
       }
       var p = map.project(pinLL);
       bubEl.style.transform = "translate(" + (p.x + 24).toFixed(1) + "px," + (p.y - 14).toFixed(1) + "px) translate(0,-50%)";
