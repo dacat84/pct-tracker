@@ -24,12 +24,37 @@
   ];
   var LM = [[0,"Campo","term",1],[20,"Lake Morena","water",3],[42,"Mt. Laguna","town",2],[77,"Scissors Crossing","pass",3],[109,"Warner Springs","town",3],[127,"Agua Caliente","park",3],[152,"Paradise Valley Café","town",3],[179,"Idyllwild","town",2],[187,"San Jacinto Peak","peak",2],[210,"San Gorgonio Pass","pass",2],[266,"Big Bear","town",2],[308,"Deep Creek Hot Springs","water",2],[342,"Cajon Pass","pass",2],[369,"Wrightwood","town",2],[379,"Mt. Baden-Powell","peak",1],[444,"Acton","town",3],[452,"Vasquez Rocks","park",3],[454,"Agua Dulce","town",2],[517,"Mojave Desert","desert",2],[566,"Tehachapi","town",2],[652,"Walker Pass","pass",2],[702,"Kennedy Meadows S","town",1],[750,"Cottonwood Pass","pass",3],[767,"Mt. Whitney","peak",1],[779,"Forester Pass","pass",1],[792,"Glen Pass","pass",2],[807,"Pinchot Pass","pass",3],[815,"Mather Pass","pass",2],[843,"Muir Pass","pass",2],[857,"Muir Trail Ranch","town",3],[878,"Vermilion Valley Resort","town",3],[906,"Reds Meadow","town",3],[910,"Mammoth Lakes","town",2],[942,"Tuolumne Meadows","town",1],[1017,"Sonora Pass","pass",2],[1032,"Ebbetts Pass","pass",3],[1077,"Carson Pass","pass",3],[1090,"Lake Tahoe","water",1],[1094,"South Lake Tahoe","town",2],[1153,"Donner Pass","pass",2],[1195,"Sierra Buttes","peak",3],[1250,"Bucks Summit","pass",3],[1287,"Belden","town",3],[1325,"Halfway Point","term",1],[1352,"Lassen Peak","peak",2],[1378,"Subway Cave","water",3],[1410,"Burney","town",3],[1418,"Burney Falls","water",2],[1500,"Mt. Shasta","peak",1],[1501,"Castle Crags","park",2],[1599,"Etna","town",3],[1656,"Seiad Valley","town",2],[1690,"Oregon Border","term",1],[1726,"Ashland","town",2],[1775,"Mt. McLoughlin","peak",3],[1820,"Crater Lake","water",1],[1880,"Diamond Peak","peak",3],[1907,"Willamette Pass","pass",3],[1965,"Three Sisters","peak",2],[1990,"McKenzie Pass","pass",3],[2001,"Santiam Pass","pass",3],[2005,"Three Fingered Jack","peak",3],[2030,"Mt. Jefferson","peak",2],[2045,"Olallie Lake","water",3],[2097,"Mt. Hood","peak",1],[2098,"Timberline Lodge","town",2],[2120,"Tunnel Falls","water",3],[2144,"Cascade Locks","town",1],[2225,"Mt. Adams","peak",2],[2265,"Goat Rocks","peak",2],[2295,"White Pass","pass",3],[2320,"Mt. Rainier","peak",2],[2393,"Snoqualmie Pass","pass",2],[2400,"Kendall Katwalk","peak",3],[2461,"Stevens Pass","pass",2],[2530,"Glacier Peak","peak",2],[2572,"Stehekin","town",2],[2591,"Rainy Pass","pass",3],[2620,"Harts Pass","pass",3],[2650,"Northern Terminus","term",1]];
   // Features that are not on the trail itself: real position. side = a side trip from the trail (dashed link).
+  // Real positions for landmarks that are not exactly on the trail (summits, lakes, falls).
+  // Whether something counts as "off the trail" is worked out from the distance to the PCT line.
   var OFF = {
-    "Mt. Whitney": [36.5785, -118.2923, true], "San Jacinto Peak": [33.8147, -116.6794, true], "Mt. Baden-Powell": [34.3586, -117.7647, true],
+    "Mt. Whitney": [36.5785, -118.2923], "San Jacinto Peak": [33.8147, -116.6794], "Mt. Baden-Powell": [34.3586, -117.7647],
     "Mt. Shasta": [41.4092, -122.1949], "Lassen Peak": [40.4882, -121.5050], "Mt. Hood": [45.3736, -121.6959], "Mt. Rainier": [46.8529, -121.7604],
-    "Mt. Adams": [46.2024, -121.4909], "Mt. Jefferson": [44.6743, -121.7995], "Three Sisters": [44.1488, -121.7838], "Glacier Peak": [48.1125, -121.1139],
+    "Mt. Adams": [46.2024, -121.4909], "Mt. Jefferson": [44.6743, -121.7995], "Three Sisters": [44.1033, -121.7693], "Glacier Peak": [48.1125, -121.1139],
     "Mt. McLoughlin": [42.4451, -122.3155], "Diamond Peak": [43.5207, -122.1496], "Three Fingered Jack": [44.4767, -121.8441],
-    "Crater Lake": [42.9446, -122.1090], "Lake Tahoe": [39.0968, -120.0324], "Sierra Buttes": [39.5943, -120.6406]
+    "Crater Lake": [42.9446, -122.1090], "Lake Tahoe": [39.0968, -120.0324], "Sierra Buttes": [39.5943, -120.6406],
+    "Deep Creek Hot Springs": [34.3394, -117.1769], "Tunnel Falls": [45.5849, -121.8520], "Burney Falls": [41.0122, -121.6513],
+    "Subway Cave": [40.6839, -121.4186], "Goat Rocks": [46.5150, -121.4547]
+  };
+  // Positions of passes and road crossings, snapped to the trail. For the high Sierra passes
+  // ("high") and the low crossings ("low") the marker goes to the highest / lowest trail point nearby.
+  var PASS = {
+    "Scissors Crossing": [33.0998, -116.4700, "low"], "San Gorgonio Pass": [33.9230, -116.6930, "low"], "Cajon Pass": [34.3070, -117.4660, "low"],
+    "Walker Pass": [35.6633, -118.0270], "Cottonwood Pass": [36.4530, -118.2140, "high"], "Forester Pass": [36.6946, -118.3716, "high"], "Glen Pass": [36.7888, -118.4126, "high"],
+    "Pinchot Pass": [36.9369, -118.4057, "high"], "Mather Pass": [37.0263, -118.4628, "high"], "Muir Pass": [37.1120, -118.6703, "high"], "Sonora Pass": [38.3286, -119.6368],
+    "Ebbetts Pass": [38.5446, -119.8131], "Carson Pass": [38.6947, -119.9890], "Donner Pass": [39.3170, -120.3290], "Bucks Summit": [39.8999, -121.1186],
+    "Willamette Pass": [43.5966, -122.0373], "McKenzie Pass": [44.2603, -121.8100], "Santiam Pass": [44.4253, -121.8546], "White Pass": [46.6440, -121.3810],
+    "Snoqualmie Pass": [47.4243, -121.4135], "Stevens Pass": [47.7463, -121.0857], "Rainy Pass": [48.5157, -120.7357], "Harts Pass": [48.7210, -120.6690]
+  };
+  // Real heights (m) of summits, passes and lakes; everything else uses the trail height at that point.
+  var ELEV = {
+    "San Jacinto Peak": 3302, "Mt. Baden-Powell": 2865, "Mt. Whitney": 4421, "Sierra Buttes": 2619, "Lassen Peak": 3187, "Mt. Shasta": 4322,
+    "Mt. McLoughlin": 2894, "Diamond Peak": 2665, "Three Sisters": 3159, "Three Fingered Jack": 2390, "Mt. Jefferson": 3199, "Mt. Hood": 3429,
+    "Mt. Adams": 3743, "Goat Rocks": 2402, "Mt. Rainier": 4392, "Glacier Peak": 3213,
+    "Scissors Crossing": 686, "San Gorgonio Pass": 363, "Cajon Pass": 914, "Walker Pass": 1599, "Cottonwood Pass": 3402, "Forester Pass": 4009,
+    "Glen Pass": 3635, "Pinchot Pass": 3697, "Mather Pass": 3688, "Muir Pass": 3644, "Sonora Pass": 2933, "Ebbetts Pass": 2661, "Carson Pass": 2613,
+    "Donner Pass": 2151, "Bucks Summit": 1663, "Willamette Pass": 1563, "McKenzie Pass": 1623, "Santiam Pass": 1468, "White Pass": 1372,
+    "Snoqualmie Pass": 919, "Stevens Pass": 1238, "Rainy Pass": 1480, "Harts Pass": 1889,
+    "Lake Tahoe": 1897, "Crater Lake": 1883, "Tunnel Falls": 370
   };
   var TYPE = {
     term: { de: "Terminus", en: "Terminus", c: "#ff4d2e", i: "★" }, town: { de: "Ort / Resupply", en: "Town / resupply", c: "#f5b301", i: "⌂" },
@@ -190,10 +215,22 @@
           .sort(function (a, b) { return String(a.properties.start_date).localeCompare(String(b.properties.start_date)); });
         var here = latest && typeof latest.lat === "number" ? snap(pts, latest.lat, latest.lon) : null;
         if (!here || here.off > 50) here = { km: 0, m: pts[0].m, lat: pts[0].lat, lon: pts[0].lon, off: 0 };
+        // fine PCT line (the profile points are ~2 km apart, too coarse to tell "on" from "beside" the trail)
+        var lc = []; (line.features || []).forEach(function (f) { var g = f.geometry; (g.type === "LineString" ? [g.coordinates] : g.coordinates).forEach(function (part) { lc = lc.concat(part); }); });
+        function nearLine(lat, lon) { var b = null, bd = 1e18; for (var i = 0; i < lc.length; i++) { var d = hav(lat, lon, lc[i][1], lc[i][0]); if (d < bd) { bd = d; b = lc[i]; } } return { ll: b, d: bd }; }
         var lms = LM.map(function (m) {
-          var km = m[0] * MI2KM * F, o = OFF[m[1]], p = o ? snap(pts, o[0], o[1]) : atKm(pts, km);
-          if (o) km = p.km;
-          return { name: m[1], type: m[2], tier: m[3], km: km, lat: o ? o[0] : p.lat, lon: o ? o[1] : p.lon, m: p.m, side: o && o[2], trail: [p.lon, p.lat] };
+          var km = m[0] * MI2KM * F, o = OFF[m[1]], p = o ? snap(pts, o[0], o[1]) : atKm(pts, km), near = null;
+          if (o) { km = p.km; near = nearLine(o[0], o[1]); }
+          var ps = PASS[m[1]];
+          if (ps) {   // passes: extreme trail point within 4 km of the given position
+            var s0 = snap(pts, ps[0], ps[1]), bestP = s0;
+            if (ps[2]) pts.forEach(function (q) { if (Math.abs(q.km - s0.km) <= 4 && (ps[2] === "low" ? q.m < bestP.m : q.m > bestP.m)) bestP = q; });
+            var nl = ps[2] ? nearLine(bestP.lat, bestP.lon) : nearLine(ps[0], ps[1]); km = bestP.km;
+            return { name: m[1], type: m[2], tier: m[3], km: km, lat: nl.ll[1], lon: nl.ll[0], m: ELEV[m[1]] || bestP.m, tm: bestP.m, side: false, off: 0, trail: nl.ll };
+          }
+          var side = !!(near && near.d > 0.6);   // more than 600 m from the trail: own point + yellow link line
+          return { name: m[1], type: m[2], tier: m[3], km: km, lat: o ? o[0] : p.lat, lon: o ? o[1] : p.lon, m: ELEV[m[1]] || p.m, tm: p.m, side: side,
+            off: near ? near.d : 0, trail: near ? near.ll : [p.lon, p.lat] };
         });
         var regs = REGIONS.map(function (g) { return Object.assign({}, g, { ka: g.a * F, kb: g.b * F }); });
         var reg = regs.find(function (g) { return here.km >= g.ka && here.km < g.kb; }) || regs[regs.length - 1];
@@ -330,7 +367,8 @@
       if (l.type === "peak" && !theme.dot) el.firstChild.style.background = "transparent";
       var pop = new maplibregl.Popup({ offset: 10, className: "tw-pop", maxWidth: "300px" }).setHTML(
         "<h4>" + l.name + '</h4><div class="m">' + Ty[LANG] + " · " + elev(l.m) + "</div>" +
-        nw((l.side ? T("Abstecher bei ", "Side trip at ") : T("Am Trail bei ", "On the trail at ")) + "Trail-" + DU() + "\u00a0" + nf(distV(l.km))) +
+        (l.side ? nw(T("Abseits vom Trail, ca. ", "Off the trail, approx. ") + dist(l.off, l.off < 10 ? 1 : 0) + T(" Luftlinie", " straight line")) + "<br>" + nw(T("nächster Trailpunkt: Trail-", "nearest trail point: trail ") + DU() + "\u00a0" + nf(distV(l.km)))
+          : nw(T("Am Trail bei Trail-", "On the trail at trail ") + DU() + "\u00a0" + nf(distV(l.km)))) +
         (l.type === "term" ? "" : "<br>" + nw(dist(l.km) + T(" ab Campo", " from Campo")) + "<br>" + nw(dist(D.total - l.km) + T(" bis Kanada", " to Canada"))));
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-5, 0] }).setLngLat([l.lon, l.lat]).setPopup(pop).addTo(map);
     });
