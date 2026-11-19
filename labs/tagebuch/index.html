@@ -86,7 +86,7 @@ body{background:#efe8d8;color:#1d2a33;font-family:'Source Serif 4',Georgia,serif
   </div>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../pct.js?v=35"></script>
+<script src="../pct.js?v=37"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -112,6 +112,7 @@ body{background:#efe8d8;color:#1d2a33;font-family:'Source Serif 4',Georgia,serif
     map.addLayer({ id: "trk", type: "line", source: "trk", paint: { "line-color": L.dayColor("#c0392b", "#2c5d8f"), "line-width": 3 }, layout: { "line-cap": "round", "line-join": "round" } });
     L.addCamps(map, D, { fill: "#f3ecdc", ink: "#1d2a33" });
     L.addManual(map, D, { fill: "#fff", ink: "#e0452f" });
+    L.addClosures(map, D);
     L.addLandmarks(map, D, { dot: function (l) { return (l.type === "term") ? "#1d2a33" : "#f3ecdc"; } });
     ph.filter(function (p) { return p.lat && p.lon; }).forEach(function (p) {
       var el = document.createElement("div"); el.className = "phm"; el.style.backgroundImage = "url(" + p.q + ")";

@@ -217,7 +217,8 @@
     return Promise.all([J("data/pct_profile.json"), J(DIR + "track.geojson").catch(function () { return { features: [] }; }),
       J(DIR + "latest.json").catch(function () { return null; }), J("data/Full_PCT_Simplified.geojson"),
       J("labs/diary.json").catch(function () { return window.PCT_DIARY || []; }),
-      J(DIR + "manual.json").catch(function () { return []; })])
+      J(DIR + "manual.json").catch(function () { return []; }),
+      J(DIR + "closures.json").catch(function () { return []; })])
       .then(function (r) {
         var prof = r[0], track = r[1], latest = r[2], line = r[3], diary = r[4] || [], pts = prof.points, F = prof.total_km / NOMINAL;
         var feats = (track.features || []).filter(function (f) { return f.geometry && f.geometry.coordinates && f.geometry.coordinates.length; })
@@ -285,6 +286,26 @@
           c.nero = d.nero;
           if (d.nero && !c.town) { var tw = TOWNS.find(function (x) { return x[0] === d.nero; }); c.town = { name: tw[0], lnglat: [tw[2], tw[1]] }; }
         });
+        // hero = into town and out again the same day (resupply, laundry, food), night on the trail:
+        // a break of 90+ min where one recording ends and the next starts near a town,
+        // or the track itself goes into an off-trail town and back
+        function actEnd(f) { var pr = f.properties; return pr.t && pr.t.length ? Date.parse(pr.t0 || pr.start_date) + pr.t[pr.t.length - 1] * 1000 : Date.parse(pr.start_date) + (pr.moving_time_s || 0) * 1000; }
+        function townNear(p, km) { var hit = null; accPts.forEach(function (tw) { if (!hit && (hav(p[1], p[0], tw.lat, tw.lon) < km || hav(p[1], p[0], tw.tlat, tw.tlon) < km)) hit = tw.name; }); return hit; }
+        dayList.forEach(function (d, i) {
+          d.hero = null; var c = camps[i]; if (!c || c.zero || d.nero) return;
+          var fs = feats.filter(function (f) { return f.properties.dayIdx === i; });
+          for (var k = 0; k + 1 < fs.length && !d.hero; k++) {
+            var ca = fs[k].geometry.coordinates, a = ca[ca.length - 1], b = fs[k + 1].geometry.coordinates[0];
+            if (Date.parse(fs[k + 1].properties.start_date) - actEnd(fs[k]) >= 90 * 60000 && hav(a[1], a[0], b[1], b[0]) < 3) d.hero = townNear(a, 3);
+          }
+          if (!d.hero) accPts.forEach(function (tw) {   // walked (or rode with the watch on) into a town away from the trail
+            if (d.hero || hav(tw.lat, tw.lon, tw.tlat, tw.tlon) < 4) return;
+            fs.forEach(function (f) { f.geometry.coordinates.forEach(function (p) { if (!d.hero && hav(p[1], p[0], tw.tlat, tw.tlon) < 1.5) d.hero = tw.name; }); });
+          });
+          if (d.hero && townNear(c.lnglat, 3) === d.hero) d.hero = null;   // slept there: that's a nero, not a hero
+          c.hero = d.hero;
+        });
+
         // trail sections actually walked (fire closures, skips or a flip-flop leave gaps)
         var tks = [];
         feats.forEach(function (f) {
@@ -312,7 +333,7 @@
         return {
           src: SRC, pts: pts, total: prof.total_km, line: line, track: { type: "FeatureCollection", features: feats }, latest: latest,
           here: here, landmarks: lms, regions: regs, region: reg, days: dayList, today: dayList[dayList.length - 1] || null,
-          manual: manual, dayNo: dayList.length, walkedKm: totalKm, covered: covered, coveredKm: coveredKm, next: next, towns: towns, diary: diary, camps: camps
+          manual: manual, closures: (Array.isArray(r[6]) ? r[6] : []).filter(function (c) { return isFinite(c.from_km) && isFinite(c.to_km); }), dayNo: dayList.length, walkedKm: totalKm, covered: covered, coveredKm: coveredKm, next: next, towns: towns, diary: diary, camps: camps
         };
       });
   }
@@ -435,6 +456,39 @@
     map.addControl(new C(), pos || "bottom-right");
   }
 
+  // ---- Fire closures: trail section in red with flames ([{ "from_km", "to_km", "name", "since", "note" }]) ----
+  var FLAME = '<svg viewBox="0 0 24 30" width="26" height="32"><path d="M12 1c1 5 6 7 6 14a6 6 0 0 1-12 0c0-3 1.5-5 3-6.5 0 2.5 1 4 2.5 4.5C10 9 10.5 5 12 1z" fill="#ff5a1f" stroke="#7a1d00" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 13c.6 2.5 3 3.5 3 6.5a3 3 0 0 1-6 0c0-2 1.5-3 3-6.5z" fill="#ffd23f"/></svg>';
+  function addClosures(map, D) {
+    if (!D.closures || !D.closures.length) return;
+    var feats = D.closures.map(function (c) {
+      var a = Math.min(c.from_km, c.to_km), b = Math.max(c.from_km, c.to_km);
+      var coords = D.pts.filter(function (p) { return p.km >= a && p.km <= b; }).map(function (p) { return [p.lon, p.lat]; });
+      var pa = atKm(D.pts, a), pb = atKm(D.pts, b); coords.unshift([pa.lon, pa.lat]); coords.push([pb.lon, pb.lat]);
+      // flames along the section, at most one every ~15 km (min. 1, max. 8)
+      var n = Math.max(1, Math.min(8, Math.round((b - a) / 15)));
+      for (var k = 0; k < n; k++) {
+        var p = atKm(D.pts, a + (b - a) * (k + .5) / n), el = document.createElement("div");
+        el.innerHTML = FLAME; el.style.cssText = "cursor:pointer;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))";
+        new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([p.lon, p.lat])
+          .setPopup(new maplibregl.Popup({ offset: 22, className: "tw-pop", maxWidth: "300px" }).setHTML(
+            "<h4>" + T("Waldbrand-Sperrung", "Fire closure") + '</h4><div class="m">' + (c.name ? c.name + "<br>" : "") +
+            nw("Trail-" + DU() + "\u00a0" + nf(distV(a))) + " – " + nw(nf(distV(b))) + " · " + nw(dist(b - a)) +
+            (c.since ? "<br>" + T("seit ", "since ") + dfmt(c.since + "T12:00", { day: "numeric", month: "long" }) : "") + "</div>" + (c.note || "")))
+          .addTo(map);
+      }
+      return { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: coords } };
+    });
+    map.addSource("closures", { type: "geojson", data: { type: "FeatureCollection", features: feats } });
+    map.addLayer({ id: "closures", type: "line", source: "closures", paint: { "line-color": "#ff3b1f", "line-width": 5, "line-opacity": .75, "line-dasharray": [1.5, 1] }, layout: { "line-cap": "round" } });
+  }
+
+  // ---- What zero / nero / hero mean (tooltips) ----
+  var TERMS = {
+    zero: T("Zero: ein Tag ohne Trail-Kilometer, also 0 km gelaufen. Meist ein Ruhetag in der Stadt.", "Zero: a day with no trail miles at all, 0 mi hiked. Usually a rest day in town."),
+    nero: T("Nero: jeden Tag auf dem Trail gelaufen, aber im Ort übernachtet, zum Resupply oder einfach für ein Bett.", "Nero: hiked on the trail that day, but spent the night in town, for a resupply or just a bed."),
+    hero: T("Hero: rein in den Ort und am selben Tag wieder raus, alle Erledigungen (Resupply, Wäsche, Essen) an einem Tag, die Nacht wieder auf dem Trail.", "Hero: into town and out again the same day, all chores (resupply, laundry, food) done in one go, the night back on the trail.")
+  };
+
   // ---- Positions reported by message (Garmin fallback): small dots with date and note ----
   function addManual(map, D, theme) {
     theme = theme || {};
@@ -466,7 +520,13 @@
         z.style.cssText = "background:" + fill + ";color:" + ink + ";border:2px solid " + ink + ";border-radius:12px;padding:2px 7px;font:700 11px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
         z.innerHTML = BED + " ×" + c.zero;
         new maplibregl.Marker({ element: z, anchor: c.town ? "top" : "bottom", offset: c.town ? [0, 10] : [0, -4] }).setLngLat(c.town ? c.town.lnglat : c.lnglat).addTo(map);
-      } else if (c.nero) {   // night in town: bed + "Nero" at the town
+      } else if (c.hero) {   // in and out of town the same day: small badge at the town
+        var hz = document.createElement("div"); hz.className = "camp"; hz.dataset.day = c.day; hz.title = TERMS.hero;
+        hz.style.cssText = "background:" + ink + ";color:" + fill + ";border:1.5px solid " + fill + ";border-radius:10px;padding:1px 6px;font:700 10px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
+        hz.textContent = "Hero"; var htw = TOWNS.find(function (x) { return x[0] === c.hero; });
+        new maplibregl.Marker({ element: hz, anchor: "top", offset: [0, 10] }).setLngLat(htw ? [htw[2], htw[1]] : c.lnglat).addTo(map);
+      }
+      if (c.nero) {   // night in town: bed + "Nero" at the town
         var nz = document.createElement("div"); nz.className = "camp"; nz.dataset.day = c.day;
         nz.title = "Nero" + " in " + c.nero + " · " + T("Nacht nach Tag ", "night after day ") + c.day;
         nz.style.cssText = "background:" + fill + ";color:" + ink + ";border:2px solid " + ink + ";border-radius:12px;padding:2px 7px;font:700 11px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)";
@@ -670,6 +730,6 @@
   function regS(g) { return EN ? g.en_s : g.short; }
 
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();
