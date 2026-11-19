@@ -443,6 +443,32 @@
       if (k < 0) return null; stop(); show(seq[k].km, false, true); return seq[k].c; } };
   }
 
+  // fit the map to all activities of one day
+  function fitDay(map, D, date, pad) {
+    var b = null;
+    D.track.features.forEach(function (f) {
+      if (String(f.properties.start_date).slice(0, 10) !== date) return;
+      f.geometry.coordinates.forEach(function (c) { if (!b) b = new maplibregl.LngLatBounds(c, c); else b.extend(c); });
+    });
+    if (b) map.fitBounds(b, { padding: pad || 50, maxZoom: 13, duration: 900 });
+    return !!b;
+  }
+  // make an elevation profile element scrubbable: press/drag shows that trail point on the map
+  function scrubProfile(el, map, D, onKm) {
+    var mk = null, down = false;
+    function at(e) {
+      var r = el.getBoundingClientRect(), x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left, km = Math.max(0, Math.min(1, x / r.width)) * D.total, p = atKm(D.pts, km);
+      if (!mk) { var d = document.createElement("div"); d.style.cssText = "width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #2235d6;box-shadow:0 0 0 2px rgba(255,255,255,.6)"; mk = new maplibregl.Marker({ element: d }).setLngLat([p.lon, p.lat]).addTo(map); }
+      mk.setLngLat([p.lon, p.lat]); map.easeTo({ center: [p.lon, p.lat], zoom: Math.max(map.getZoom(), 9.5), duration: down ? 0 : 600 });
+      if (onKm) onKm(km, p);
+    }
+    el.style.cursor = "ew-resize"; el.style.touchAction = "none"; el.style.userSelect = "none"; el.style.webkitUserSelect = "none";
+    el.addEventListener("pointerdown", function (e) { down = true; el.setPointerCapture(e.pointerId); at(e); });
+    el.addEventListener("pointermove", function (e) { if (down) at(e); });
+    el.addEventListener("pointerup", function () { down = false; });
+    el.addEventListener("pointercancel", function () { down = false; });
+  }
+
   // trail point for a position, or null when it is more than 50 km off the trail
   function trailPoint(D, ll) { var s = snap(D.pts, ll[1], ll[0]); return s && s.off <= 50 ? s : null; }
 
@@ -450,6 +476,6 @@
   function regS(g) { return EN ? g.en_s : g.short; }
 
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, BASE: BASE, START: START,
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, scrubProfile: scrubProfile, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();
