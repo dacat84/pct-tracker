@@ -1,4 +1,4 @@
-// PCT Labs: shared core for the test designs (data, landmarks, photos, hiker marker).
+// PCT Labs: shared core for the test designs (data, landmarks, photos, maps, replay).
 // Not linked from the live site. Data source: ?data=demo (default) | test | live.
 (function () {
   "use strict";
@@ -116,71 +116,6 @@
     var lo = 0, hi = pts.length - 1;
     while (hi - lo > 1) { var mid = (lo + hi) >> 1; if (pts[mid].km < km) lo = mid; else hi = mid; }
     return pts[Math.abs(pts[lo].km - km) < Math.abs(pts[hi].km - km) ? lo : hi];
-  }
-
-  // ---- Hiker marker (SVG, CSS animated): walks, or falls over and sleeps next to the tent ----
-  var HIKER_CSS = "" +
-    ".hk{width:84px;height:84px;position:relative;pointer-events:auto;cursor:pointer;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}" +
-    ".hk svg{overflow:visible}" +
-    ".hk .leg,.hk .arm{transform-box:fill-box}" +
-    ".hk .legA{transform-origin:50% 0;animation:hkLeg .7s ease-in-out infinite}" +
-    ".hk .legB{transform-origin:50% 0;animation:hkLeg .7s ease-in-out infinite reverse}" +
-    ".hk .armA{transform-origin:50% 0;animation:hkLeg .7s ease-in-out infinite reverse}" +
-    ".hk .pole{transform-origin:50% 0;animation:hkLeg .7s ease-in-out infinite reverse}" +
-    ".hk .body{animation:hkBob .35s ease-in-out infinite alternate}" +
-    "@keyframes hkLeg{0%{transform:rotate(28deg)}50%{transform:rotate(-28deg)}100%{transform:rotate(28deg)}}" +
-    "@keyframes hkBob{from{transform:translateY(0)}to{transform:translateY(-1.5px)}}" +
-    ".hk .tent{opacity:0;transition:opacity .6s .9s}" +
-    ".hk .zz{opacity:0}" +
-    ".hk.sleep .person{transform-origin:20px 52px;transform:rotate(-90deg) translate(-4px,2px);transition:transform .55s cubic-bezier(.5,-0.4,.7,1.4)}" +
-    ".hk.sleep .legA,.hk.sleep .legB,.hk.sleep .armA,.hk.sleep .pole,.hk.sleep .body{animation:none}" +
-    ".hk.sleep .tent{opacity:1}" +
-    ".hk.sleep .zz{animation:hkZ 2.6s ease-in infinite 1.2s}" +
-    ".hk.sleep .zz.b{animation-delay:2.1s}.hk.sleep .zz.c{animation-delay:3s}" +
-    "@keyframes hkZ{0%{opacity:0;transform:translate(0,0) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translate(10px,-22px) scale(1.25)}}" +
-    ".hk .bub{position:absolute;left:50%;bottom:80px;transform:translateX(-50%);white-space:nowrap;font:600 12px/1 Inter,system-ui,sans-serif;background:#fff;color:#14202a;padding:5px 9px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.3)}" +
-    ".hk .bub b{color:#e0452f}";
-  function hikerEl(state, label) {
-    if (!document.getElementById("hk-css")) { var s = document.createElement("style"); s.id = "hk-css"; s.textContent = HIKER_CSS; document.head.appendChild(s); }
-    var el = document.createElement("div");
-    el.className = "hk " + (state || "walk");
-    // ink outline, comic style
-    var ink = "#14202a";
-    el.innerHTML =
-      (label ? '<div class="bub">' + label + "</div>" : "") +
-      '<svg viewBox="0 0 64 64" width="84" height="84">' +
-      // tent (shown when sleeping)
-      '<g class="tent"><path d="M30 54 L44 30 L58 54 Z" fill="#f5b301" stroke="' + ink + '" stroke-width="2.4" stroke-linejoin="round"/>' +
-      '<path d="M44 30 L44 54" stroke="' + ink + '" stroke-width="1.6"/><path d="M40 54 L44 42 L48 54" fill="#14202a" opacity=".8"/></g>' +
-      '<ellipse cx="22" cy="55" rx="12" ry="2.6" fill="rgba(0,0,0,.25)"/>' +
-      '<g class="person">' +
-      '<g class="leg legB"><path d="M20 38 L20 52" stroke="' + ink + '" stroke-width="4.2" stroke-linecap="round"/></g>' +
-      '<g class="body">' +
-      '<rect x="10" y="20" width="9" height="15" rx="3" fill="#2235d6" stroke="' + ink + '" stroke-width="2.2"/>' +   // backpack
-      '<path d="M20 22 L20 38" stroke="' + ink + '" stroke-width="5" stroke-linecap="round"/>' +                         // torso
-      '<path d="M20 22 L20 37" stroke="#e0452f" stroke-width="2.6" stroke-linecap="round"/>' +                         // shirt
-      '<circle cx="21" cy="15" r="5.6" fill="#ffd9b8" stroke="' + ink + '" stroke-width="2.2"/>' +                     // head
-      '<path d="M16.4 10.6 Q16.8 5 21.4 5 Q26 5 25.8 10.6 Z" fill="#f5b301" stroke="' + ink + '" stroke-width="1.8" stroke-linejoin="round"/>' + // hat
-      '<path d="M13.6 10.8 L29.4 10.8" stroke="' + ink + '" stroke-width="2" stroke-linecap="round"/>' +
-      '<circle cx="23.4" cy="15.6" r=".9" fill="' + ink + '"/>' +
-      '<g class="arm armA"><path d="M21 24 L23 33" stroke="' + ink + '" stroke-width="3.4" stroke-linecap="round"/></g>' +
-      '<g class="pole"><path d="M23 25 L28 50" stroke="#8a959d" stroke-width="1.6" stroke-linecap="round"/></g>' +
-      "</g>" +
-      '<g class="leg legA"><path d="M20 38 L20 52" stroke="' + ink + '" stroke-width="4.2" stroke-linecap="round"/></g>' +
-      "</g>" +
-      '<text class="zz" x="6" y="42" font-family="Inter,sans-serif" font-weight="800" font-size="9" fill="#fff" stroke="' + ink + '" stroke-width=".6">z</text>' +
-      '<text class="zz b" x="10" y="35" font-family="Inter,sans-serif" font-weight="800" font-size="11" fill="#fff" stroke="' + ink + '" stroke-width=".6">z</text>' +
-      '<text class="zz c" x="15" y="27" font-family="Inter,sans-serif" font-weight="800" font-size="13" fill="#fff" stroke="' + ink + '" stroke-width=".6">Z</text>' +
-      "</svg>";
-    return el;
-  }
-  // Asleep when the last activity ended more than 3 h ago, or it is night at the trail (Pacific time, 21:00 to 06:00).
-  function hikerState(latestTs) {
-    var forced = qs.get("hiker"); if (forced === "walk" || forced === "sleep") return forced;
-    var h = Number(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", hour12: false })) % 24;
-    if (h >= 21 || h < 6) return "sleep";
-    var t = Date.parse(latestTs || ""); if (!isFinite(t)) return "sleep";
-    return (Date.now() - t) > 3 * 3600 * 1000 ? "sleep" : "walk";
   }
 
   // ---- Photos without GPS: put them on the track by the time they were taken ----
@@ -891,7 +826,7 @@
   function reg(g) { return EN ? g.en : g.de; }
   function regS(g) { return EN ? g.en_s : g.short; }
 
-  window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
+  window.PCTLab = { load: load, photos: photos, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
     switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, addOffTrail: addOffTrail, justPaused: justPaused, closureBands: closureBands, declutter: declutter, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();
