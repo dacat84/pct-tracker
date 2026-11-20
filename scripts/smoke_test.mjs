@@ -7,28 +7,33 @@ const BASE = (process.argv[2] || "https://dacat84.github.io/pct-tracker/").repla
 const bust = "&_=" + Date.now();   // skip the browser/CDN cache
 const problems = [];
 
+// main pages must only ever use the real data (data/), never data/demo or data/test
+const realOnly = async (p) => {
+  const src = await p.evaluate(() => window.PCTLab && window.PCTLab.src);
+  if (src !== "live") throw new Error("main page uses data source '" + src + "'");
+  if (p.__demoHits) throw new Error("main page loaded demo or test data");
+};
 const checks = [
-  { path: "labs/?data=demo", name: "Reportage", run: async (p) => {
+  { path: "?x=1", name: "Reportage", run: async (p) => { await p.waitForSelector(".me", { timeout: 30000 }); await realOnly(p); } },
+  { path: "tagebuch/?x=1", name: "Tagebuch", run: async (p) => { await p.waitForSelector(".e", { timeout: 30000 }); await realOnly(p); } },
+  { path: "fotos/?x=1", name: "Fotos", run: async (p) => { await p.waitForFunction(() => document.querySelector(".ph, .empty"), null, { timeout: 30000 }); await realOnly(p); } },
+  { path: "statistik/?x=1", name: "Statistik", run: async (p) => { await p.waitForFunction(() => /km|mi/.test(document.getElementById("hTot")?.textContent || ""), null, { timeout: 30000 }); await realOnly(p); } },
+  { path: "ausruestung/?x=1", name: "Ausrüstung", run: async (p) => {
+      const v = await p.textContent(".t.base .v"); if (!/\d{3,}/.test(v)) throw new Error("base weight missing ('" + v + "')"); await realOnly(p); } },
+  { path: "labs/?data=demo", name: "Labs Reportage", run: async (p) => {
       await p.waitForFunction(() => /\d/.test(document.getElementById("cDay")?.textContent || ""), null, { timeout: 30000 });
       const day = await p.textContent("#cDay");
       if (!/(Tag|Day) \d+/.test(day)) throw new Error("day card shows '" + day + "'");
       if (!(await p.$("#prof svg"))) throw new Error("elevation strip missing");
-      if (!(await p.$(".me"))) throw new Error("position marker missing");
   } },
-  { path: "labs/statistik/?data=demo", name: "Statistik", run: async (p) => {
+  { path: "labs/statistik/?data=demo", name: "Labs Statistik", run: async (p) => {
       await p.waitForFunction(() => /km|mi/.test(document.getElementById("hTot")?.textContent || ""), null, { timeout: 30000 });
       const w = await p.$eval("#hBar", (e) => parseFloat(e.style.width) || 0);
       if (!(w > 0)) throw new Error("progress bar is empty");
       const rows = await p.$$eval("#days .row", (r) => r.length);
       if (rows < 10) throw new Error("day list has only " + rows + " rows");
-      if (!(await p.$("#prof svg path"))) throw new Error("elevation profile missing");
   } },
-  { path: "labs/tagebuch/?data=demo", name: "Tagebuch", run: async (p) => {
-      await p.waitForSelector(".e", { timeout: 30000 });
-  } },
-  { path: "labs/?data=test", name: "Reportage (Testdaten)", run: async (p) => { await p.waitForSelector(".me", { timeout: 30000 }); } },
-  { path: "?x=1", name: "Startseite", run: async (p) => { await p.waitForTimeout(4000); } },
-  { path: "stats.html?x=1", name: "Statistik (alt)", run: async (p) => { await p.waitForTimeout(3000); } },
+  { path: "labs/tagebuch/?data=test", name: "Labs Tagebuch (Testdaten)", run: async (p) => { await p.waitForSelector(".e", { timeout: 30000 }); } },
 ];
 
 const browser = await chromium.launch();
@@ -36,6 +41,7 @@ for (const [label, ctxOpts] of [["Desktop", { viewport: { width: 1300, height: 9
   const ctx = await browser.newContext(ctxOpts);
   for (const c of checks) {
     const page = await ctx.newPage(), errors = [];
+    page.on("request", (r) => { if (/\/data\/(demo|test)\//.test(r.url()) && !c.path.startsWith("labs/")) page.__demoHits = true; });
     page.on("pageerror", (e) => errors.push(e.message));
     const url = BASE + c.path + (c.path.includes("?") ? bust : "?" + bust.slice(1));
     try {

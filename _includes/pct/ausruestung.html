@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% if page.url contains '/labs/' %}<meta name="robots" content="noindex,nofollow">{% else %}<meta name="description" content="Felix' Pacific Crest Trail 2027: Live-Karte, Tagebuch, Fotos und Statistik.">
+<meta property="og:title" content="PCT 2027 · Felix">
+<meta property="og:description" content="Pacific Crest Trail von Mexiko nach Kanada: Live-Karte, Tagebuch, Fotos und Statistik.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ page.url | absolute_url }}">{% endif %}
+<title>{% if page.url contains "/labs/" %}PCT Labs · {% endif %}Ausrüstung · PCT 2027</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233a8089'/><path d='M3 26 L12 12 L16 18 L21 10 L29 26 Z' fill='%23f4f1e8'/><path d='M10 6 L6.4 13 L8.4 13 L5.6 18 L8 18 L5 24 L15 24 L12 18 L14.4 18 L11.6 13 L13.6 13 Z' fill='%2316201f' stroke='%2316201f' stroke-width='.6' stroke-linejoin='round'/><rect x='9.2' y='24' width='1.6' height='4' fill='%2316201f'/></svg>" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+{% assign gear = site.data.gear %}{% assign lp = site.lighterpack_id | default: "qr1evs" %}
+<style>
+*{box-sizing:border-box}html,body{margin:0}
+body{background:#f3ecdc;color:#1d2a33;font-family:'Inter',system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:1040px;margin:0 auto;padding:78px 28px 90px}
+h1{font-family:'Playfair Display',Georgia,serif;font-weight:900;font-size:56px;line-height:1;margin:0 0 10px}
+.sub{color:#5b6670;font-size:15px;margin:0 0 26px;max-width:640px;line-height:1.5}
+.g{display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:14px;margin-bottom:22px}
+.t{background:#fffaf0;border:1px solid #d9cfba;border-radius:6px;padding:16px 18px}
+.t .k{font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#7a6f5c}
+.t .v{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:30px;margin:6px 0 4px}
+.t .v span{font-family:Inter,sans-serif;font-size:15px;font-weight:600;color:#7a6f5c}
+.t .s{font-size:12.5px;color:#5b6670;line-height:1.45}
+.t.base{background:#1d2a33;border-color:#1d2a33;color:#fff}.t.base .k,.t.base .s,.t.base .v span{color:#c9d2d8}.t.base .v{font-size:40px;color:#ffb48a}
+.lp{background:#fff;border:1px solid #d9cfba;border-radius:6px;overflow:hidden}
+.lp iframe{width:100%!important;height:72vh!important;max-height:900px!important;border:0!important;display:block}
+.src{font-size:12px;color:#7a6f5c;margin-top:10px}.src a{color:#7a6f5c}
+@media(max-width:800px){.wrap{padding:24px 14px 80px}h1{font-size:40px}.g{grid-template-columns:1fr 1fr}.t.base{grid-column:span 2}.lp iframe{height:78vh!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 data-de="Ausrüstung" data-en="Gear">Ausrüstung</h1>
+  <p class="sub" data-de="Was ich auf dem Trail dabei habe. Die Zahlen kommen automatisch aus meiner LighterPack-Liste." data-en="What I carry on the trail. The numbers come straight from my LighterPack list.">Was ich auf dem Trail dabei habe. Die Zahlen kommen automatisch aus meiner LighterPack-Liste.</p>
+  <div class="g">
+    <div class="t base"><div class="k">Base Weight</div><div class="v">{{ gear.base_g }}&nbsp;<span>g</span></div>
+      <div class="s" data-de="≈ {{ gear.base_kg_de }} kg · alles im Rucksack, ohne Essen, Wasser und getragene Kleidung" data-en="≈ {{ gear.base_kg_en }} kg · everything in the pack, without food, water and worn clothing">≈ {{ gear.base_kg_de }} kg</div></div>
+    <div class="t"><div class="k" data-de="Nachtlager" data-en="Shelter">Nachtlager</div><div class="v">{{ gear.shelter_g }}&nbsp;<span>g</span></div><div class="s" data-de="Zelt &amp; Heringe" data-en="Tent &amp; stakes">Zelt &amp; Heringe</div></div>
+    <div class="t"><div class="k" data-de="Schlafsystem" data-en="Sleep system">Schlafsystem</div><div class="v">{{ gear.sleep_g }}&nbsp;<span>g</span></div><div class="s" data-de="Quilt 20°F + Isomatte" data-en="Quilt 20°F + pad">Quilt 20°F + Isomatte</div></div>
+    <div class="t"><div class="k" data-de="Rucksack" data-en="Pack">Rucksack</div><div class="v">{{ gear.pack_g }}&nbsp;<span>g</span></div><div class="s">Cutaway 30L</div></div>
+  </div>
+  <div class="lp"><script src="https://lighterpack.com/e/{{ lp }}"></script><div id="{{ lp }}" class="lp-embed"></div></div>
+  <p class="src"><a href="https://lighterpack.com/r/{{ lp }}" target="_blank" rel="noopener" data-de="Liste auf LighterPack öffnen" data-en="Open the list on LighterPack">Liste auf LighterPack öffnen</a></p>
+</div>
+<script src="/pct-tracker/labs/pct.js?v=80"></script>
+<script>PCTLab.switcher(4);</script>
+</body>
+</html>

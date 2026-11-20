@@ -12,30 +12,17 @@ Live: https://dacat84.github.io/pct-tracker/
 
 ## Pages
 
-- **Karte / Map** (`index.md`)
-  - Hero: where I am right now, distance from Campo, next waypoint, distance to the Northern Terminus.
-  - An honest freshness pill ("Letzte Aktivität / Last activity, vor X Tagen") instead of a fake "live" label.
-  - Interactive **elevation profile** of the whole PCT (`assets/js/elevation.js`): peaks, passes, towns, water, parks and terminals as tiered landmarks, six section bands, tap to zoom into a section, fullscreen view, and a marker showing the current position. Tracked sections are drawn solid, the rest stays faded.
-  - MapLibre map with the full PCT route as a thin white baseline and the walked days in bright cyan/magenta (Strava style), plus a pulsing position marker.
-  - Short "Über die Wanderung / About the hike" intro for people who do not know the PCT.
+- **Reportage / Story** (`/`): satellite map with the walked days, tents for every night, zero, nero and hero days, a replay of the whole hike, an elevation strip, the photo strip and a small card with the numbers of the day.
+- **Tagebuch / Journal** (`/tagebuch/`): the diary entries from `_updates/`. On a computer the map next to it follows the entry you are reading.
+- **Fotos / Photos** (`/fotos/`): the Flickr album as a gallery. Photos with a location also appear on the map.
+- **Statistik / Stats** (`/statistik/`): km hiked and km on the PCT, elevation gain, time, every day in a list, elevation profile.
+- **Ausrüstung / Gear** (`/ausruestung/`): base weight and the three big items from LighterPack, plus the full list.
 
-- **Statistik / Stats** (`stats.md`, self-contained)
-  - Hero: total distance hiked with a PCT progress bar and remaining kilometres.
-  - Tiles: elevation gain, total time, average per day, average pace, days out, zero days.
-  - Longest and shortest day.
-  - **Tag für Tag / Day by day**: the full history, newest first, each day with date, a proportional bar, and kilometres.
+All pages are built from the same files in `_includes/pct/` and one script, `labs/pct.js`.
 
-- **Fotos / Photos** (`photos.md`)
-  - Auto-synced from a Flickr album, newest first, with a larger featured (newest) image.
-  - No local image management.
+### Labs (test copy)
 
-- **Tagebuch / Diary** (`updates.md`, entries in `_updates/`)
-  - Short Markdown notes from the trail, bilingual, fast to write from a phone.
-
-- **Ausrüstung / Gear** (`gear.md`)
-  - At-a-glance cards: base weight plus shelter, sleep system and pack, so non-hikers get it at a glance.
-  - The cards sync automatically from the LighterPack list (every 3 hours), so they always match it.
-  - Full itemised list embedded from [lighterpack.com](https://lighterpack.com), always current.
+The same pages also run under `/labs/`. There they can show demo data (`?data=demo`, 30 made-up days from Campo) or the test walks at home (`?data=test`). The main site only ever reads the real data in `data/`; in waiting mode that stays empty until the start. Every change to the pages shows up in both places.
 
 ---
 
@@ -51,7 +38,8 @@ Live: https://dacat84.github.io/pct-tracker/
 ## How it works
 
 - Built with **GitHub Pages (Jekyll)**: no server, no database.
-- **Data sync**: recent hiking activities are pulled from **Garmin Connect** by a scheduled GitHub Action and written into `data/track.geojson` and `data/latest.json`. The front end reads those files unchanged. See `scripts/GARMIN_SETUP.md` to activate it. (The older Strava sync is kept for reference and can be removed once Garmin is verified.)
+- **Data sync**: recent hiking activities are pulled from **Garmin Connect** by a scheduled GitHub Action and written into `data/track.geojson` and `data/latest.json` (in waiting mode into `data/test/`). See `scripts/GARMIN_SETUP.md`.
+- **Site check**: after every deploy a GitHub Action opens all pages in a real browser (desktop and phone) and opens an issue if something is broken.
 - **Elevation profile** data is precomputed into `data/pct_profile.json` (total_km 4196.7) by `scripts/build_elevation.py`.
 - **Photos** load client-side from the Flickr API; **gear** is an embedded LighterPack list.
 - **Gear cards** are generated from the public LighterPack list (`lighterpack_id` in `_config.yml`) by `scripts/gear_sync.py`, run every 3 hours by a GitHub Action into `_data/gear.json`. Edit the list in LighterPack (phone is fine); no CSV export needed. To switch lists, change `lighterpack_id` in one place.

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% if page.url contains '/labs/' %}<meta name="robots" content="noindex,nofollow">{% else %}<meta name="description" content="Felix' Pacific Crest Trail 2027: Live-Karte, Tagebuch, Fotos und Statistik.">
+<meta property="og:title" content="PCT 2027 · Felix">
+<meta property="og:description" content="Pacific Crest Trail von Mexiko nach Kanada: Live-Karte, Tagebuch, Fotos und Statistik.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ page.url | absolute_url }}">{% endif %}
+<title>{% if page.url contains "/labs/" %}PCT Labs · {% endif %}Fotos · PCT 2027</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233a8089'/><path d='M3 26 L12 12 L16 18 L21 10 L29 26 Z' fill='%23f4f1e8'/><path d='M10 6 L6.4 13 L8.4 13 L5.6 18 L8 18 L5 24 L15 24 L12 18 L14.4 18 L11.6 13 L13.6 13 Z' fill='%2316201f' stroke='%2316201f' stroke-width='.6' stroke-linejoin='round'/><rect x='9.2' y='24' width='1.6' height='4' fill='%2316201f'/></svg>" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}html,body{margin:0}
+body{background:#0b0f12;color:#e9eef1;font-family:'Inter',system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:1180px;margin:0 auto;padding:78px 28px 90px}
+h1{font-family:'Playfair Display',Georgia,serif;font-weight:900;font-size:56px;line-height:1;margin:0 0 10px;color:#fff}
+.sub{color:#aeb9c1;font-size:15px;margin:0 0 26px}
+.grid{columns:3 300px;column-gap:14px}
+.ph{break-inside:avoid;margin:0 0 14px;position:relative;cursor:zoom-in;border-radius:4px;overflow:hidden;background:#151b20}
+.ph img{display:block;width:100%;height:auto;transition:transform .4s}.ph:hover img{transform:scale(1.03)}
+.ph .d{position:absolute;left:0;right:0;bottom:0;padding:22px 12px 9px;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65))}
+.ph .d small{display:block;font-weight:400;color:#dfe6ea;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{color:#aeb9c1;font-size:16px;padding:40px 0}
+@media(max-width:700px){.wrap{padding:24px 14px 80px}h1{font-size:40px}.grid{columns:2;column-gap:8px}.ph{margin-bottom:8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 data-de="Fotos" data-en="Photos">Fotos</h1>
+  <p class="sub" id="sub"></p>
+  <div class="grid" id="grid"></div>
+</div>
+<script src="/pct-tracker/labs/pct.js?v=80"></script>
+<script>
+(function () {
+  var L = window.PCTLab, T = L.T, $ = function (id) { return document.getElementById(id); };
+  L.switcher(2);
+  L.photos().then(function (ph) {
+    if (!ph.length) {
+      $("sub").textContent = "";
+      $("grid").outerHTML = '<p class="empty">' + (L.MAIN && new Date() < new Date(L.START + "T00:00:00")
+        ? T("Die Fotos kommen ab dem Start am 22. April 2027.", "Photos will appear from the start on April 22, 2027.")
+        : T("Noch keine Fotos im Album.", "No photos in the album yet.")) + "</p>";
+      return;
+    }
+    $("sub").textContent = ph.length + T(ph.length === 1 ? " Foto" : " Fotos", ph.length === 1 ? " photo" : " photos") + T(" · neueste zuerst", " · newest first");
+    $("grid").innerHTML = ph.map(function (p, i) {
+      var d = p.taken ? L.dfmt(p.taken.replace(" ", "T"), { day: "numeric", month: "long", year: "numeric" }) : "";
+      return '<div class="ph" data-i="' + i + '"><img loading="lazy" src="' + (p.m || p.l) + '" alt=""><div class="d">' + d + (p.title ? "<small>" + p.title + "</small>" : "") + "</div></div>";
+    }).join("");
+    $("grid").querySelectorAll(".ph").forEach(function (el) { el.onclick = function () { L.lightbox(ph, +el.dataset.i); }; });
+  });
+})();
+</script>
+</body>
+</html>

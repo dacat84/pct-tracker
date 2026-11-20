@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% if page.url contains '/labs/' %}<meta name="robots" content="noindex,nofollow">{% else %}<meta name="description" content="Felix' Pacific Crest Trail 2027: Live-Karte, Tagebuch, Fotos und Statistik.">
+<meta property="og:title" content="PCT 2027 · Felix">
+<meta property="og:description" content="Pacific Crest Trail von Mexiko nach Kanada: Live-Karte, Tagebuch, Fotos und Statistik.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ page.url | absolute_url }}">{% endif %}
+<title>{% if page.url contains "/labs/" %}PCT Labs · {% endif %}Reportage · PCT 2027</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233a8089'/><path d='M3 26 L12 12 L16 18 L21 10 L29 26 Z' fill='%23f4f1e8'/><path d='M10 6 L6.4 13 L8.4 13 L5.6 18 L8 18 L5 24 L15 24 L12 18 L14.4 18 L11.6 13 L13.6 13 Z' fill='%2316201f' stroke='%2316201f' stroke-width='.6' stroke-linejoin='round'/><rect x='9.2' y='24' width='1.6' height='4' fill='%2316201f'/></svg>" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;overflow:hidden}
+#map{position:fixed;inset:0}
+.shade{position:fixed;inset:0;pointer-events:none;z-index:1;background:linear-gradient(180deg,rgba(5,9,12,.72) 0%,rgba(5,9,12,0) 32%,rgba(5,9,12,0) 50%,rgba(5,9,12,.9) 100%)}
+.head{position:fixed;left:44px;top:34px;z-index:2;max-width:640px;pointer-events:none}
+.head .k{font-size:12.5px;letter-spacing:.3em;text-transform:uppercase;color:#ffd2c4}
+.head h1{font-family:'Playfair Display',Georgia,serif;font-weight:900;font-size:64px;line-height:.98;margin:12px 0 10px;text-shadow:0 2px 20px rgba(0,0,0,.35)}
+.head p{font-family:Inter,system-ui,sans-serif;font-size:17px;line-height:1.45;font-weight:500;margin:0;color:#fff;max-width:600px;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 14px rgba(0,0,0,.75)}
+.head p b{font-weight:700}.head p span{display:block;font-size:14.5px;font-weight:400;color:#e4eaee}
+.head .who{font-size:12.5px;letter-spacing:.3em;text-transform:uppercase;color:#cfd8de;margin-top:16px}
+.card{position:fixed;right:36px;top:64px;z-index:2;width:300px;background:rgba(255,255,255,.62);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);color:#14202a;border-radius:6px;padding:14px 20px 10px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.card .r{border-top-color:rgba(20,32,42,.1)!important}
+.card .top{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.card .top .t{font-family:'Playfair Display';font-size:46px;font-weight:700;line-height:1;white-space:nowrap;flex:none}
+.card .top .d{font-size:13px;color:#56636d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.card .km{font-size:15px;color:#56636d;margin:-2px 0 10px;white-space:nowrap}.card .km b{font-size:20px;color:#e0452f;font-weight:700}
+.card .top .t svg{width:34px;height:24px;margin-right:6px;vertical-align:-2px}
+.card .r{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid #e4e8eb;font-size:14px}
+.card .r span:first-child{color:#56636d}.card .r b{font-weight:600;text-align:right}
+.card .src{font-size:11px;color:#8a959d;margin-top:6px}
+.bottom{position:fixed;left:0;right:0;bottom:0;z-index:2;padding:0 44px 22px}
+.prof{height:54px;margin-bottom:6px;cursor:pointer}
+.prof svg{display:block;width:100%;height:100%}
+.chap{display:flex;gap:4px;margin-bottom:12px}
+.chap button{all:unset;cursor:pointer;min-width:0}
+.chap .bar{height:3px;background:rgba(255,255,255,.22);border-radius:2px;overflow:hidden}
+.chap .bar i{display:block;height:100%;width:0;background:#e0452f}
+.chap .n{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#aeb9c1;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chap button.on .n{color:#fff}.chap button:hover .n{color:#ffd2c4}
+.strip{display:flex;gap:6px;height:96px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.strip a{flex:none;height:100%;aspect-ratio:3/2;background:#1b232a center/cover;border-radius:2px;position:relative}
+.strip a span{position:absolute;left:6px;bottom:5px;font-size:11px;color:#fff;text-shadow:0 1px 4px #000}
+.strip .empty{font-size:13px;color:#aeb9c1;align-self:center}
+/* landmarks */
+.lm{display:flex;align-items:center;gap:6px;pointer-events:auto;cursor:default;transform:translateY(0)}
+.lm i{width:9px;height:9px;border-radius:50%;border:2px solid #0b0f12;flex:none;box-shadow:0 0 0 1px rgba(255,255,255,.5)}
+.lm.peak i{border-radius:0;width:0;height:0;border:6px solid transparent;border-bottom:10px solid #fff;border-top:0;box-shadow:none;margin-top:-4px}
+.lm span{font-size:12px;font-weight:600;color:#fff;text-shadow:0 1px 3px #000,0 0 8px rgba(0,0,0,.7);white-space:nowrap}
+.lm.term span{font-family:'Playfair Display';font-size:15px;font-weight:700}
+#map.z-lo .lm.t2 span,#map.z-lo .lm.t3,#map.z-mid .lm.t3 span{display:none}
+.ph{width:38px;height:38px;border-radius:50%;border:2px solid #fff;background:#1b232a center/cover;box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer}
+/* replay controls */
+.ctl{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.ctl #play{all:unset;width:48px;height:48px;border-radius:50%;background:#e0452f;color:#fff;font-size:16px;cursor:pointer;box-shadow:0 4px 14px rgba(224,69,47,.4);flex:none;display:grid;place-items:center}
+.ctl #speed{all:unset;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.25);color:#fff;border-radius:16px;padding:6px 11px;font:500 13px Inter,sans-serif;cursor:pointer}
+.ctl #clock{font-size:14px;color:#e9eef1}
+.ctl .stats{margin-left:auto;display:flex;gap:26px;font-size:13px;color:#aeb9c1}
+.ctl .stats i{font-style:normal}.ctl .stats b{color:#fff;font-weight:600;font-size:15px;margin-left:6px}
+@media(max-width:820px){.ctl .stats{display:none}.ctl #play{width:40px;height:40px}}
+/* position */
+.me{position:relative;width:18px;height:18px}
+.me i{position:absolute;inset:0;border-radius:50%;background:#e0452f;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+.me i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid #e0452f;animation:mePulse 2s ease-out infinite}
+@keyframes mePulse{from{transform:scale(1);opacity:.9}to{transform:scale(3);opacity:0}}
+.me-bub{position:absolute;left:0;top:0;z-index:4;will-change:transform}
+.me-bub .bub{white-space:nowrap;font:600 12px/1 Inter,system-ui,sans-serif;background:#fff;color:#14202a;padding:5px 9px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.me-bub .bub b{color:#e0452f}.me-bub .bub .up{color:#56636d;font-weight:500}.me-bub{pointer-events:none}
+.maplibregl-ctrl-group{background:#fff!important}
+.maplibregl-ctrl-attrib{font-size:10px}
+.maplibregl-ctrl-bottom-right{bottom:300px}
+.maplibregl-ctrl-bottom-left{bottom:300px;left:53.5px;display:flex;flex-direction:column-reverse;z-index:3}   /* centred over the 48px play button */
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl-group{background:#fff!important;opacity:1}.maplibregl-ctrl-bottom-left .maplibregl-ctrl{margin:0 0 8px 0}
+.card .more{display:none}
+.card .note{display:none;font-size:13px;color:#56636d;margin:-6px 0 10px;white-space:nowrap}.card .note.on{display:block}.card .note b{color:#14202a;font-weight:600}
+/* phone: everything stacked above the bottom switcher, small day card that opens on tap */
+@media(max-width:820px){
+  .head{left:16px;top:20px;right:16px}.head .k{font-size:10.5px;letter-spacing:.18em}.head h1{font-size:34px;margin:6px 0 4px}.head p{font-size:15px}.head .who{display:none}
+  .bottom{padding:0 16px 66px}.strip{height:58px}.chap{margin-bottom:8px}.chap .n{font-size:9.5px;letter-spacing:.04em;margin-top:6px;visibility:hidden}.chap button.on .n{visibility:visible;overflow:visible}   /* phone: only the current section is named */.prof{height:44px}
+  .card{left:16px;right:16px;top:auto;bottom:262px;width:auto;padding:8px 12px 6px;cursor:pointer}
+  .card .top{margin-bottom:2px}.card .top .t{font-size:24px}.card .km{margin:0;font-size:13px}.card .km b{font-size:16px}
+  .card .r{display:none;padding:5px 0;font-size:13px}.card.open .r{display:flex}.card.open .r.hide-m{display:none}.card .src{display:none}
+  .card .more{display:block;position:absolute;right:12px;top:10px;font-size:12px;color:#8a959d}.card.open .more{transform:rotate(180deg)}
+  .maplibregl-ctrl-bottom-left{bottom:262px;left:25.5px}
+  .card{display:none!important}               /* phone: no day card, the bar and the label at the tent are enough */
+  #prof{pointer-events:none}                   /* phone: profile not touchable, so pinching the map can't jump to Oregon */
+  .maplibregl-ctrl-bottom-right{bottom:262px}
+  body.card-open .maplibregl-ctrl-bottom-left,body.card-open .maplibregl-ctrl-bottom-right{display:none}
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="shade"></div>
+
+<div class="head">
+  <div class="k" id="kicker">&nbsp;</div>
+  <h1 id="title">Pacific Crest Trail</h1>
+  <p id="sub">&nbsp;</p>
+  <div class="who" data-de="Pacific Crest Trail 2027 · Campo → Kanada" data-en="Pacific Crest Trail 2027 · Campo → Canada">Pacific Crest Trail 2027 · Campo → Kanada</div>
+</div>
+
+<div class="card" id="card">
+  <span class="more">▾</span>
+  <div class="top"><span class="t" id="cDay">–</span><span class="d" id="cDate"></span></div>
+  <div class="km"><b id="cToday">–</b> <span id="cTodayL"></span></div>
+  <div class="note" id="cNote"></div>
+  <div class="r"><span data-de="Gesamt gelaufen" data-en="Total hiked">Gesamt gelaufen</span><b id="cTotal">–</b></div>
+  <div class="r"><span data-de="Position am Trail" data-en="Trail position">Position am Trail</span><b id="cKm">–</b></div>
+  <div class="r"><span data-de="Bis Kanada" data-en="To Canada">Bis Kanada</span><b id="cLeft">–</b></div>
+  <div class="r hide-m"><span data-de="Höhe" data-en="Elevation">Höhe</span><b id="cElev">–</b></div>
+  <div class="r"><span data-de="Nächster Ort" data-en="Next town">Nächster Ort</span><b id="cNext">–</b></div>
+  <div class="r hide-m"><span data-de="Letztes Signal" data-en="Last signal">Letztes Signal</span><b id="cSeen">–</b></div>
+  <div class="src" data-de="Track: Garmin · Fotos: Flickr · Karte: Esri" data-en="Track: Garmin · Photos: Flickr · Map: Esri">Track: Garmin · Fotos: Flickr · Karte: Esri</div>
+</div>
+
+<div class="bottom">
+  <div class="ctl">
+    <button id="play" title="Abspielen (Leertaste)">▶</button>
+    <button id="speed" title="Tempo">1×</button>
+    <span id="clock"></span>
+    <div class="stats"><span><i data-de="Tag" data-en="Day">Tag</i> <b id="sDay">–</b></span><span><i data-de="gelaufen" data-en="hiked">gelaufen</i> <b id="sKm">–</b></span><span><i data-de="bis Kanada" data-en="to Canada">bis Kanada</i> <b id="sLeft">–</b></span></div>
+  </div>
+  <div class="prof" id="prof"></div>
+  <div class="chap" id="chap"></div>
+  <div class="strip" id="strip"><span class="empty" data-de="Fotos werden geladen …" data-en="Loading photos …">Fotos werden geladen …</span></div>
+</div>
+
+
+
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="/pct-tracker/labs/pct.js?v=80"></script>
+<script>
+(function () {
+  var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
+  L.switcher(0);
+
+  var map = new maplibregl.Map({
+    container: "map", center: [-116.47, 32.59], zoom: 9, attributionControl: { compact: true },
+    style: { version: 8, sources: {
+      sat: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, attribution: "Esri, Maxar, Earthstar Geographics" } },
+      layers: [{ id: "sat", type: "raster", source: "sat", paint: { "raster-saturation": -0.25, "raster-brightness-max": 0.85 } }] }
+  });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-left");
+  window.__map = map;   // handy for testing in the browser console
+  function zoomClass() { var z = map.getZoom(), el = $("map"); el.classList.toggle("z-lo", z < 7.5); el.classList.toggle("z-mid", z >= 7.5 && z < 10); }
+  map.on("zoom", zoomClass);
+
+  function ago(ts) {
+    var t = Date.parse(ts || ""); if (!isFinite(t)) return "–";
+    var h = (Date.now() - t) / 3600000;
+    if (h < 1) return T("gerade eben", "just now"); if (h < 24) return T("vor " + Math.round(h) + " Std.", Math.round(h) + " h ago");
+    var d = Math.round(h / 24); return d === 1 ? T("gestern", "yesterday") : T("vor " + nf(d) + " Tagen", nf(d) + " days ago");
+  }
+  function firstSentence(s) { s = String(s || "").replace(/\s+/g, " ").trim(); var m = s.match(/^.{20,180}?[.!?](\s|$)/); return m ? m[0].trim() : s.slice(0, 160); }
+
+  Promise.all([L.load(), map.loaded() ? 0 : new Promise(function (r) { map.on("load", r); })]).then(function (r) {
+    var D = r[0], here = D.here;
+
+    // --- text ---
+    var ri = D.regions.indexOf(D.region);
+    $("kicker").textContent = T("Abschnitt ", "Section ") + (ri + 1) + T(" von ", " of ") + D.regions.length + T(" · Tag ", " · Day ") + (D.dayNo || 0) + " · " + L.DU() + " " + nf(L.distV(here.km));
+    $("title").textContent = L.reg(D.region);
+    var toStart = Math.ceil((Date.parse(L.START + "T00:00:00") - Date.now()) / 86400000);
+    if (toStart > 0) $("sub").textContent = T("Noch " + nf(toStart) + " Tage bis zum Start am 22. April 2027.", nf(toStart) + " days until the start on April 22, 2027.");
+    else $("sub").textContent = D.next ? T("Nächster Ort: ", "Next town: ") + D.next.name + T(" in ", " in ") + L.dist(D.next.km - here.km) + "." : T("Auf dem letzten Stück nach Kanada.", "On the last stretch to Canada.");
+    $("cSeen").textContent = ago(D.latest && D.latest.ts) + (D.latest && D.latest.manual ? T(" (per Nachricht)", " (by message)") : "");
+
+    // --- info card for one day (default: the latest). Click a day on the map to see it. ---
+    function nextTownFrom(km) { return D.towns.filter(function (tw) { return tw.km > km + 0.5; })[0] || null; }
+    function card(i, zero) {
+      var d = D.days[i], c = D.camps[i];
+      if (!d) { $("cDay").innerHTML = '<span style="font-size:32px">' + T("Vor dem Start", "Before the start") + "</span>"; $("cDate").textContent = ""; $("cToday").textContent = "0"; $("cTodayL").textContent = L.DU(); return; }
+      var tp = L.trailPoint(D, c.lnglat) || D.here, tot = D.days.slice(0, i + 1).reduce(function (s, x) { return s + x.km; }, 0), nt = nextTownFrom(tp.km);
+      if (zero) {
+        $("cDay").innerHTML = L.BED + "Zero";
+        $("cDate").textContent = (zero.town ? T("in ", "in ") + zero.town.name + " · " : "") + T("nach Tag ", "after day ") + (i + 1);
+        $("cToday").textContent = zero.zero + (zero.zero === 1 ? T(" Ruhetag", " rest day") : T(" Ruhetage", " rest days")); $("cTodayL").textContent = ""; $("cNote").classList.remove("on");
+      } else {
+        $("cDay").textContent = T("Tag ", "Day ") + (i + 1);
+        $("cDate").textContent = L.dfmt(d.date + "T12:00", { weekday: "short", day: "numeric", month: "long" });
+        var cd = $("cDate"); if (cd.scrollWidth > cd.clientWidth + 1) cd.textContent = L.dfmt(d.date + "T12:00", { weekday: "short", day: "numeric", month: "short" });   // "16. Nov." when the long month doesn't fit
+        $("cToday").textContent = L.dist(d.km, 1); $("cTodayL").textContent = (d.sec ? "· " + hmm(d.sec) + " " : "") + (d.up ? "· ↑\u00a0" + L.elev(d.up).replace(" ", "\u00a0") : "");   // one line: km · time · climb
+        // nero / hero on a line of its own, so nothing gets broken up
+        $("cNote").innerHTML = d.nero ? "<b>Nero</b> · " + T("Nacht in ", "night in ") + d.nero : d.hero ? "<b>Hero</b> · " + T("rein und raus in ", "in and out of ") + d.hero : "";
+        $("cNote").classList.toggle("on", !!(d.nero || d.hero)); $("cNote").title = d.nero ? L.TERMS.nero : d.hero ? L.TERMS.hero : "";
+      }
+      $("cTotal").textContent = L.dist(tot);
+      $("cKm").textContent = L.DU() + " " + nf(L.distV(tp.km)) + " · " + nf(tp.km / D.total * 100, 1) + " %";
+      $("cLeft").textContent = L.dist(D.total - tp.km);
+      $("cElev").textContent = L.elev(tp.m);
+      $("cNext").textContent = nt ? nt.name + " · " + L.dist(nt.km - tp.km) : T("Kanada!", "Canada!");
+      card.cur = zero ? -1 : i;
+    }
+    card(D.days.length - 1);
+    $("card").onclick = function () { if (window.innerWidth <= 820) document.body.classList.toggle("card-open", this.classList.toggle("open")); };
+
+    // --- map: PCT line, walked track, landmarks ---
+    map.addSource("pct", { type: "geojson", data: D.line });
+    map.addLayer({ id: "pct", type: "line", source: "pct", paint: { "line-color": "#fff", "line-width": 1.6, "line-opacity": .55, "line-dasharray": [2, 2] } });
+    map.addSource("trk", { type: "geojson", data: D.track });
+    map.addLayer({ id: "trk-glow", type: "line", source: "trk", paint: { "line-color": "#e0452f", "line-width": 9, "line-opacity": .28, "line-blur": 4 }, layout: { "line-cap": "round", "line-join": "round" } });
+    map.addLayer({ id: "trk", type: "line", source: "trk", paint: { "line-color": L.dayColor("#ff6b4f", "#ffd166"), "line-width": 3 }, layout: { "line-cap": "round", "line-join": "round" } });
+    L.addOffTrail(map, D, "#8fd3ff");   // off the PCT: towns, side trails, alternates
+    L.addCamps(map, D, { fill: "#ffd166", ink: "#14202a" });
+    L.addManual(map, D, { fill: "#fff", ink: "#e0452f" });
+    L.addClosures(map, D);
+    L.declutter(map);
+    map.addLayer({ id: "trk-sel", type: "line", source: "trk", filter: ["==", ["get", "dayIdx"], -1], paint: { "line-color": "#fff", "line-width": 6, "line-opacity": .9 }, layout: { "line-cap": "round", "line-join": "round" } }, "trk");
+    map.addLayer({ id: "trk-hit", type: "line", source: "trk", paint: { "line-color": "#000", "line-width": 18, "line-opacity": 0 } });
+    function pickDay(i) { card(i); map.setFilter("trk-sel", ["==", ["get", "dayIdx"], i]); if (D.camps[i]) pinBub(D.camps[i].lnglat, bubTxt(i + 1, D.days[i])); }
+    map.on("click", function (e) {   // a day on the map: show it in the card; elsewhere: back to the latest day
+      if (L.justPaused()) return;
+      var f = map.queryRenderedFeatures(e.point, { layers: ["trk-hit"] })[0];
+      if (f && f.properties.dayIdx != null) pickDay(+f.properties.dayIdx);
+      else if (card.cur !== D.days.length - 1 || map.getFilter("trk-sel")[2] !== -1) { card(D.days.length - 1); map.setFilter("trk-sel", ["==", ["get", "dayIdx"], -1]); pinBub(meMk.getLngLat(), bubTxt(D.dayNo, D.today)); }
+    });
+    map.on("mouseenter", "trk-hit", function () { map.getCanvas().style.cursor = "pointer"; });
+    map.on("mouseleave", "trk-hit", function () { map.getCanvas().style.cursor = ""; });
+
+    L.addLandmarks(map, D);
+
+    // --- position marker (simple pulsing dot; the animated hiker is parked in pct.js for later) ---
+    L.addTowns(map, D, {});
+    var pos = D.latest && typeof D.latest.lat === "number" ? [D.latest.lon, D.latest.lat] : [here.lon, here.lat];
+    var me = document.createElement("div"); me.className = "me";
+    me.innerHTML = '<i></i>';
+    var meMk = new maplibregl.Marker({ element: me, anchor: "center" }).setLngLat(pos).addTo(map);
+    // the label follows the dot smoothly instead of jumping with every bend of the track
+    // label is part of the marker itself, so it can never lag behind or cover the dot
+    var bubEl = document.createElement("div"); bubEl.className = "me-bub";
+    function hmm(sec) { var m = Math.round(sec / 60); return Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0") + "\u00a0h"; }
+    function bubTxt(n, d) { return T("Tag ", "Day ") + (n || 0) + " · <b>" + L.dist(d ? d.km : 0, 1) + "</b>" + (d && d.sec ? ' · <span class="up">' + hmm(d.sec) + "</span>" : "") + (d && d.up ? ' · <span class="up">↑\u00a0' + L.elev(d.up).replace(" ", "\u00a0") + "</span>" : ""); }
+    bubEl.innerHTML = '<div class="bub">' + bubTxt(D.dayNo, D.today) + '</div>';
+    if (!D.days.length) bubEl.style.visibility = "hidden";   // nothing walked yet: no "Tag 0" label
+    // The label belongs to the tent: it appears when the dot reaches a tent (or the newest position)
+    // and stays pinned there while the dot walks on, until the next tent. Nothing while a day is underway.
+    map.getContainer().appendChild(bubEl);
+    var pinLL = meMk.getLngLat();
+    function pinBub(ll, txt) { pinLL = maplibregl.LngLat.convert(ll); bubEl.firstChild.innerHTML = txt; bubEl.style.display = ""; }
+    function hideBub() { bubEl.style.display = "none"; }
+    (function place() {
+      var p = map.project(pinLL);
+      var w = bubEl.offsetWidth, cw = map.getContainer().clientWidth, x = p.x + 24 + w > cw - 8 ? p.x - 24 - w : p.x + 24;   // flip to the left at the screen edge
+      bubEl.style.transform = "translate(" + Math.max(8, x).toFixed(1) + "px," + (p.y - 14).toFixed(1) + "px) translate(0,-50%)";
+      requestAnimationFrame(place);
+    })();
+    meMk.getElement().style.zIndex = 5;   // dot and label above tents and badges
+    L.addLocate(map, function () { return meMk.getLngLat().toArray(); }, "bottom-left");
+
+    // --- start view: last day + position ---
+    var lastDay = D.today ? D.track.features.filter(function (f) { return f.properties.day === D.today.date; }) : [];
+    var b = new maplibregl.LngLatBounds(pos, pos);
+    lastDay.forEach(function (f) { f.geometry.coordinates.forEach(function (c) { b.extend(c); }); });
+    // zoom so the last day fits, but keep the hiker in the open middle of the screen (not under the text boxes)
+    var mob = innerWidth < 820, cam = map.cameraForBounds(b, { padding: mob ? 40 : { top: 200, bottom: 240, left: 120, right: 380 } });
+    var z = D.track.features.length ? 13 : Math.max(9, Math.min(12.5, cam ? cam.zoom : 11));   // close to the newest tracked point
+    map.jumpTo({ center: pos, zoom: z });
+    map.panBy(mob ? [0, 60] : [-130, 30], { duration: 0 });
+    zoomClass();
+
+    // --- replay ---
+    L.replay({ map: map, D: D, marker: meMk, ui: { play: $("play"), speed: $("speed"), clock: $("clock") },
+      onCamp: function (c) { if (c) { card.zeroOn = true; card(c.day - 1, c); } else card.zeroOn = false; },
+      onUpdate: function (s) {
+        $("sDay").textContent = s.dayNo || 0; $("sKm").textContent = L.dist(s.km);
+        var sn = L.trailPoint(D, s.lnglat) || D.here;
+        $("sLeft").textContent = L.dist(D.total - (sn ? sn.km : 0));
+        if (s.atCamp || s.end) pinBub(s.end ? meMk.getLngLat() : s.lnglat, bubTxt(s.dayNo, s.day));
+        else if (s.km < 0.05) hideBub();   // replay starts again at Campo
+        if (s.dayNo && s.dayNo - 1 !== card.cur && !card.zeroOn) card(s.dayNo - 1);
+        if (sn && Math.abs(sn.km - strip.km) > 0.8) strip(sn.km);
+      } });
+    if (!D.track.features.length) { $("play").style.opacity = .4; $("clock").textContent = T("Noch keine Aufzeichnung, Start am 22. April 2027", "Nothing recorded yet, start on April 22, 2027"); }
+
+    // --- chapter bar ---
+    $("chap").innerHTML = D.regions.map(function (g, i) {
+      var p = Math.max(0, Math.min(1, (here.km - g.ka) / (g.kb - g.ka)));
+      return '<button data-i="' + i + '" class="' + (g === D.region ? "on" : "") + '" style="flex:' + (g.kb - g.ka) + '"><div class="bar"><i style="width:' + (p * 100) + '%"></i></div><div class="n">' + L.regS(g) + "</div></button>";
+    }).join("");
+    $("chap").querySelectorAll("button").forEach(function (bt) {
+      bt.onclick = function () {
+        var g = D.regions[+bt.dataset.i], bb = new maplibregl.LngLatBounds();
+        D.pts.forEach(function (p) { if (p.km >= g.ka && p.km <= g.kb) bb.extend([p.lon, p.lat]); });
+        map.fitBounds(bb, { padding: { top: 200, bottom: 260, left: 60, right: 360 }, duration: 900 });
+      };
+    });
+
+    // --- slim elevation profile: walked part follows the replay, drag to look anywhere on the trail ---
+    var W = 1000, H = 54, mx = 0; D.pts.forEach(function (p) { if (p.m > mx) mx = p.m; });
+    var sx = function (km) { return km / D.total * W; }, sy = function (m) { return H - 4 - m / mx * (H - 10); };
+    var spath = D.pts.filter(function (_, i) { return i % 2 === 0; }).map(function (p, i) { return (i ? "L" : "M") + sx(p.km).toFixed(1) + " " + sy(p.m).toFixed(1); }).join("");
+    $("prof").innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none">' +
+      '<defs><clipPath id="done"></clipPath></defs>' +
+      L.closureBands(D, sx, 0, H) +
+      '<path d="' + spath + "L" + W + " " + H + "L0 " + H + 'Z" fill="rgba(255,255,255,.10)"/>' +
+      '<path d="' + spath + '" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1" vector-effect="non-scaling-stroke"/>' +
+      '<g clip-path="url(#done)"><path d="' + spath + "L" + W + " " + H + "L0 " + H + 'Z" fill="rgba(224,69,47,.35)"/><path d="' + spath + '" fill="none" stroke="#ff6b4f" stroke-width="2" vector-effect="non-scaling-stroke"/></g>' +
+      '<line id="curL" x1="0" x2="0" y1="0" y2="' + H + '" stroke="#fff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>' +
+      '<line id="prvL" x1="0" x2="0" y1="0" y2="' + H + '" stroke="#7aa2ff" stroke-width="1.5" vector-effect="non-scaling-stroke" visibility="hidden"/></svg>';
+    function strip(km) {   // only the trail sections actually walked up to km are highlighted
+      strip.km = km; var x = sx(km);
+      $("done").innerHTML = D.covered.map(function (c) { var a = Math.min(c[0], km), b = Math.min(c[1], km); return b > a ? '<rect x="' + sx(a) + '" y="0" width="' + (sx(b) - sx(a)) + '" height="' + H + '"/>' : ""; }).join(""); $("curL").setAttribute("x1", x); $("curL").setAttribute("x2", x); }
+    strip(here.km);
+    L.scrubProfile($("prof"), map, D, function (km, p, walked) { var x = sx(km), l = $("prvL"); l.setAttribute("x1", x); l.setAttribute("x2", x); l.setAttribute("visibility", walked ? "hidden" : "visible"); if (walked) strip(km); }, function () { $("prvL").setAttribute("visibility", "hidden"); });
+
+    // --- photos: strip + on the map where they were taken ---
+    L.photos().then(function (ph) {
+      L.placePhotos(ph, D);
+      if (!ph.length) { $("strip").innerHTML = '<span class="empty">' + (L.MAIN && new Date() < new Date(L.START + "T00:00:00") ? T("Die Fotos kommen ab dem Start.", "Photos will appear from the start.") : T("Noch keine Fotos im Album.", "No photos in the album yet.")) + "</span>"; return; }
+      $("strip").innerHTML = ph.map(function (p) {
+        var d = p.taken ? L.dfmt(p.taken.replace(" ", "T"), { day: "numeric", month: "short" }) : "";
+        return '<a href="#" style="background-image:url(' + p.m + ')" data-i="' + ph.indexOf(p) + '"><span>' + d + "</span></a>";
+      }).join("");
+      $("strip").querySelectorAll("a").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); L.lightbox(ph, +a.dataset.i); }; });
+      ph.filter(function (p) { return p.lat && p.lon; }).forEach(function (p) {
+        var el = document.createElement("div"); el.className = "ph"; el.style.backgroundImage = "url(" + p.q + ")";
+        el.onclick = function () { L.lightbox(ph, ph.indexOf(p)); };
+        new maplibregl.Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(map);
+      });
+    });
+  }).catch(function (e) { $("sub").textContent = T("Daten konnten nicht geladen werden (", "Could not load data (") + e.message + ")."; });
+})();
+</script>
+</body>
+</html>
