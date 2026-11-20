@@ -244,7 +244,7 @@
   // ---- Load everything and derive what the designs need ----
   function load() {
     return Promise.all([J("data/pct_profile.json"), J(DIR + "track.geojson").catch(function () { return { features: [] }; }),
-      J(DIR + "latest.json").catch(function () { return null; }), J("data/Full_PCT_Simplified.geojson"),
+      J(DIR + "latest.json").catch(function () { return null; }), J("data/pct_line.json"),
       J("labs/diary.json").catch(function () { return window.PCT_DIARY || []; }),
       J(DIR + "manual.json").catch(function () { return []; }),
       J(DIR + "closures.json").catch(function () { return []; })])
@@ -264,7 +264,22 @@
         if (!here || here.off > 50) here = { km: 0, m: pts[0].m, lat: pts[0].lat, lon: pts[0].lon, off: 0 };
         // fine PCT line (the profile points are ~2 km apart, too coarse to tell "on" from "beside" the trail)
         var lc = []; (line.features || []).forEach(function (f) { var g = f.geometry; (g.type === "LineString" ? [g.coordinates] : g.coordinates).forEach(function (part) { lc = lc.concat(part); }); });
-        function nearLine(lat, lon) { var b = null, bd = 1e18; for (var i = 0; i < lc.length; i++) { var d = hav(lat, lon, lc[i][1], lc[i][0]); if (d < bd) { bd = d; b = lc[i]; } } return { ll: b, d: bd }; }
+        // grid index (~1 km cells) so lookups only check nearby points instead of all ~126,000
+        var grid = {}, G = 0.01;
+        lc.forEach(function (c) { var k = Math.floor(c[0] / G) + "," + Math.floor(c[1] / G); (grid[k] = grid[k] || []).push(c); });
+        function nearLine(lat, lon) {
+          var gx = Math.floor(lon / G), gy = Math.floor(lat / G), b = null, bd = 1e18;
+          for (var r = 0; r <= 45; r++) {   // grow the search ring until a point is found and the ring is farther than it
+            for (var dx = -r; dx <= r; dx++) for (var dy = -r; dy <= r; dy++) {
+              if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+              var cell = grid[(gx + dx) + "," + (gy + dy)]; if (!cell) continue;
+              for (var q = 0; q < cell.length; q++) { var d = hav(lat, lon, cell[q][1], cell[q][0]); if (d < bd) { bd = d; b = cell[q]; } }
+            }
+            if (b && bd < (r - 1) * 0.8) break;   // a ring is at least ~0.8 km (r-1 cells) away
+          }
+          if (!b) for (var i = 0; i < lc.length; i++) { var d2 = hav(lat, lon, lc[i][1], lc[i][0]); if (d2 < bd) { bd = d2; b = lc[i]; } }
+          return { ll: b, d: bd };
+        }
         var lms = LM.map(function (m) {
           var km = m[0] * MI2KM * F, o = OFF[m[1]], p = o ? snap(pts, o[0], o[1]) : atKm(pts, km), near = null;
           if (o) { km = p.km; near = nearLine(o[0], o[1]); }
@@ -338,8 +353,6 @@
         // Trail sections actually walked on the PCT (fire closures, skips or a flip-flop leave gaps).
         // Only track points within ~250 m of the PCT line count; side trails, alternates and walks
         // into town are hiked km, but not PCT km. Grid index over the fine PCT line for speed.
-        var grid = {}, G = 0.01;
-        lc.forEach(function (c) { var k = Math.floor(c[0] / G) + "," + Math.floor(c[1] / G); (grid[k] = grid[k] || []).push(c); });
         function onPct(c) {
           var gx = Math.floor(c[0] / G), gy = Math.floor(c[1] / G);
           for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) {
