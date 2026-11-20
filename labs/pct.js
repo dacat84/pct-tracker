@@ -469,9 +469,7 @@
       el.innerHTML = (ICON[t[0]] ? iconHtml(t[0]) : '<i style="background:' + (theme.dot || "#f5b301") + '"></i>') + '<span style="color:' + (theme.text || "#fff") + ";text-shadow:" + (theme.halo || "0 1px 3px #000,0 0 8px rgba(0,0,0,.7)") + '">' + t[0] + "</span>";
       var tkm = nw("Trail-" + DU() + "\u00a0" + nf(distV(s ? s.km : 0)));
       var pop = new maplibregl.Popup({ offset: 12, className: "tw-pop", maxWidth: "300px" }).setHTML(
-        "<h4>" + t[0] + '</h4><div class="m">' + (direct ? nw(T("Direkt am Trail", "Right on the trail")) + " · " + tkm
-          : (acc ? nw(T("Zugang: ", "Access: ")) + " " + acc[0] : nw(T("Nächster Trailpunkt", "Nearest trail point"))) + "<br>" + tkm + "<br>" +
-            nw(T("ca. ", "approx. ") + dist(off, off < 10 ? 1 : 0) + (via ? T(" über die Straße in den Ort", " by road to town") : T(" Luftlinie in den Ort", " to town (straight line)")))) + "</div>" +
+        "<h4>" + t[0] + '</h4><div class="m">' + (direct ? nw(T("Direkt am Trail", "Right on the trail")) : acc ? nw(T("Zugang: ", "Access: ")) + " " + acc[0] : nw(T("Abseits vom Trail", "Off the trail"))) + "</div>" +
         nwList(t[3]) );
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-6, 0] }).setLngLat([t[2], t[1]]).setPopup(pop).addTo(map);
     });
