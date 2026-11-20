@@ -463,7 +463,7 @@
       var direct = off < 1.5, via = !!(acc && acc[3]);
       if (s && !direct) lines.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: path } });
       var el = document.createElement("div"); el.className = "tw";
-      el.innerHTML = '<i style="background:' + (theme.dot || "#f5b301") + '"></i><span style="color:' + (theme.text || "#fff") + ";text-shadow:" + (theme.halo || "0 1px 3px #000,0 0 8px rgba(0,0,0,.7)") + '">' + t[0] + "</span>";
+      el.innerHTML = (ICON[t[0]] ? iconHtml(t[0]) : '<i style="background:' + (theme.dot || "#f5b301") + '"></i>') + '<span style="color:' + (theme.text || "#fff") + ";text-shadow:" + (theme.halo || "0 1px 3px #000,0 0 8px rgba(0,0,0,.7)") + '">' + t[0] + "</span>";
       var tkm = nw("Trail-" + DU() + "\u00a0" + nf(distV(s ? s.km : 0)));
       var pop = new maplibregl.Popup({ offset: 12, className: "tw-pop", maxWidth: "300px" }).setHTML(
         "<h4>" + t[0] + '</h4><div class="m">' + (direct ? nw(T("Direkt am Trail", "Right on the trail")) + " · " + tkm
@@ -479,6 +479,15 @@
     map.addLayer({ id: "tw-links", type: "line", source: "tw-links", minzoom: 7, paint: { "line-color": theme.link || "#f5b301", "line-width": 1.3, "line-opacity": .8, "line-dasharray": [2, 2] } });
   }
 
+  // Small picture symbols for places with something special (instead of the plain dot / square)
+  var ICON = {
+    "Julian": "🥧", "Idyllwild": "🐕", "Kennedy Meadows": "👏", "Seiad Valley": "🥞", "Trout Lake": "🥤", "Stehekin": "🥐",
+    "Muir Trail Ranch": "♨️", "Timberline Lodge": "🍳", "Paradise Valley Café": "🍔", "Etna": "🍺", "Cascade Locks": "🌉",
+    "Cajon Pass McDonald's": "🍟", "Deep Creek Hot Springs": "♨️", "Burney Falls": "💦", "Tunnel Falls": "💦",
+    "Eagle Rock": "🦅", "Subway Cave": "🔦", "Vasquez Rocks": "🪨", "Kendall Katwalk": "🧗"
+  };
+  function iconHtml(name) { return '<b style="font-size:17px;line-height:1;font-style:normal;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))">' + ICON[name] + "</b>"; }
+
   // ---- Trail landmarks (peaks, passes, water, parks, termini), clickable ----
   function addLandmarks(map, D, theme) {
     theme = theme || {};
@@ -487,13 +496,9 @@
       el.className = "lm " + l.type + " t" + l.tier; el.style.cursor = "pointer"; el.style.pointerEvents = "auto";
       el.innerHTML = "<i style='background:" + (theme.dot ? theme.dot(l) : Ty.c) + "'></i><span>" + l.name + "</span>";
       if (l.type === "peak" && !theme.dot) el.firstChild.style.background = "transparent";
-      if (/McDonald/.test(l.name)) {   // a plain golden M instead of the dot
-        el.firstChild.style.cssText = "background:none;border:0;width:auto;height:auto;display:inline-block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))";
-        el.firstChild.innerHTML = '<svg viewBox="0 0 24 20" width="22" height="18"><path d="M3 9a9 6.5 0 0 1 18 0z" fill="#e8a33a"/><circle cx="8" cy="5.5" r=".7" fill="#fff6d8"/><circle cx="12" cy="4" r=".7" fill="#fff6d8"/><circle cx="16" cy="5.5" r=".7" fill="#fff6d8"/><rect x="2.5" y="9.6" width="19" height="2" rx="1" fill="#5aa832"/><rect x="2.5" y="11.6" width="19" height="2.6" rx="1.2" fill="#6b3a1f"/><path d="M3 14.8h18a2 2 0 0 1-2 3H5a2 2 0 0 1-2-3z" fill="#e8a33a"/></svg>';
-        el.querySelector("span").textContent = "McDonald's";
-      }
+      if (ICON[l.name]) { el.firstChild.outerHTML = iconHtml(l.name); if (/McDonald/.test(l.name)) el.querySelector("span").textContent = "McDonald's"; }
       var pop = new maplibregl.Popup({ offset: 10, className: "tw-pop", maxWidth: "300px" }).setHTML(
-        "<h4>" + l.name + '</h4><div class="m">' + (KIND[l.name] ? KIND[l.name][LANG === "en" ? 1 : 0] : Ty[LANG]) + (ELEV[l.name] || l.type !== "spot" ? " · " + elev(l.m) : "") + "</div>" +   // no rough height for spots without a measured one
+        "<h4>" + l.name + '</h4><div class="m">' + (KIND[l.name] ? KIND[l.name][LANG === "en" ? 1 : 0] : Ty[LANG]) + (ELEV[l.name] ? " · " + elev(l.m) : "") + "</div>" +   // only measured heights, never a guess from the profile
         (l.side ? '<div class="n" style="margin-top:4px">' + (l.off > 8 ? T("Vom Trail aus zu sehen, ca. ", "Seen from the trail, approx. ") + dist(l.off) + T(" entfernt", " away") : T("Abstecher, ca. ", "Side trip, approx. ") + dist(l.off, l.off < 10 ? 1 : 0) + T(" vom Trail", " from the trail")) + "</div>" : "") +
         (NOTE[l.name] ? '<div class="n" style="margin-top:4px">' + NOTE[l.name] + "</div>" : ""));
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-5, 0] }).setLngLat([l.lon, l.lat]).setPopup(pop).addTo(map);
