@@ -169,7 +169,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     $("title").textContent = L.reg(D.region);
     var toStart = Math.ceil((Date.parse(L.START + "T00:00:00") - Date.now()) / 86400000);
     if (toStart > 0) $("sub").innerHTML = T("Noch <b>" + nf(toStart) + " Tage</b> bis zum Start.", "<b>" + nf(toStart) + " days</b> until the start.") +
-      "<span>" + T("Los geht es am 22. April 2027 am Southern Terminus in Campo, dann " + L.dist(D.total) + " bis nach Kanada.", "It starts on April 22, 2027 at the Southern Terminus in Campo, then " + L.dist(D.total) + " to Canada.") + "</span>";
+      "<span>" + T("Los geht es am 22. April 2027 am Southern Terminus in Campo, dann " + L.dist(4265) + " bis nach Kanada.", "It starts on April 22, 2027 at the Southern Terminus in Campo, then " + L.dist(4265) + " to Canada.")   // official length (2,650 mi) + "</span>";
     else $("sub").innerHTML = T("Ich bin gerade in <b>" + L.reg(D.region) + "</b>.", "I'm in <b>" + L.reg(D.region) + "</b> right now.") +
       "<span>" + L.dist(here.km) + T(" ab Campo", " from Campo") + (D.next ? T(" · nächster Ort ", " · next town ") + D.next.name : "") + T(" · noch ", " · ") + L.dist(D.total - here.km) + T(" bis zum Northern Terminus.", " to the Northern Terminus.") + "</span>";
     $("cSeen").textContent = ago(D.latest && D.latest.ts) + (D.latest && D.latest.manual ? T(" (per Nachricht)", " (by message)") : "");
