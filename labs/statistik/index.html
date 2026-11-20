@@ -34,6 +34,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
 .tile{border:1px solid #2a3038;background:#12161a;padding:14px 16px}
 .tile span{display:block;font:500 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#7d8790}
 .tile b{display:block;font:500 26px 'JetBrains Mono',monospace;margin:6px 0 2px;white-space:nowrap}
+.hero .split{font-size:14px;color:#9aa4ac;margin:-4px 0 14px}.hero .split b{color:#e6ebef;font-weight:600}.hero .split small{color:#6d7780}
 .tile em{font-style:normal;font:400 12.5px 'JetBrains Mono',monospace;color:#9aa4ad}
 .tile.w2{grid-column:span 2}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
@@ -69,6 +70,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
   <div class="hero">
     <div class="l" data-de="Gelaufen" data-en="Hiked">Gelaufen</div>
     <div class="v" id="hTot">–</div>
+    <div class="split" id="hSplit"></div>
     <div class="bar"><i id="hBar" style="width:0"></i></div>
     <div class="r"><b id="hPct">–</b><span id="hLeft">–</span></div>
   </div>
@@ -89,7 +91,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
   <div class="panel"><h3><span data-de="Höhenprofil · Campo → Kanada" data-en="Elevation profile · Campo → Canada">Höhenprofil · Campo → Kanada</span><span id="profInfo"></span></h3><div class="prof" id="prof"></div><div class="tip" id="tip"></div></div>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../pct.js?v=55"></script>
+<script src="../pct.js?v=56"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -117,6 +119,9 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     var h2 = two(D.walkedKm, 1); $("hTot").innerHTML = h2[0] + "<small>" + h2[1] + "</small>";
     // trail actually covered (skipped sections don't count)
     var pct = D.coveredKm / D.total * 100; $("hBar").style.width = Math.min(100, pct) + "%";
+    // hiked km = everything recorded; PCT km = trail sections covered (no side trails, towns, alternates)
+    var offKm = Math.max(0, D.walkedKm - D.coveredKm);
+    $("hSplit").innerHTML = T("davon auf dem PCT ", "on the PCT ") + "<b>" + L.dist(D.coveredKm) + "</b>" + (offKm >= 0.5 ? " · " + T("abseits ", "off the PCT ") + "<b>" + L.dist(offKm) + "</b> <small>" + T("(Side Trails, Orte, Umwege)", "(side trails, towns, detours)") + "</small>" : "");
     $("hPct").textContent = nf(pct, 1) + T(" % des PCT", " % of the PCT"); $("hLeft").textContent = T("noch ", "") + L.dist(Math.max(0, D.total - D.coveredKm)) + T("", " to go");
     var u2 = twoE(up); $("tUp").textContent = u2[0]; $("tUp2").textContent = u2[1];
     $("tTime").textContent = hm(sec); $("tTime2").textContent = "Ø " + hm(n ? sec / n : 0) + T(" pro Tag", " per day");   // the day count is already in "Tage unterwegs"

@@ -310,7 +310,19 @@
           c.hero = d.hero;
         });
 
-        // trail sections actually walked (fire closures, skips or a flip-flop leave gaps)
+        // Trail sections actually walked on the PCT (fire closures, skips or a flip-flop leave gaps).
+        // Only track points within ~250 m of the PCT line count; side trails, alternates and walks
+        // into town are hiked km, but not PCT km. Grid index over the fine PCT line for speed.
+        var grid = {}, G = 0.01;
+        lc.forEach(function (c) { var k = Math.floor(c[0] / G) + "," + Math.floor(c[1] / G); (grid[k] = grid[k] || []).push(c); });
+        function onPct(c) {
+          var gx = Math.floor(c[0] / G), gy = Math.floor(c[1] / G);
+          for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) {
+            var cell = grid[(gx + dx) + "," + (gy + dy)]; if (!cell) continue;
+            for (var q = 0; q < cell.length; q++) if (hav(c[1], c[0], cell[q][1], cell[q][0]) < 0.25) return true;
+          }
+          return false;
+        }
         var tks = [];
         feats.forEach(function (f) {
           var j = -1;
@@ -319,13 +331,15 @@
             var lo = j < 0 ? 0 : Math.max(0, j - 30), hi = j < 0 ? pts.length - 1 : Math.min(pts.length - 1, j + 30), bd = 1e18, bj = lo, i, d;
             for (i = lo; i <= hi; i++) { d = hav(c[1], c[0], pts[i].lat, pts[i].lon); if (d < bd) { bd = d; bj = i; } }
             if (bd > 20) for (i = 0; i < pts.length; i++) { d = hav(c[1], c[0], pts[i].lat, pts[i].lon); if (d < bd) { bd = d; bj = i; } }
-            j = bj; if (bd <= 5) tks.push(pts[bj].km);
+            j = bj; if (bd <= 5 && onPct(c)) tks.push(pts[bj].km);
           });
         });
         tks.sort(function (a, b) { return a - b; });
         var covered = [];
-        tks.forEach(function (k) { var l = covered[covered.length - 1]; if (l && k - l[1] <= 6) l[1] = Math.max(l[1], k); else covered.push([k, k]); });
-        if (covered.length && covered[0][0] < 6) covered[0][0] = 0;   // from the terminus
+        // small gaps up to 3 km are bridged (GPS gaps, a few hundred metres skipped at a road crossing
+        // or town junction); anything longer stays open as not walked
+        tks.forEach(function (k) { var l = covered[covered.length - 1]; if (l && k - l[1] <= 3) l[1] = Math.max(l[1], k); else covered.push([k, k]); });
+        if (covered.length && covered[0][0] < 3) covered[0][0] = 0;   // from the terminus
         var coveredKm = covered.reduce(function (s, c) { return s + c[1] - c[0]; }, 0);
         var totalKm = dayList.reduce(function (s, d) { return s + d.km; }, 0);
         // towns with the trail km of the point where you leave the trail for them (same data as on the map)
