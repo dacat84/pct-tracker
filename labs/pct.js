@@ -63,7 +63,9 @@
     "Evolution Lake": ["See", "Lake"], "Thousand Island Lake": ["See", "Lake"], "Burney Falls": ["Wasserfall", "Waterfall"],
     "Tunnel Falls": ["Wasserfall", "Waterfall"], "Subway Cave": ["Lavahöhle", "Lava tube cave"], "Agua Caliente": ["Bach", "Creek"],
     "Vasquez Rocks": ["Felsen", "Rock formation"], "Castle Crags": ["Felsnadeln", "Granite spires"], "Eagle Rock": ["Felsen", "Rock formation"],
-    "Kendall Katwalk": ["Felspfad", "Cliff path"], "Knife's Edge": ["Grat", "Ridge"], "Goat Rocks": ["Gebirge", "Mountain range"], "Mojave Desert": ["Wüste", "Desert"]
+    "Kendall Katwalk": ["Felspfad", "Cliff path"], "Campo": ["Southern Terminus", "Southern Terminus"], "Northern Terminus": ["Northern Terminus", "Northern Terminus"],
+    "Oregon Border": ["Staatsgrenze Kalifornien / Oregon", "California / Oregon state line"], "Washington Border": ["Staatsgrenze Oregon / Washington", "Oregon / Washington state line"],
+    "Halfway Point": ["Hälfte des Trails", "Halfway point of the trail"], "Knife's Edge": ["Grat", "Ridge"], "Goat Rocks": ["Gebirge", "Mountain range"], "Mojave Desert": ["Wüste", "Desert"]
   };
 
   // One line about the well-known spots (English place terms, as in the town notes)
