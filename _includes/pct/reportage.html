@@ -10,7 +10,7 @@
 <meta property="og:url" content="{{ page.url | absolute_url }}">{% endif %}
 <title>{% if page.url contains "/labs/" %}PCT Labs · {% endif %}Reportage · PCT 2027</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233a8089'/><path d='M3 26 L12 12 L16 18 L21 10 L29 26 Z' fill='%23f4f1e8'/><path d='M10 6 L6.4 13 L8.4 13 L5.6 18 L8 18 L5 24 L15 24 L12 18 L14.4 18 L11.6 13 L13.6 13 Z' fill='%2316201f' stroke='%2316201f' stroke-width='.6' stroke-linejoin='round'/><rect x='9.2' y='24' width='1.6' height='4' fill='%2316201f'/></svg>" />
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@1,8..60,400&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%}
@@ -20,7 +20,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .head{position:fixed;left:44px;top:34px;z-index:2;max-width:640px;pointer-events:none}
 .head .k{font-size:12.5px;letter-spacing:.3em;text-transform:uppercase;color:#ffd2c4}
 .head h1{font-family:'Playfair Display',Georgia,serif;font-weight:900;font-size:64px;line-height:.98;margin:12px 0 10px;text-shadow:0 2px 20px rgba(0,0,0,.35)}
-.head p{font-family:Inter,system-ui,sans-serif;font-size:17px;line-height:1.45;font-weight:500;margin:0;color:#fff;max-width:600px;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 14px rgba(0,0,0,.75)}
+.head p{font-family:'Source Serif 4',Georgia,serif;font-style:italic;font-size:24px;line-height:1.3;font-weight:400;margin:0;color:#fff;max-width:600px;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 14px rgba(0,0,0,.75)}
 .head p b{font-weight:700}.head p span{display:block;font-size:14.5px;font-weight:400;color:#e4eaee}
 .head .who{font-size:12.5px;letter-spacing:.3em;text-transform:uppercase;color:#cfd8de;margin-top:16px}
 .card{position:fixed;right:36px;top:64px;z-index:2;width:300px;background:rgba(255,255,255,.62);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);color:#14202a;border-radius:6px;padding:14px 20px 10px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
@@ -29,7 +29,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .card .top .t{font-family:'Playfair Display';font-size:46px;font-weight:700;line-height:1;white-space:nowrap;flex:none}
 .card .top .d{font-size:13px;color:#56636d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .card .km{font-size:15px;color:#56636d;margin:-2px 0 10px;white-space:nowrap}.card .km b{font-size:20px;color:#e0452f;font-weight:700}
-.card.cd .top{flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:8px}.card.cd .top .t{font-size:40px}.card.cd .km b{font-size:26px}   /* countdown before the start */
+.card.cd .top{display:none}.card.cd .km{margin:2px 0 4px}.card.cd .km b{display:block;font-family:'Playfair Display';font-size:46px;line-height:1.05}.card.cd .note{display:block;margin:0 0 10px}   /* countdown before the start */
 .card .top .t svg{width:34px;height:24px;margin-right:6px;vertical-align:-2px}
 .card .r{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid #e4e8eb;font-size:14px}
 .card .r span:first-child{color:#56636d}.card .r b{font-weight:600;text-align:right}
@@ -81,7 +81,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .card .note{display:none;font-size:13px;color:#56636d;margin:-6px 0 10px;white-space:nowrap}.card .note.on{display:block}.card .note b{color:#14202a;font-weight:600}
 /* phone: everything stacked above the bottom switcher, small day card that opens on tap */
 @media(max-width:820px){
-  .head{left:16px;top:20px;right:16px}.head .k{font-size:10.5px;letter-spacing:.18em}.head h1{font-size:34px;margin:6px 0 4px}.head p{font-size:15px}.head .who{display:none}
+  .head{left:16px;top:20px;right:16px}.head .k{font-size:10.5px;letter-spacing:.18em}.head h1{font-size:34px;margin:6px 0 4px}.head p{font-size:19px}.head .who{display:none}
   .bottom{padding:0 16px 66px}.strip{height:58px}.chap{margin-bottom:8px}.chap .n{font-size:9.5px;letter-spacing:.04em;margin-top:6px;visibility:hidden}.chap button.on .n{visibility:visible;overflow:visible}   /* phone: only the current section is named */.prof{height:44px}
   .card{left:16px;right:16px;top:auto;bottom:262px;width:auto;padding:8px 12px 6px;cursor:pointer}
   .card .top{margin-bottom:2px}.card .top .t{font-size:24px}.card .km{margin:0;font-size:13px}.card .km b{font-size:16px}
@@ -171,7 +171,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     // start = midnight trail time (PDT) in Campo; the card counts down, the phone (no card) gets the days in the subtitle
     var START_TS = Date.parse(L.START + "T00:00:00-07:00"), toStart = Math.ceil((START_TS - Date.now()) / 86400000);
     var phone = matchMedia("(max-width:820px)").matches;
-    if (toStart > 0) $("sub").textContent = phone ? T("Noch " + nf(toStart) + " Tage bis zum Start am 22. April 2027", nf(toStart) + " days until the start on April 22, 2027")
+    if (toStart > 0) $("sub").textContent = phone ? T("Noch " + nf(toStart) + " Tage bis zum Start am 22.\u00a0April\u00a02027", nf(toStart) + " days until the start on April\u00a022,\u00a02027")
                                                    : T("Start am 22. April 2027 in Campo", "Starting April 22, 2027 in Campo");
     else $("sub").textContent = D.next ? T("Nächster Ort: ", "Next town: ") + D.next.name + T(" in ", " in ") + L.dist(D.next.km - here.km) + "." : T("Auf dem letzten Stück nach Kanada.", "On the last stretch to Canada.");
     $("cSeen").textContent = ago(D.latest && D.latest.ts) + (D.latest && D.latest.manual ? T(" (per Nachricht)", " (by message)") : "");
@@ -181,8 +181,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     // before the start: the card is a countdown that ticks every minute
     function countdown() {
       var ms = Math.max(0, START_TS - Date.now()), dd = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24, mm = Math.floor(ms / 60000) % 60;
-      $("card").classList.add("cd"); $("cDay").textContent = "Countdown";
-      $("cDate").textContent = T("bis 22. April 2027", "to April 22, 2027");
+      $("card").classList.add("cd");
+      $("cNote").textContent = T("bis zum Start am 22. April 2027", "until the start on April 22, 2027");
       $("cToday").textContent = nf(dd) + (dd === 1 ? T(" Tag", " day") : T(" Tage", " days"));
       $("cTodayL").textContent = hh + T(" Std. ", " h ") + mm + T(" Min.", " min");
       clearTimeout(countdown.t); if (!D.days.length && ms > 0) countdown.t = setTimeout(countdown, 60000 - Date.now() % 60000 + 50);
