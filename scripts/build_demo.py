@@ -102,6 +102,37 @@ for n in range(30):
     day += datetime.timedelta(days=1)
     day += datetime.timedelta(days=zero)
 
+# Off-PCT examples: out-and-back walks from the trail (side trail to a summit, walks into town).
+# They wiggle a bit like a real path and add their length to the day.
+DETOURS = [
+    ("San Jacinto Peak", (-116.6794, 33.8147)),   # side trail to the summit
+    ("Paradise Valley Cafe", (-116.5914, 33.5691)),  # road walk along Hwy 74
+    ("Wrightwood", (-117.6334, 34.3608)),         # into town and back
+    ("Mount Laguna store", (-116.4211, 32.8686)), # short walk to the store
+]
+def path_to(a, b, n=24):
+    out = []
+    for i in range(1, n + 1):
+        f = i / n
+        w = math.sin(f * math.pi * 3) * 0.0012 * math.sin(f * math.pi)   # gentle wiggle, zero at both ends
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        L = math.hypot(dx, dy) or 1
+        out.append((a[0] + dx * f - dy / L * w, a[1] + dy * f + dx / L * w))
+    return out
+for name, target in DETOURS:
+    best = None
+    for fi, f in enumerate(feats):
+        for ci, c in enumerate(f["geometry"]["coordinates"]):
+            d = hav((c[0], c[1]), target)
+            if best is None or d < best[0]: best = (d, fi, ci)
+    d, fi, ci = best
+    c = feats[fi]["geometry"]["coordinates"]
+    there = path_to(tuple(c[ci]), target)
+    trip = [[round(x, 6), round(y, 6)] for x, y in there + list(reversed(there[:-1])) + [tuple(c[ci])]]
+    feats[fi]["geometry"]["coordinates"] = c[:ci + 1] + trip + c[ci + 1:]
+    feats[fi]["properties"]["distance_m"] = round(feats[fi]["properties"]["distance_m"] + 2 * d * 1000 * 1.15, 1)
+    print("detour", name, "day", fi + 1, round(2 * d, 1), "km")
+
 (ROOT / "data/demo/track.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": feats}))
 last = feats[-1]
 end = last["geometry"]["coordinates"][-1]
