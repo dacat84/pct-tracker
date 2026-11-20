@@ -168,10 +168,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     $("kicker").textContent = T("Abschnitt ", "Section ") + (ri + 1) + T(" von ", " of ") + D.regions.length + T(" · Tag ", " · Day ") + (D.dayNo || 0) + " · " + L.DU() + " " + nf(L.distV(here.km));
     $("title").textContent = L.reg(D.region);
     var toStart = Math.ceil((Date.parse(L.START + "T00:00:00") - Date.now()) / 86400000);
-    if (toStart > 0) $("sub").innerHTML = T("Noch <b>" + nf(toStart) + " Tage</b> bis zum Start.", "<b>" + nf(toStart) + " days</b> until the start.") +
-      "<span>" + T("Los geht es am 22. April 2027 am Southern Terminus in Campo, dann " + L.dist(4265) + " bis nach Kanada.", "It starts on April 22, 2027 at the Southern Terminus in Campo, then " + L.dist(4265) + " to Canada.")   // official length (2,650 mi) + "</span>";
-    else $("sub").innerHTML = T("Ich bin gerade in <b>" + L.reg(D.region) + "</b>.", "I'm in <b>" + L.reg(D.region) + "</b> right now.") +
-      "<span>" + L.dist(here.km) + T(" ab Campo", " from Campo") + (D.next ? T(" · nächster Ort ", " · next town ") + D.next.name : "") + T(" · noch ", " · ") + L.dist(D.total - here.km) + T(" bis zum Northern Terminus.", " to the Northern Terminus.") + "</span>";
+    if (toStart > 0) $("sub").textContent = T("Noch " + nf(toStart) + " Tage bis zum Start am 22. April 2027.", nf(toStart) + " days until the start on April 22, 2027.");
+    else $("sub").textContent = D.next ? T("Nächster Ort: ", "Next town: ") + D.next.name + T(" in ", " in ") + L.dist(D.next.km - here.km) + "." : T("Auf dem letzten Stück nach Kanada.", "On the last stretch to Canada.");
     $("cSeen").textContent = ago(D.latest && D.latest.ts) + (D.latest && D.latest.manual ? T(" (per Nachricht)", " (by message)") : "");
 
     // --- info card for one day (default: the latest). Click a day on the map to see it. ---
