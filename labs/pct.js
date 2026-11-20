@@ -48,7 +48,7 @@
     "Campo": [32.5897, -116.4670], "Lake Morena": [32.6858, -116.5193], "Agua Caliente": [33.3017, -116.6287], "Vasquez Rocks": [34.4878, -118.3197],
     "Halfway Point": [40.2099, -121.3559], "Castle Crags": [41.1478, -122.3197], "Oregon Border": [42.0001, -122.9112], "Olallie Lake": [44.8079, -121.7883],
     "Washington Border": [45.6623, -121.8986], "Kendall Katwalk": [47.4518, -121.3787], "Northern Terminus": [49.0003, -120.8021],
-    "Eagle Rock": [33.2664, -116.6338], "Cajon Pass McDonald's": [34.3029, -117.4687], "Rae Lakes": [36.8135, -118.4057],
+    "Eagle Rock": [33.2547, -116.6117], "Cajon Pass McDonald's": [34.3029, -117.4687], "Rae Lakes": [36.8135, -118.4057],
     "Evolution Lake": [37.1690, -118.7130], "Thousand Island Lake": [37.7208, -119.1813]
   };
   // One line about the well-known spots (English place terms, as in the town notes)
