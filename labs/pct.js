@@ -22,7 +22,7 @@
     { de: "Oregon", en: "Oregon", short: "Oregon", en_s: "Oregon", a: 2720, b: 3455, c: "#8aa4c0" },
     { de: "Washington", en: "Washington", short: "Washington", en_s: "Washington", a: 3455, b: 4265, c: "#b39ac8" }
   ];
-  var LM = [[0,"Campo","term",1],[20,"Lake Morena","water",3],[42,"Mt. Laguna","town",2],[77,"Scissors Crossing","pass",3],[109,"Warner Springs","town",3],[127,"Agua Caliente","park",3],[152,"Paradise Valley Café","town",3],[179,"Idyllwild","town",2],[187,"San Jacinto Peak","peak",2],[210,"San Gorgonio Pass","pass",2],[266,"Big Bear","town",2],[308,"Deep Creek Hot Springs","water",2],[342,"Cajon Pass","pass",2],[369,"Wrightwood","town",2],[379,"Mt. Baden-Powell","peak",1],[444,"Acton","town",3],[452,"Vasquez Rocks","park",3],[454,"Agua Dulce","town",2],[517,"Mojave Desert","desert",2],[566,"Tehachapi","town",2],[652,"Walker Pass","pass",2],[702,"Kennedy Meadows S","town",1],[750,"Cottonwood Pass","pass",3],[767,"Mt. Whitney","peak",1],[779,"Forester Pass","pass",1],[792,"Glen Pass","pass",2],[807,"Pinchot Pass","pass",3],[815,"Mather Pass","pass",2],[843,"Muir Pass","pass",2],[857,"Muir Trail Ranch","town",3],[878,"Vermilion Valley Resort","town",3],[906,"Reds Meadow","town",3],[910,"Mammoth Lakes","town",2],[942,"Tuolumne Meadows","town",1],[1017,"Sonora Pass","pass",2],[1032,"Ebbetts Pass","pass",3],[1077,"Carson Pass","pass",3],[1090,"Lake Tahoe","water",1],[1094,"South Lake Tahoe","town",2],[1153,"Donner Pass","pass",2],[1195,"Sierra Buttes","peak",3],[1250,"Bucks Summit","pass",3],[1287,"Belden","town",3],[1325,"Halfway Point","term",1],[1352,"Lassen Peak","peak",2],[1378,"Subway Cave","water",3],[1410,"Burney","town",3],[1418,"Burney Falls","water",2],[1500,"Mt. Shasta","peak",1],[1501,"Castle Crags","park",2],[1599,"Etna","town",3],[1656,"Seiad Valley","town",2],[1690,"Oregon Border","term",1],[1726,"Ashland","town",2],[1775,"Mt. McLoughlin","peak",3],[1820,"Crater Lake","water",1],[1880,"Diamond Peak","peak",3],[1907,"Willamette Pass","pass",3],[1965,"Three Sisters","peak",2],[1990,"McKenzie Pass","pass",3],[2001,"Santiam Pass","pass",3],[2005,"Three Fingered Jack","peak",3],[2030,"Mt. Jefferson","peak",2],[2045,"Olallie Lake","water",3],[2097,"Mt. Hood","peak",1],[2098,"Timberline Lodge","town",2],[2120,"Tunnel Falls","water",3],[2144,"Cascade Locks","town",1],[2147,"Washington Border","term",1],[2225,"Mt. Adams","peak",2],[2265,"Goat Rocks","peak",2],[2295,"White Pass","pass",3],[2320,"Mt. Rainier","peak",2],[2393,"Snoqualmie Pass","pass",2],[2400,"Kendall Katwalk","peak",3],[2461,"Stevens Pass","pass",2],[2530,"Glacier Peak","peak",2],[2572,"Stehekin","town",2],[2591,"Rainy Pass","pass",3],[2620,"Harts Pass","pass",3],[2650,"Northern Terminus","term",1]];
+  var LM = [[0,"Campo","term",1],[20,"Lake Morena","water",3],[42,"Mt. Laguna","town",2],[77,"Scissors Crossing","pass",3],[106,"Eagle Rock","spot",2],[109,"Warner Springs","town",3],[127,"Agua Caliente","park",3],[152,"Paradise Valley Café","town",3],[179,"Idyllwild","town",2],[187,"San Jacinto Peak","peak",2],[210,"San Gorgonio Pass","pass",2],[266,"Big Bear","town",2],[308,"Deep Creek Hot Springs","water",2],[342,"Cajon Pass","pass",2],[342.5,"Cajon Pass McDonald's","spot",3],[369,"Wrightwood","town",2],[379,"Mt. Baden-Powell","peak",1],[444,"Acton","town",3],[452,"Vasquez Rocks","park",3],[454,"Agua Dulce","town",2],[517,"Hikertown","town",2],[518,"Mojave Desert","desert",2],[566,"Tehachapi","town",2],[652,"Walker Pass","pass",2],[702,"Kennedy Meadows S","town",1],[750,"Cottonwood Pass","pass",3],[767,"Mt. Whitney","peak",1],[779,"Forester Pass","pass",1],[786,"Rae Lakes","water",3],[792,"Glen Pass","pass",2],[807,"Pinchot Pass","pass",3],[815,"Mather Pass","pass",2],[838,"Evolution Lake","water",3],[843,"Muir Pass","pass",2],[857,"Muir Trail Ranch","town",3],[878,"Vermilion Valley Resort","town",3],[906,"Reds Meadow","town",3],[910,"Mammoth Lakes","town",2],[915,"Thousand Island Lake","water",3],[942,"Tuolumne Meadows","town",1],[1017,"Sonora Pass","pass",2],[1032,"Ebbetts Pass","pass",3],[1077,"Carson Pass","pass",3],[1090,"Lake Tahoe","water",1],[1094,"South Lake Tahoe","town",2],[1153,"Donner Pass","pass",2],[1195,"Sierra Buttes","peak",3],[1250,"Bucks Summit","pass",3],[1287,"Belden","town",3],[1325,"Halfway Point","term",1],[1352,"Lassen Peak","peak",2],[1378,"Subway Cave","water",3],[1410,"Burney","town",3],[1418,"Burney Falls","water",2],[1500,"Mt. Shasta","peak",1],[1501,"Castle Crags","park",2],[1599,"Etna","town",3],[1656,"Seiad Valley","town",2],[1690,"Oregon Border","term",1],[1726,"Ashland","town",2],[1775,"Mt. McLoughlin","peak",3],[1820,"Crater Lake","water",1],[1880,"Diamond Peak","peak",3],[1905,"Shelter Cove","town",3],[1907,"Willamette Pass","pass",3],[1965,"Three Sisters","peak",2],[1990,"McKenzie Pass","pass",3],[1998,"Big Lake Youth Camp","town",3],[2001,"Santiam Pass","pass",3],[2005,"Three Fingered Jack","peak",3],[2030,"Mt. Jefferson","peak",2],[2045,"Olallie Lake","water",3],[2097,"Mt. Hood","peak",1],[2098,"Timberline Lodge","town",2],[2120,"Tunnel Falls","water",3],[2144,"Cascade Locks","town",1],[2147,"Washington Border","term",1],[2225,"Mt. Adams","peak",2],[2265,"Goat Rocks","peak",2],[2295,"White Pass","pass",3],[2320,"Mt. Rainier","peak",2],[2393,"Snoqualmie Pass","pass",2],[2400,"Kendall Katwalk","peak",3],[2461,"Stevens Pass","pass",2],[2462,"Leavenworth","town",3],[2530,"Glacier Peak","peak",2],[2572,"Stehekin","town",2],[2591,"Rainy Pass","pass",3],[2620,"Harts Pass","pass",3],[2650,"Northern Terminus","term",1]];
   // Features that are not on the trail itself: real position. side = a side trip from the trail (dashed link).
   // Real positions for landmarks that are not exactly on the trail (summits, lakes, falls).
   // Whether something counts as "off the trail" is worked out from the distance to the PCT line.
@@ -47,7 +47,17 @@
     // other points right on the trail (checked against komoot / Wikipedia / the state lines)
     "Campo": [32.5897, -116.4670], "Lake Morena": [32.6858, -116.5193], "Agua Caliente": [33.3017, -116.6287], "Vasquez Rocks": [34.4878, -118.3197],
     "Halfway Point": [40.2099, -121.3559], "Castle Crags": [41.1478, -122.3197], "Oregon Border": [42.0001, -122.9112], "Olallie Lake": [44.8079, -121.7883],
-    "Washington Border": [45.6623, -121.8986], "Kendall Katwalk": [47.4518, -121.3787], "Northern Terminus": [49.0003, -120.8021]
+    "Washington Border": [45.6623, -121.8986], "Kendall Katwalk": [47.4518, -121.3787], "Northern Terminus": [49.0003, -120.8021],
+    "Eagle Rock": [33.2664, -116.6338], "Cajon Pass McDonald's": [34.3029, -117.4687], "Rae Lakes": [36.8135, -118.4057],
+    "Evolution Lake": [37.1690, -118.7130], "Thousand Island Lake": [37.7208, -119.1813]
+  };
+  // One line about the well-known spots (English place terms, as in the town notes)
+  var NOTE = {
+    "Eagle Rock": "Granite outcrop shaped like an eagle, classic photo stop",
+    "Cajon Pass McDonald's": "The famous hiker stop right off the trail at I-15",
+    "Rae Lakes": "One of the most beautiful lake basins of the Sierra",
+    "Evolution Lake": "Evolution Basin, highlight of the John Muir Trail section",
+    "Thousand Island Lake": "Below Banner Peak, a Sierra classic"
   };
   // Real heights (m) of summits, passes and lakes; everything else uses the trail height at that point.
   var ELEV = {
@@ -64,7 +74,8 @@
     term: { de: "Terminus", en: "Terminus", c: "#ff4d2e", i: "★" }, town: { de: "Ort / Resupply", en: "Town / resupply", c: "#f5b301", i: "⌂" },
     pass: { de: "Pass", en: "Pass", c: "#7ed6a5", i: "⋀" }, peak: { de: "Gipfel", en: "Peak", c: "#ffffff", i: "▲" },
     water: { de: "Wasser / Sehenswert", en: "Water / feature", c: "#6ec6ff", i: "≈" }, park: { de: "Park / Wildnis", en: "Park / wilderness", c: "#9dbf78", i: "♣" },
-    desert: { de: "Wüste", en: "Desert", c: "#e0a06a", i: "☀" }
+    desert: { de: "Wüste", en: "Desert", c: "#e0a06a", i: "☀" },
+    spot: { de: "Trail-Klassiker", en: "Trail classic", c: "#ff8fc8", i: "✦" }
   };
 
   function hav(a, b, c, d) {
@@ -362,16 +373,21 @@
     ["Mount Laguna", 32.8686, -116.4211, "General Store · Lodge · Post Office"],
     ["Julian", 33.0786, -116.6020, "Grocery · Post Office · Mom's Pie (free pie for hikers)"],
     ["Warner Springs", 33.2828, -116.6339, "Community Center · Post Office"],
+    ["Paradise Valley Café", 33.5691, -116.5914, "Café · Burgers · Resupply box"],
     ["Idyllwild", 33.7400, -116.7189, "Grocery · Outfitter · Post Office · Cafés"],
     ["Big Bear Lake", 34.2439, -116.9114, "Grocery · Outfitter · Post Office · Hostel"],
     ["Wrightwood", 34.3608, -117.6334, "Grocery · Post Office · Mountain Hardware"],
     ["Agua Dulce", 34.4964, -118.3256, "Grocery · Restaurants"],
+    ["Hikertown", 34.7759, -118.6064, "Hostel · Small store · Start of the LA Aqueduct"],
     ["Tehachapi", 35.1322, -118.4490, "Grocery · Post Office · Restaurants"],
     ["Kennedy Meadows", 36.0190, -118.1233, "General Store · Resupply · Bear Canister"],
     ["Lone Pine", 36.6060, -118.0629, "Grocery · Outfitter · Post Office"],
     ["Bishop", 37.3635, -118.3951, "Grocery · Outfitter · Bakery"],
+    ["Muir Trail Ranch", 37.2374, -118.8823, "Resupply buckets · Hot springs"],
+    ["Vermilion Valley Resort", 37.3769, -119.0123, "Store · Restaurant · Ferry across Lake Edison"],
+    ["Reds Meadow", 37.6174, -119.0726, "Store · Café · Shuttle to Mammoth"],
     ["Mammoth Lakes", 37.6485, -118.9721, "Grocery · Outfitter · Post Office"],
-    ["Tuolumne Meadows", 37.8735, -119.3590, "Store · Post Office (Sommer)"],
+    ["Tuolumne Meadows", 37.8735, -119.3590, "Store · Post Office (summer)"],
     ["South Lake Tahoe", 38.9399, -119.9772, "Grocery · Outfitter · Post Office"],
     ["Truckee", 39.3280, -120.1833, "Grocery · Outfitter"],
     ["Sierra City", 39.5657, -120.6324, "General Store · Post Office"],
@@ -383,18 +399,23 @@
     ["Seiad Valley", 41.8418, -123.1964, "Store · Café · Post Office"],
     ["Ashland", 42.1946, -122.7095, "Grocery · Outfitter · Post Office"],
     ["Mazama Village", 42.8668, -122.1675, "Store · Campground · Resupply"],
+    ["Shelter Cove", 43.5817, -122.0390, "Store · Resupply · Showers"],
     ["Sisters", 44.2910, -121.5492, "Grocery · Outfitter"],
-    ["Cascade Locks", 45.6696, -121.8909, "Store · Post Office · Restaurants"],
+    ["Big Lake Youth Camp", 44.3717, -121.8652, "Resupply · Hiker meals (donation)"],
+    ["Cascade Locks", 45.6696, -121.8909, "Store · Post Office · Restaurants · PCT Days festival (August)"],
+    ["Timberline Lodge", 45.3311, -121.7113, "Breakfast buffet · Resupply"],
     ["Trout Lake", 45.9968, -121.5287, "General Store · Post Office"],
     ["White Pass", 46.6378, -121.3913, "Store · Resupply"],
     ["Snoqualmie Pass", 47.4243, -121.4135, "Store · Lodge"],
     ["Skykomish", 47.7090, -121.3590, "Store · Lodge"],
+    ["Leavenworth", 47.5962, -120.6615, "Grocery · Outfitter · Bavarian village"],
     ["Stehekin", 48.3093, -120.6545, "Post Office · Bakery"],
     ["Mazama", 48.5926, -120.4039, "Store · Resupply"]
   ];
   // Where you leave the trail for a town: [name of the access point, lat, lon], snapped to the trail.
   // Towns not listed use the nearest trail point.
   var ACCESS = {
+    "Leavenworth": ["Stevens Pass (US-2)", 47.7463, -121.0857],
     "Julian": ["Scissors Crossing", 33.0998, -116.4700], "Idyllwild": ["Saddle Junction / Devils Slide", 33.7769, -116.6658],
     "Tehachapi": ["Hwy 58", 35.1010, -118.2870], "Lone Pine": ["Cottonwood Pass / Horseshoe Meadows", 36.4537, -118.1734, [[36.4501, -118.1694], [36.5560, -118.1100]]],
     "Bishop": ["Kearsarge Pass / Onion Valley", 36.7735, -118.3768, [[36.7726, -118.3409], [36.8027, -118.1999], [37.0500, -118.2500]]], "Mammoth Lakes": ["Reds Meadow", 37.6153, -119.0747],
@@ -450,7 +471,8 @@
         (l.side && l.off > 8 ? nw(T("Vom Trail aus zu sehen, ca. ", "Seen from the trail, approx. ") + dist(l.off) + T(" entfernt", " away")) + "<br>" + nw(T("nächster Trailpunkt: Trail-", "nearest trail point: trail ") + DU() + "\u00a0" + nf(distV(l.km)))
         : l.side ? nw(T("Abseits vom Trail, ca. ", "Off the trail, approx. ") + dist(l.off, l.off < 10 ? 1 : 0) + T(" Luftlinie", " straight line")) + "<br>" + nw(T("nächster Trailpunkt: Trail-", "nearest trail point: trail ") + DU() + "\u00a0" + nf(distV(l.km)))
           : nw(T("Am Trail bei Trail-", "On the trail at trail ") + DU() + "\u00a0" + nf(distV(l.km)))) +
-        (l.type === "term" ? "" : "<br>" + nw(dist(l.km) + T(" ab Campo", " from Campo")) + "<br>" + nw(dist(D.total - l.km) + T(" bis Kanada", " to Canada"))));
+        (l.type === "term" ? "" : "<br>" + nw(dist(l.km) + T(" ab Campo", " from Campo")) + "<br>" + nw(dist(D.total - l.km) + T(" bis Kanada", " to Canada"))) +
+        (NOTE[l.name] ? '<div class="n" style="margin-top:4px">' + NOTE[l.name] + "</div>" : ""));
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-5, 0] }).setLngLat([l.lon, l.lat]).setPopup(pop).addTo(map);
     });
   }
