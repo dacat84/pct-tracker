@@ -488,8 +488,9 @@
       el.innerHTML = "<i style='background:" + (theme.dot ? theme.dot(l) : Ty.c) + "'></i><span>" + l.name + "</span>";
       if (l.type === "peak" && !theme.dot) el.firstChild.style.background = "transparent";
       if (/McDonald/.test(l.name)) {   // a plain golden M instead of the dot
-        el.firstChild.style.cssText = "background:none;border:0;width:auto;height:auto;font:900 20px/1 Georgia,serif;color:#ffc72c;text-shadow:0 1px 3px rgba(0,0,0,.7)";
-        el.firstChild.textContent = "M"; el.querySelector("span").textContent = "McDonald's";
+        el.firstChild.style.cssText = "background:none;border:0;width:auto;height:auto;display:inline-block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))";
+        el.firstChild.innerHTML = '<svg viewBox="0 0 24 20" width="22" height="18"><path d="M3 9a9 6.5 0 0 1 18 0z" fill="#e8a33a"/><circle cx="8" cy="5.5" r=".7" fill="#fff6d8"/><circle cx="12" cy="4" r=".7" fill="#fff6d8"/><circle cx="16" cy="5.5" r=".7" fill="#fff6d8"/><rect x="2.5" y="9.6" width="19" height="2" rx="1" fill="#5aa832"/><rect x="2.5" y="11.6" width="19" height="2.6" rx="1.2" fill="#6b3a1f"/><path d="M3 14.8h18a2 2 0 0 1-2 3H5a2 2 0 0 1-2-3z" fill="#e8a33a"/></svg>';
+        el.querySelector("span").textContent = "McDonald's";
       }
       var pop = new maplibregl.Popup({ offset: 10, className: "tw-pop", maxWidth: "300px" }).setHTML(
         "<h4>" + l.name + '</h4><div class="m">' + (KIND[l.name] ? KIND[l.name][LANG === "en" ? 1 : 0] : Ty[LANG]) + " · " + elev(l.m) + "</div>" +
