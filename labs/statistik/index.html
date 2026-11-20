@@ -45,7 +45,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
 .days::-webkit-scrollbar{width:8px}.days::-webkit-scrollbar-track{background:transparent}
 .days::-webkit-scrollbar-thumb{background:#2c343b;border-radius:4px}.days::-webkit-scrollbar-thumb:hover{background:#3a444c}
 .dl .row.zero .b{text-overflow:ellipsis;background:none;font:400 12px 'JetBrains Mono',monospace;color:#7d8790;white-space:nowrap;overflow:hidden;height:auto}
-.dl .row.nero .b{position:relative;display:flex;align-items:center;height:10px}.dl .row.nero .b span{position:absolute;left:calc(var(--w,0) + 8px);font:400 12px 'JetBrains Mono',monospace;color:#7d8790;white-space:nowrap}
+.dl .row.nero .b{position:relative;display:flex;align-items:center;height:10px;overflow:visible}.dl .row.nero .b span{position:absolute;left:calc(var(--w,0) + 8px);max-width:calc(100% - var(--w,0) - 8px);overflow:hidden;text-overflow:ellipsis;font:400 12px 'JetBrains Mono',monospace;color:#7d8790;white-space:nowrap}
 .dl .row.zero .b svg{vertical-align:-1px;margin-right:2px}.dl .row.zero .k{color:#7d8790}
 .dl .row.zero.on .b,.dl .row.zero.on .d,.dl .row.zero.on .k{color:#ff4d2e}
 .dl{display:grid;grid-template-columns:max-content 1fr max-content;gap:6px 12px;align-items:center}
