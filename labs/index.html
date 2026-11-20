@@ -20,7 +20,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .head{position:fixed;left:44px;top:34px;z-index:2;max-width:640px;pointer-events:none}
 .head .k{font-size:12.5px;letter-spacing:.3em;text-transform:uppercase;color:#ffd2c4}
 .head h1{font-family:'Playfair Display',Georgia,serif;font-weight:900;font-size:64px;line-height:.98;margin:12px 0 10px;text-shadow:0 2px 20px rgba(0,0,0,.35)}
-.head p{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:20px;margin:0;color:#e9eef1;max-width:560px;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+.head p{font-family:Inter,system-ui,sans-serif;font-size:17px;line-height:1.45;font-weight:500;margin:0;color:#fff;max-width:600px;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 14px rgba(0,0,0,.75)}
+.head p b{font-weight:700}.head p span{display:block;font-size:14.5px;font-weight:400;color:#e4eaee}
 .head .who{font-size:12.5px;letter-spacing:.3em;text-transform:uppercase;color:#cfd8de;margin-top:16px}
 .card{position:fixed;right:36px;top:64px;z-index:2;width:300px;background:rgba(255,255,255,.62);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);color:#14202a;border-radius:6px;padding:14px 20px 10px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
 .card .r{border-top-color:rgba(20,32,42,.1)!important}
@@ -167,8 +168,10 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     $("kicker").textContent = T("Abschnitt ", "Section ") + (ri + 1) + T(" von ", " of ") + D.regions.length + T(" · Tag ", " · Day ") + (D.dayNo || 0) + " · " + L.DU() + " " + nf(L.distV(here.km));
     $("title").textContent = L.reg(D.region);
     var toStart = Math.ceil((Date.parse(L.START + "T00:00:00") - Date.now()) / 86400000);
-    if (toStart > 0) $("sub").textContent = T("Noch " + nf(toStart) + " Tage bis zum Start am 22. April 2027.", nf(toStart) + " days until the start on April 22, 2027.");
-    else $("sub").textContent = D.next ? T("Nächster Ort: ", "Next town: ") + D.next.name + T(" in ", " in ") + L.dist(D.next.km - here.km) + "." : T("Auf dem letzten Stück nach Kanada.", "On the last stretch to Canada.");
+    if (toStart > 0) $("sub").innerHTML = T("Noch <b>" + nf(toStart) + " Tage</b> bis zum Start.", "<b>" + nf(toStart) + " days</b> until the start.") +
+      "<span>" + T("Los geht es am 22. April 2027 am Southern Terminus in Campo, dann " + L.dist(D.total) + " bis nach Kanada.", "It starts on April 22, 2027 at the Southern Terminus in Campo, then " + L.dist(D.total) + " to Canada.") + "</span>";
+    else $("sub").innerHTML = T("Ich bin gerade in <b>" + L.reg(D.region) + "</b>.", "I'm in <b>" + L.reg(D.region) + "</b> right now.") +
+      "<span>" + L.dist(here.km) + T(" ab Campo", " from Campo") + (D.next ? T(" · nächster Ort ", " · next town ") + D.next.name : "") + T(" · noch ", " · ") + L.dist(D.total - here.km) + T(" bis zum Northern Terminus.", " to the Northern Terminus.") + "</span>";
     $("cSeen").textContent = ago(D.latest && D.latest.ts) + (D.latest && D.latest.manual ? T(" (per Nachricht)", " (by message)") : "");
 
     // --- info card for one day (default: the latest). Click a day on the map to see it. ---
