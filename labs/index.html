@@ -115,7 +115,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
   <div class="r hide-m"><span data-de="Höhe" data-en="Elevation">Höhe</span><b id="cElev">–</b></div>
   <div class="r"><span data-de="Nächster Ort" data-en="Next town">Nächster Ort</span><b id="cNext">–</b></div>
   <div class="r hide-m"><span data-de="Letztes Signal" data-en="Last signal">Letztes Signal</span><b id="cSeen">–</b></div>
-  <div class="src" data-de="Track: Garmin · Fotos: Flickr · Karte: Esri" data-en="Track: Garmin · Photos: Flickr · Map: Esri">Track: Garmin · Fotos: Flickr · Karte: Esri</div>
+  <div class="src" data-de="Track: Garmin · Karte: Esri" data-en="Track: Garmin · Map: Esri">Track: Garmin · Karte: Esri</div>
 </div>
 
 <div class="bottom">
@@ -185,7 +185,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         $("cDay").textContent = T("Tag ", "Day ") + (i + 1);
         $("cDate").textContent = L.dfmt(d.date + "T12:00", { weekday: "short", day: "numeric", month: "long" });
         var cd = $("cDate"); if (cd.scrollWidth > cd.clientWidth + 1) cd.textContent = L.dfmt(d.date + "T12:00", { weekday: "short", day: "numeric", month: "short" });   // "16. Nov." when the long month doesn't fit
-        $("cToday").textContent = L.dist(d.km, 1); $("cTodayL").textContent = T("gelaufen", "hiked") + (d.up ? " · ↑ " + L.elev(d.up) : "");
+        $("cToday").textContent = L.dist(d.km, 1); $("cTodayL").textContent = T("gelaufen", "hiked") + (d.sec ? " · " + hmm(d.sec).replace("\u00a0", " ") : "") + (d.up ? " · ↑ " + L.elev(d.up) : "");
         // nero / hero on a line of its own, so nothing gets broken up
         $("cNote").innerHTML = d.nero ? "<b>Nero</b> · " + T("Nacht in ", "night in ") + d.nero : d.hero ? "<b>Hero</b> · " + T("rein und raus in ", "in and out of ") + d.hero : "";
         $("cNote").classList.toggle("on", !!(d.nero || d.hero)); $("cNote").title = d.nero ? L.TERMS.nero : d.hero ? L.TERMS.hero : "";
