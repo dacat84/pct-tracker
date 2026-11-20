@@ -88,6 +88,5 @@ the Garmin password and the MFA code (which arrives by e-mail or SMS).
 - The unofficial Garmin API can occasionally change. If it breaks, the fallback
   is to run `scripts/garmin_sync.py` from your Mac (or a Raspberry Pi) on a
   schedule and let it push - same script, no code changes.
-- Once Garmin is verified working you can delete the Strava bits:
-  `scripts/strava_sync.py`, `.github/workflows/strava-sync.yml`,
-  `data/strava_state.json`, and the `STRAVA_*` secrets.
+- The old Strava sync has been removed. The `STRAVA_*` secrets in the repo
+  settings are no longer used and can be deleted.

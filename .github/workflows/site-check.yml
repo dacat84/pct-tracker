@@ -1,0 +1,57 @@
+name: Site check
+
+# Loads the live pages in a real browser after every deploy (and once a day)
+# and opens an issue if something is broken. The issue closes itself again.
+on:
+  workflow_run:
+    workflows: ["pages-build-deployment"]
+    types: [completed]
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: site-check
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install browser
+        run: |
+          npm i --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+      - name: Check pages
+        run: node scripts/smoke_test.mjs
+
+      - name: Report a broken site
+        if: ${{ failure() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create site-check --color d93f0b --description "Live site broken" 2>/dev/null || true
+          body="Die Seiten-Prüfung hat Fehler gefunden: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          $(cat smoke_problems.txt 2>/dev/null)"
+          n=$(gh issue list --label site-check --state open --json number --jq '.[0].number')
+          if [ -z "$n" ]; then gh issue create --label site-check --title "Seite hat einen Fehler" --body "$body"
+          else gh issue comment "$n" --body "$body"; fi
+
+      - name: Close the issue when the site works again
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list --label site-check --state open --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "Seite läuft wieder: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          done

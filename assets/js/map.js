@@ -409,7 +409,7 @@ function findLatestFeature(track) {
       stopLiveAnim(); clearLiveLine();
       console.error("Track load error:", e);
       const isNetworkError = e.message && (e.message.includes("HTTP 404") || e.message.includes("HTTP 5") || e.message.includes("Failed to fetch") || e.message.includes("NetworkError"));
-      showError(isNetworkError ? "Could not load track data" : "Something went wrong", isNetworkError ? "The data files could not be reached. This usually means the Strava sync has not run yet, or GitHub Pages is still deploying." : `An unexpected error occurred. (${e.message})`);
+      showError(isNetworkError ? "Could not load track data" : "Something went wrong", isNetworkError ? "The data files could not be reached. This usually means the Garmin sync has not run yet, or GitHub Pages is still deploying." : `An unexpected error occurred. (${e.message})`);
     }
   }
 
