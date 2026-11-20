@@ -481,12 +481,7 @@
   }
 
   // Small picture symbols for places with something special (instead of the plain dot / square)
-  var ICON = {
-    "Julian": "🥧", "Idyllwild": "🐕", "Kennedy Meadows": "👏", "Seiad Valley": "🥞", "Trout Lake": "🥤", "Stehekin": "🥐",
-    "Muir Trail Ranch": "♨️", "Timberline Lodge": "🍳", "Paradise Valley Café": "🍔", "Etna": "🍺", "Cascade Locks": "🌉",
-    "Cajon Pass McDonald's": "🍟", "Deep Creek Hot Springs": "♨️", "Burney Falls": "💦", "Tunnel Falls": "💦",
-    "Eagle Rock": "🦅", "Subway Cave": "🔦", "Vasquez Rocks": "🪨", "Kendall Katwalk": "🧗", "Knife's Edge": "⛰️"
-  };
+  var ICON = {};   // picture symbols removed: normal markers everywhere (tents and beds stay)
   function iconHtml(name) { return '<b style="font-size:24px;line-height:1;font-style:normal;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))">' + ICON[name] + "</b>"; }
 
   // ---- Trail landmarks (peaks, passes, water, parks, termini), clickable ----
