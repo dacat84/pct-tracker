@@ -29,6 +29,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .card .top .t{font-family:'Playfair Display';font-size:46px;font-weight:700;line-height:1;white-space:nowrap;flex:none}
 .card .top .d{font-size:13px;color:#56636d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .card .km{font-size:15px;color:#56636d;margin:-2px 0 10px;white-space:nowrap}.card .km b{font-size:20px;color:#e0452f;font-weight:700}
+.card.cd .top{flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:8px}.card.cd .top .t{font-size:40px}.card.cd .km b{font-size:26px}   /* countdown before the start */
 .card .top .t svg{width:34px;height:24px;margin-right:6px;vertical-align:-2px}
 .card .r{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid #e4e8eb;font-size:14px}
 .card .r span:first-child{color:#56636d}.card .r b{font-weight:600;text-align:right}
@@ -167,16 +168,28 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     var ri = D.regions.indexOf(D.region);
     $("kicker").textContent = T("Abschnitt ", "Section ") + (ri + 1) + T(" von ", " of ") + D.regions.length + T(" · Tag ", " · Day ") + (D.dayNo || 0) + " · " + L.DU() + " " + nf(L.distV(here.km));
     $("title").textContent = L.reg(D.region);
-    var toStart = Math.ceil((Date.parse(L.START + "T00:00:00") - Date.now()) / 86400000);
-    if (toStart > 0) $("sub").textContent = T("Noch " + nf(toStart) + " Tage bis zum Start am 22. April 2027.", nf(toStart) + " days until the start on April 22, 2027.");
+    // start = midnight trail time (PDT) in Campo; the card counts down, the phone (no card) gets the days in the subtitle
+    var START_TS = Date.parse(L.START + "T00:00:00-07:00"), toStart = Math.ceil((START_TS - Date.now()) / 86400000);
+    var phone = matchMedia("(max-width:820px)").matches;
+    if (toStart > 0) $("sub").textContent = phone ? T("Noch " + nf(toStart) + " Tage bis zum Start am 22. April 2027", nf(toStart) + " days until the start on April 22, 2027")
+                                                   : T("Start am 22. April 2027 in Campo", "Starting April 22, 2027 in Campo");
     else $("sub").textContent = D.next ? T("Nächster Ort: ", "Next town: ") + D.next.name + T(" in ", " in ") + L.dist(D.next.km - here.km) + "." : T("Auf dem letzten Stück nach Kanada.", "On the last stretch to Canada.");
     $("cSeen").textContent = ago(D.latest && D.latest.ts) + (D.latest && D.latest.manual ? T(" (per Nachricht)", " (by message)") : "");
 
     // --- info card for one day (default: the latest). Click a day on the map to see it. ---
     function nextTownFrom(km) { return D.towns.filter(function (tw) { return tw.km > km + 0.5; })[0] || null; }
+    // before the start: the card is a countdown that ticks every minute
+    function countdown() {
+      var ms = Math.max(0, START_TS - Date.now()), dd = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24, mm = Math.floor(ms / 60000) % 60;
+      $("card").classList.add("cd"); $("cDay").textContent = "Countdown";
+      $("cDate").textContent = T("bis 22. April 2027", "to April 22, 2027");
+      $("cToday").textContent = nf(dd) + (dd === 1 ? T(" Tag", " day") : T(" Tage", " days"));
+      $("cTodayL").textContent = hh + T(" Std. ", " h ") + mm + T(" Min.", " min");
+      clearTimeout(countdown.t); if (!D.days.length && ms > 0) countdown.t = setTimeout(countdown, 60000 - Date.now() % 60000 + 50);
+    }
     function card(i, zero) {
       var d = D.days[i], c = D.camps[i];
-      if (!d) { $("cDay").innerHTML = '<span style="font-size:32px">' + T("Vor dem Start", "Before the start") + "</span>"; $("cDate").textContent = ""; $("cToday").textContent = "0"; $("cTodayL").textContent = L.DU(); return; }
+      if (!d) { countdown(); return; }
       var tp = L.trailPoint(D, c.lnglat) || D.here, tot = D.days.slice(0, i + 1).reduce(function (s, x) { return s + x.km; }, 0), nt = nextTownFrom(tp.km);
       if (zero) {
         $("cDay").innerHTML = L.BED + "Zero";
