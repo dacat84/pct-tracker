@@ -33,7 +33,8 @@
     "Mt. McLoughlin": [42.4451, -122.3155], "Diamond Peak": [43.5207, -122.1496], "Three Fingered Jack": [44.4767, -121.8441],
     "Crater Lake": [42.9446, -122.1090], "Lake Tahoe": [39.0968, -120.0324], "Sierra Buttes": [39.5943, -120.6406],
     "Deep Creek Hot Springs": [34.3394, -117.1769], "Tunnel Falls": [45.5849, -121.8520], "Burney Falls": [41.0122, -121.6513],
-    "Subway Cave": [40.6839, -121.4186], "Goat Rocks": [46.5150, -121.4547]
+    "Subway Cave": [40.6839, -121.4186], "Goat Rocks": [46.5150, -121.4547],
+    "Cajon Pass McDonald's": [34.3090, -117.4704]   // the building on Wagon Train Rd
   };
   // Positions of passes and road crossings (summit coordinates), snapped to the nearest point of the
   // PCT line. Only the low crossings ("low") look for the lowest trail point nearby.
@@ -48,7 +49,7 @@
     "Campo": [32.5897, -116.4670], "Lake Morena": [32.6858, -116.5193], "Agua Caliente": [33.3017, -116.6287], "Vasquez Rocks": [34.4878, -118.3197],
     "Halfway Point": [40.2099, -121.3559], "Castle Crags": [41.1478, -122.3197], "Oregon Border": [42.0001, -122.9112], "Olallie Lake": [44.8079, -121.7883],
     "Washington Border": [45.6623, -121.8986], "Kendall Katwalk": [47.4518, -121.3787], "Northern Terminus": [49.0003, -120.8021],
-    "Eagle Rock": [33.2547, -116.6117], "Cajon Pass McDonald's": [34.3029, -117.4687], "Rae Lakes": [36.8135, -118.4057],
+    "Eagle Rock": [33.2547, -116.6117], "Rae Lakes": [36.8135, -118.4057],
     "Evolution Lake": [37.1690, -118.7130], "Thousand Island Lake": [37.7208, -119.1813]
   };
   // What a landmark actually is (instead of the broad group like "water / sight")
@@ -486,6 +487,10 @@
       el.className = "lm " + l.type + " t" + l.tier; el.style.cursor = "pointer"; el.style.pointerEvents = "auto";
       el.innerHTML = "<i style='background:" + (theme.dot ? theme.dot(l) : Ty.c) + "'></i><span>" + l.name + "</span>";
       if (l.type === "peak" && !theme.dot) el.firstChild.style.background = "transparent";
+      if (/McDonald/.test(l.name)) {   // a plain golden M instead of the dot
+        el.firstChild.style.cssText = "background:none;border:0;width:auto;height:auto;font:900 20px/1 Georgia,serif;color:#ffc72c;text-shadow:0 1px 3px rgba(0,0,0,.7)";
+        el.firstChild.textContent = "M"; el.querySelector("span").textContent = "McDonald's";
+      }
       var pop = new maplibregl.Popup({ offset: 10, className: "tw-pop", maxWidth: "300px" }).setHTML(
         "<h4>" + l.name + '</h4><div class="m">' + (KIND[l.name] ? KIND[l.name][LANG === "en" ? 1 : 0] : Ty[LANG]) + " · " + elev(l.m) + "</div>" +
         (l.side ? '<div class="n" style="margin-top:4px">' + (l.off > 8 ? T("Vom Trail aus zu sehen, ca. ", "Seen from the trail, approx. ") + dist(l.off) + T(" entfernt", " away") : T("Abstecher, ca. ", "Side trip, approx. ") + dist(l.off, l.off < 10 ? 1 : 0) + T(" vom Trail", " from the trail")) + "</div>" : "") +
