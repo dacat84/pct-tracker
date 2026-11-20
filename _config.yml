@@ -17,6 +17,7 @@ permalink: pretty
 tracker:
   mode: waiting
   start: "2027-04-22"   # official start (PCTA permit); countdown + "22. April 2027"
+  delay_hours: 0       # privacy: show a hike only this many hours after it ended (e.g. 12 or 24)
 
 collections:
   updates:
