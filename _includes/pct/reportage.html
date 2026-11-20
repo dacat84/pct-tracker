@@ -178,14 +178,13 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
     // --- info card for one day (default: the latest). Click a day on the map to see it. ---
     function nextTownFrom(km) { return D.towns.filter(function (tw) { return tw.km > km + 0.5; })[0] || null; }
-    // before the start: the card is a countdown that ticks every minute
+    // before the start: the card counts down the days (same count as the phone subtitle)
     function countdown() {
-      var ms = Math.max(0, START_TS - Date.now()), dd = Math.floor(ms / 86400000), hh = Math.floor(ms / 3600000) % 24, mm = Math.floor(ms / 60000) % 60;
+      var dd = Math.max(0, Math.ceil((START_TS - Date.now()) / 86400000));
       $("card").classList.add("cd");
       $("cNote").textContent = T("bis zum Start am 22. April 2027", "until the start on April 22, 2027");
       $("cToday").textContent = nf(dd) + (dd === 1 ? T(" Tag", " day") : T(" Tage", " days"));
-      $("cTodayL").textContent = hh + T(" Std. ", " h ") + mm + T(" Min.", " min");
-      clearTimeout(countdown.t); if (!D.days.length && ms > 0) countdown.t = setTimeout(countdown, 60000 - Date.now() % 60000 + 50);
+      $("cTodayL").textContent = "";
     }
     function card(i, zero) {
       var d = D.days[i], c = D.camps[i];
