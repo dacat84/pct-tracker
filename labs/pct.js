@@ -1,10 +1,13 @@
-// PCT Labs: shared core for the test designs (data, landmarks, photos, maps, replay).
-// Not linked from the live site. Data source: ?data=demo (default) | test | live.
+// PCT Tracker: shared core of all pages (data, landmarks, photos, maps, replay).
+// The same pages run twice:
+//   /pct-tracker/...       main site: real data only (data/), no demo or test walks
+//   /pct-tracker/labs/...  test copy: ?data=demo (default) | test | live
 (function () {
   "use strict";
   var BASE = "/pct-tracker/";
+  var MAIN = !/\/labs(\/|$)/.test(location.pathname);
   var qs = new URLSearchParams(location.search);
-  var SRC = qs.get("data") || "demo";
+  var SRC = MAIN ? "live" : (qs.get("data") || "demo");
   var DIR = { demo: "data/demo/", test: "data/test/", live: "data/" }[SRC] || "data/demo/";
   var NOMINAL = 4265, MI2KM = 1.60934;
   var START = "2027-04-22";   // official start (PCTA permit), same as tracker.start in _config.yml
@@ -167,7 +170,8 @@
         var lat = parseFloat(p.latitude), lon = parseFloat(p.longitude);
         return { id: p.id, title: p.title, taken: p.datetaken, q: p.url_q, m: p.url_m || p.url_z, l: p.url_l || p.url_c || p.url_z,
           lat: lat || null, lon: lon || null, href: "https://www.flickr.com/photos/" + FLICKR.user + "/" + p.id };
-      }).sort(function (a, b) { return String(b.taken).localeCompare(String(a.taken)); })); };
+      }).filter(function (p) { return !MAIN || String(p.taken) >= START; })   // main site: only photos from the hike itself
+        .sort(function (a, b) { return String(b.taken).localeCompare(String(a.taken)); })); };
       s.src = "https://www.flickr.com/services/rest/?method=flickr.photosets.getPhotos&format=json&jsoncallback=" + cb +
         "&api_key=" + FLICKR.key + "&user_id=" + encodeURIComponent(FLICKR.user) + "&photoset_id=" + FLICKR.set +
         "&extras=" + encodeURIComponent("geo,date_taken,url_q,url_m,url_z,url_c,url_l");
@@ -630,21 +634,22 @@
   function dayColor(a, b) { return ["case", ["==", ["%", ["coalesce", ["get", "dayIdx"], 0], 2], 0], a, b]; }
 
   // ---- Design switcher (Reportage / Tagebuch / Instrumente) + data source ----
-  var DESIGNS = [["", "Reportage", "Story"], ["tagebuch/", "Tagebuch", "Journal"], ["statistik/", "Statistik", "Statistics"]];
+  var DESIGNS = [["", "Reportage", "Story"], ["tagebuch/", "Tagebuch", "Journal"], ["fotos/", "Fotos", "Photos"], ["statistik/", "Statistik", "Stats"], ["ausruestung/", "Ausrüstung", "Gear"]];
   function switcher(active) {
     var css = document.createElement("style");
     css.textContent = ".lab{position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:9000;display:flex;align-items:center;gap:2px;background:rgba(14,18,22,.88);color:#fff;border-radius:22px;padding:4px;font:500 13px/1 system-ui,-apple-system,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.25);backdrop-filter:blur(6px)}" +
       ".lab a{color:#fff;text-decoration:none;padding:7px 13px;border-radius:16px;white-space:nowrap}.lab a:hover{background:rgba(255,255,255,.12)}.lab a.on{background:#e0452f}" +
       ".lab .lg{border:1px solid rgba(255,255,255,.35);font-weight:700;padding:6px 10px}.lab select{background:transparent;color:#ffd2c4;border:0;font:600 12px system-ui;margin:0 6px;cursor:pointer}.lab select option{color:#000}" +
-      "@media(max-width:700px){.lab{top:auto;bottom:10px}.lab select{display:none}}";
+      ".lab .tag{font:700 10px system-ui;letter-spacing:.08em;color:#ffd166;padding:0 8px}" +
+      "@media(max-width:700px){.lab{top:auto;bottom:10px;max-width:calc(100vw - 16px);overflow-x:auto;font-size:12px;scrollbar-width:none}.lab::-webkit-scrollbar{display:none}.lab a{padding:7px 7px;font-size:11.5px}.lab .lg{padding:5px 7px}.lab select,.lab .tag{display:none}}";
     document.head.appendChild(css);
-    var q = SRC !== "demo" ? "?data=" + SRC : "";
+    var q = !MAIN && SRC !== "demo" ? "?data=" + SRC : "", root = BASE + (MAIN ? "" : "labs/");
     var el = document.createElement("div"); el.className = "lab";
-    el.innerHTML = DESIGNS.map(function (d, i) { return '<a href="' + BASE + "labs/" + d[0] + q + '" class="' + (i === active ? "on" : "") + '">' + (EN ? d[2] : d[1]) + "</a>"; }).join("") +
-      '<select title="' + T("Datenquelle", "Data source") + '"><option value="demo">' + T("Demo-Daten", "Demo data") + '</option><option value="test">' + T("Meine Testrunden", "My test hikes") + '</option><option value="live">Live</option></select>' +
+    el.innerHTML = DESIGNS.map(function (d, i) { return '<a href="' + root + d[0] + q + '" class="' + (i === active ? "on" : "") + '">' + (EN ? d[2] : d[1]) + "</a>"; }).join("") +
+      (MAIN ? "" : '<span class="tag">LABS</span><select title="' + T("Datenquelle", "Data source") + '"><option value="demo">' + T("Demo-Daten", "Demo data") + '</option><option value="test">' + T("Meine Testrunden", "My test hikes") + '</option><option value="live">Live</option></select>') +
       '<a href="#" class="lg">' + (EN ? "DE" : "EN") + "</a>";
-    var sel = el.querySelector("select"); sel.value = SRC;
-    sel.onchange = function () { var u = new URL(location.href); u.searchParams.set("data", sel.value); location.href = u; };
+    var sel = el.querySelector("select");
+    if (sel) { sel.value = SRC; sel.onchange = function () { var u = new URL(location.href); u.searchParams.set("data", sel.value); location.href = u; }; }
     el.querySelector(".lg").onclick = function (e) { e.preventDefault(); try { localStorage.setItem("pctLang", EN ? "de" : "en"); } catch (x) {} location.reload(); };
     document.body.appendChild(el);
     document.documentElement.lang = LANG;
@@ -827,6 +832,6 @@
   function regS(g) { return EN ? g.en_s : g.short; }
 
   window.PCTLab = { load: load, photos: photos, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, addOffTrail: addOffTrail, justPaused: justPaused, closureBands: closureBands, declutter: declutter, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
+    switcher: switcher, lightbox: lightbox, MAIN: MAIN, J: J, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, addOffTrail: addOffTrail, justPaused: justPaused, closureBands: closureBands, declutter: declutter, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();
