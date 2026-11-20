@@ -91,7 +91,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
   <div class="panel"><h3><span data-de="Höhenprofil · Campo → Kanada" data-en="Elevation profile · Campo → Canada">Höhenprofil · Campo → Kanada</span><span id="profInfo"></span></h3><div class="prof" id="prof"></div><div class="tip" id="tip"></div></div>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="../pct.js?v=57"></script>
+<script src="../pct.js?v=59"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -135,6 +135,7 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
     map.addLayer({ id: "pct", type: "line", source: "pct", paint: { "line-color": "#3a8f9a", "line-width": 1.2, "line-dasharray": [2, 2] } });
     map.addSource("trk", { type: "geojson", data: D.track });
     map.addLayer({ id: "trk", type: "line", source: "trk", paint: { "line-color": L.dayColor(AMB, "#46c8d8"), "line-width": 2.8 }, layout: { "line-cap": "round", "line-join": "round" } });
+    L.addOffTrail(map, D, "#c7b8ff");   // off the PCT: towns, side trails, alternates
     L.addTowns(map, D, { dot: "#ffb020", link: "#ffb020" });
     L.addCamps(map, D, { fill: AMB, ink: "#0d0f12" });
     L.addManual(map, D, { fill: "#fff", ink: "#e0452f" });

@@ -134,7 +134,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="pct.js?v=57"></script>
+<script src="pct.js?v=59"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -206,6 +206,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     map.addSource("trk", { type: "geojson", data: D.track });
     map.addLayer({ id: "trk-glow", type: "line", source: "trk", paint: { "line-color": "#e0452f", "line-width": 9, "line-opacity": .28, "line-blur": 4 }, layout: { "line-cap": "round", "line-join": "round" } });
     map.addLayer({ id: "trk", type: "line", source: "trk", paint: { "line-color": L.dayColor("#ff6b4f", "#ffd166"), "line-width": 3 }, layout: { "line-cap": "round", "line-join": "round" } });
+    L.addOffTrail(map, D, "#8fd3ff");   // off the PCT: towns, side trails, alternates
     L.addCamps(map, D, { fill: "#ffd166", ink: "#14202a" });
     L.addManual(map, D, { fill: "#fff", ink: "#e0452f" });
     L.addClosures(map, D);
