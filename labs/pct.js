@@ -38,7 +38,7 @@
   // Positions of passes and road crossings (summit coordinates), snapped to the nearest point of the
   // PCT line. Only the low crossings ("low") look for the lowest trail point nearby.
   var PASS = {
-    "Scissors Crossing": [33.0998, -116.4700, "low"], "San Gorgonio Pass": [33.9230, -116.6930, "low"], "Cajon Pass": [34.3070, -117.4660, "low"],
+    "Scissors Crossing": [33.0998, -116.4700, "low"], "San Gorgonio Pass": [33.9245, -116.6947], "Cajon Pass": [34.3070, -117.4660, "low"],
     "Walker Pass": [35.6633, -118.0270], "Cottonwood Pass": [36.4530, -118.2140], "Forester Pass": [36.6944, -118.3714], "Glen Pass": [36.7888, -118.4126],
     "Pinchot Pass": [36.9358, -118.4056], "Mather Pass": [37.0263, -118.4628], "Muir Pass": [37.1120, -118.6703], "Sonora Pass": [38.3286, -119.6368],
     "Ebbetts Pass": [38.5446, -119.8131], "Carson Pass": [38.6947, -119.9890], "Donner Pass": [39.3170, -120.3290], "Bucks Summit": [39.8999, -121.1186],
