@@ -478,10 +478,7 @@
       if (l.type === "peak" && !theme.dot) el.firstChild.style.background = "transparent";
       var pop = new maplibregl.Popup({ offset: 10, className: "tw-pop", maxWidth: "300px" }).setHTML(
         "<h4>" + l.name + '</h4><div class="m">' + Ty[LANG] + " · " + elev(l.m) + "</div>" +
-        (l.side && l.off > 8 ? nw(T("Vom Trail aus zu sehen, ca. ", "Seen from the trail, approx. ") + dist(l.off) + T(" entfernt", " away")) + "<br>" + nw(T("nächster Trailpunkt: Trail-", "nearest trail point: trail ") + DU() + "\u00a0" + nf(distV(l.km)))
-        : l.side ? nw(T("Abseits vom Trail, ca. ", "Off the trail, approx. ") + dist(l.off, l.off < 10 ? 1 : 0) + T(" Luftlinie", " straight line")) + "<br>" + nw(T("nächster Trailpunkt: Trail-", "nearest trail point: trail ") + DU() + "\u00a0" + nf(distV(l.km)))
-          : nw(T("Am Trail bei Trail-", "On the trail at trail ") + DU() + "\u00a0" + nf(distV(l.km)))) +
-        (l.type === "term" ? "" : "<br>" + nw(dist(l.km) + T(" ab Campo", " from Campo")) + "<br>" + nw(dist(D.total - l.km) + T(" bis Kanada", " to Canada"))) +
+        (l.side ? '<div class="n" style="margin-top:4px">' + (l.off > 8 ? T("Vom Trail aus zu sehen, ca. ", "Seen from the trail, approx. ") + dist(l.off) + T(" entfernt", " away") : T("Abstecher, ca. ", "Side trip, approx. ") + dist(l.off, l.off < 10 ? 1 : 0) + T(" vom Trail", " from the trail")) + "</div>" : "") +
         (NOTE[l.name] ? '<div class="n" style="margin-top:4px">' + NOTE[l.name] + "</div>" : ""));
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-5, 0] }).setLngLat([l.lon, l.lat]).setPopup(pop).addTo(map);
     });
