@@ -323,7 +323,7 @@ def main():
             continue
         if MODE == "live" and START_DATE and str(act.get("startTimeLocal") or "")[:10] < START_DATE:
             continue
-        if DELAY_H > 0:
+        if DELAY_H > 0 and MODE == "live":   # test walks before the hike show up right away
             try:
                 st = datetime.datetime.strptime(str(act.get("startTimeGMT"))[:19], "%Y-%m-%d %H:%M:%S")
                 end = st + datetime.timedelta(seconds=float(act.get("duration") or 0))
