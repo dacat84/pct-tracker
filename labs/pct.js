@@ -368,7 +368,7 @@
     ["Burney", 40.8824, -121.6608, "Grocery · Post Office · Motel · Restaurants"],
     ["Mount Shasta", 41.3099, -122.3106, "Grocery · Outfitter · Post Office · Motel · Hostel · Restaurants"],
     ["Etna", 41.4568, -122.8948, "Grocery · Post Office · Motel · Hostel · Brewery"],
-    ["Seiad Valley", 41.8418, -123.1964, "Store · Café · Post Office · Camping · Pancake challenge"],
+    ["Seiad Valley", 41.8418, -123.1964, "Store · Café · Post Office · Camping"],
     ["Ashland", 42.1946, -122.7095, "Grocery · Outfitter · Post Office · Motel · Hostel · Restaurants"],
     ["Mazama Village", 42.8668, -122.1675, "Store · Resupply · Motel · Camping"],
     ["Shelter Cove", 43.5817, -122.0390, "Store · Resupply · Cabins · Showers"],
