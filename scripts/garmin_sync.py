@@ -29,24 +29,28 @@ import re
 
 
 def tracker_settings(path="_config.yml"):
-    """Read `tracker: mode / start` from _config.yml (tiny parser, no PyYAML needed)."""
-    mode, start = "live", ""
+    """Read `tracker: mode / start / delay_hours` from _config.yml (tiny parser, no PyYAML needed)."""
+    mode, start, delay = "live", "", 0.0
     try:
         txt = open(path, encoding="utf-8").read()
         block = re.search(r"^tracker:\s*\n((?:[ \t]+.*\n?)*)", txt, re.M)
         if block:
             m = re.search(r"^\s+mode:\s*\"?(\w+)", block.group(1), re.M)
             s = re.search(r"^\s+start:\s*\"?([0-9-]+)", block.group(1), re.M)
+            d = re.search(r"^\s+delay_hours:\s*\"?([0-9.]+)", block.group(1), re.M)
             mode = m.group(1) if m else mode
             start = s.group(1) if s else start
+            delay = float(d.group(1)) if d else delay
     except OSError:
         pass
-    return mode, start
+    return mode, start, delay
 
 
 # waiting: before the hike, everything goes to data/test/ (seen only at ?test)
 # live:    on trail, data/ and only activities from the start date on
-MODE, START_DATE = tracker_settings()
+# delay_hours: an activity only goes public this many hours after it ended
+# (it stays unknown until then, so a later run picks it up)
+MODE, START_DATE, DELAY_H = tracker_settings()
 DATA_DIR = "data/test" if MODE == "waiting" else "data"
 TRACK_PATH = f"{DATA_DIR}/track.geojson"
 LATEST_PATH = f"{DATA_DIR}/latest.json"
@@ -319,6 +323,15 @@ def main():
             continue
         if MODE == "live" and START_DATE and str(act.get("startTimeLocal") or "")[:10] < START_DATE:
             continue
+        if DELAY_H > 0:
+            try:
+                st = datetime.datetime.strptime(str(act.get("startTimeGMT"))[:19], "%Y-%m-%d %H:%M:%S")
+                end = st + datetime.timedelta(seconds=float(act.get("duration") or 0))
+                if datetime.datetime.utcnow() - end < datetime.timedelta(hours=DELAY_H):
+                    print(f"  ~ activity {act_id} held back ({DELAY_H:g} h delay).")
+                    continue
+            except ValueError:
+                pass
         feat = build_feature(api, act)
         if feat:
             track["features"].append(feat)
