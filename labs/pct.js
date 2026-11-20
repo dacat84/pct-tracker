@@ -51,6 +51,16 @@
     "Eagle Rock": [33.2547, -116.6117], "Cajon Pass McDonald's": [34.3029, -117.4687], "Rae Lakes": [36.8135, -118.4057],
     "Evolution Lake": [37.1690, -118.7130], "Thousand Island Lake": [37.7208, -119.1813]
   };
+  // What a landmark actually is (instead of the broad group like "water / sight")
+  var KIND = {
+    "Deep Creek Hot Springs": ["Heiße Quellen", "Hot springs"], "Lake Morena": ["See", "Lake"], "Lake Tahoe": ["See", "Lake"],
+    "Crater Lake": ["Kratersee", "Crater lake"], "Olallie Lake": ["See", "Lake"], "Rae Lakes": ["Seen", "Lakes"],
+    "Evolution Lake": ["See", "Lake"], "Thousand Island Lake": ["See", "Lake"], "Burney Falls": ["Wasserfall", "Waterfall"],
+    "Tunnel Falls": ["Wasserfall", "Waterfall"], "Subway Cave": ["Lavahöhle", "Lava tube cave"], "Agua Caliente": ["Bach", "Creek"],
+    "Vasquez Rocks": ["Felsen", "Rock formation"], "Castle Crags": ["Felsnadeln", "Granite spires"], "Eagle Rock": ["Felsen", "Rock formation"],
+    "Kendall Katwalk": ["Felspfad", "Cliff path"], "Goat Rocks": ["Gebirge", "Mountain range"], "Mojave Desert": ["Wüste", "Desert"]
+  };
+
   // One line about the well-known spots (English place terms, as in the town notes)
   var NOTE = {
     "Eagle Rock": "Granite outcrop shaped like an eagle, classic photo stop",
@@ -477,7 +487,7 @@
       el.innerHTML = "<i style='background:" + (theme.dot ? theme.dot(l) : Ty.c) + "'></i><span>" + l.name + "</span>";
       if (l.type === "peak" && !theme.dot) el.firstChild.style.background = "transparent";
       var pop = new maplibregl.Popup({ offset: 10, className: "tw-pop", maxWidth: "300px" }).setHTML(
-        "<h4>" + l.name + '</h4><div class="m">' + Ty[LANG] + " · " + elev(l.m) + "</div>" +
+        "<h4>" + l.name + '</h4><div class="m">' + (KIND[l.name] ? KIND[l.name][LANG === "en" ? 1 : 0] : Ty[LANG]) + " · " + elev(l.m) + "</div>" +
         (l.side ? '<div class="n" style="margin-top:4px">' + (l.off > 8 ? T("Vom Trail aus zu sehen, ca. ", "Seen from the trail, approx. ") + dist(l.off) + T(" entfernt", " away") : T("Abstecher, ca. ", "Side trip, approx. ") + dist(l.off, l.off < 10 ? 1 : 0) + T(" vom Trail", " from the trail")) + "</div>" : "") +
         (NOTE[l.name] ? '<div class="n" style="margin-top:4px">' + NOTE[l.name] + "</div>" : ""));
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-5, 0] }).setLngLat([l.lon, l.lat]).setPopup(pop).addTo(map);
