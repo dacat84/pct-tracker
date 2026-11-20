@@ -493,7 +493,7 @@
         el.querySelector("span").textContent = "McDonald's";
       }
       var pop = new maplibregl.Popup({ offset: 10, className: "tw-pop", maxWidth: "300px" }).setHTML(
-        "<h4>" + l.name + '</h4><div class="m">' + (KIND[l.name] ? KIND[l.name][LANG === "en" ? 1 : 0] : Ty[LANG]) + " · " + elev(l.m) + "</div>" +
+        "<h4>" + l.name + '</h4><div class="m">' + (KIND[l.name] ? KIND[l.name][LANG === "en" ? 1 : 0] : Ty[LANG]) + (ELEV[l.name] || l.type !== "spot" ? " · " + elev(l.m) : "") + "</div>" +   // no rough height for spots without a measured one
         (l.side ? '<div class="n" style="margin-top:4px">' + (l.off > 8 ? T("Vom Trail aus zu sehen, ca. ", "Seen from the trail, approx. ") + dist(l.off) + T(" entfernt", " away") : T("Abstecher, ca. ", "Side trip, approx. ") + dist(l.off, l.off < 10 ? 1 : 0) + T(" vom Trail", " from the trail")) + "</div>" : "") +
         (NOTE[l.name] ? '<div class="n" style="margin-top:4px">' + NOTE[l.name] + "</div>" : ""));
       new maplibregl.Marker({ element: el, anchor: "left", offset: [-5, 0] }).setLngLat([l.lon, l.lat]).setPopup(pop).addTo(map);
