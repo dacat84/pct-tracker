@@ -334,6 +334,16 @@
           }
           return false;
         }
+        // off-PCT pieces of the track (towns, side trails like Whitney, alternates), drawn in their own colour
+        var offFeats = [];
+        feats.forEach(function (f) {
+          var run = null;
+          f.geometry.coordinates.forEach(function (c) {
+            if (!onPct(c)) { if (!run) { run = []; offFeats.push({ type: "Feature", properties: { dayIdx: f.properties.dayIdx }, geometry: { type: "LineString", coordinates: run } }); } run.push(c); }
+            else if (run) { run.push(c); run = null; }   // close the piece at the point back on the trail
+          });
+        });
+        offFeats = offFeats.filter(function (f) { return f.geometry.coordinates.length > 1; });
         var tks = [];
         feats.forEach(function (f) {
           var j = -1;
@@ -362,7 +372,7 @@
         return {
           src: SRC, pts: pts, total: prof.total_km, line: line, track: { type: "FeatureCollection", features: feats }, latest: latest,
           here: here, landmarks: lms, regions: regs, region: reg, days: dayList, today: dayList[dayList.length - 1] || null,
-          manual: manual, closures: (Array.isArray(r[6]) ? r[6] : []).filter(function (c) { return isFinite(c.from_km) && isFinite(c.to_km); }), dayNo: dayList.length, walkedKm: totalKm, covered: covered, coveredKm: coveredKm, next: next, towns: towns, diary: diary, camps: camps
+          manual: manual, closures: (Array.isArray(r[6]) ? r[6] : []).filter(function (c) { return isFinite(c.from_km) && isFinite(c.to_km); }), dayNo: dayList.length, walkedKm: totalKm, offTrack: { type: "FeatureCollection", features: offFeats }, covered: covered, coveredKm: coveredKm, next: next, towns: towns, diary: diary, camps: camps
         };
       });
   }
@@ -564,6 +574,12 @@
           '<line x1="' + a + '" x2="' + b + '" y1="' + top + '" y2="' + top + '" stroke="#ffd400" stroke-width="2" vector-effect="non-scaling-stroke"/>'; }).join("");
   }
 
+  // ---- Track pieces off the PCT (town, side trail, alternate): dashed in their own colour ----
+  function addOffTrail(map, D, color) {
+    map.addSource("trk-off", { type: "geojson", data: D.offTrack || { type: "FeatureCollection", features: [] } });
+    map.addLayer({ id: "trk-off", type: "line", source: "trk-off", paint: { "line-color": color || "#8fd3ff", "line-width": 4.2 }, layout: { "line-cap": "round", "line-join": "round" } });   // wide enough to cover the day colour below
+  }
+
   // ---- Less on the map the further out you zoom ----
   //  far  (< 6.5): only termini, position, one flame per closure
   //  lo  (6.5-8.5): + town dots, main landmarks (no labels for minor ones)
@@ -756,7 +772,8 @@
       // clock in the local time where the walk happened (Pacific on the PCT, Berlin for test walks)
       if (o.ui.clock) o.ui.clock.textContent = dfmt(p.t, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: p.c[0] < -30 ? "America/Los_Angeles" : "Europe/Berlin" }) + T(" Uhr", "");
       var f = D.track.features[s.f], day = f.properties.day, dn = D.days.findIndex(function (d) { return d.date === day; });
-      var atEnd = dayEnds.findIndex(function (k) { return Math.abs(k - cur) < 1e-6; });   // at a tent: still the day just walked
+      var atEnd = dayEnds.findIndex(function (k) { return Math.abs(k - cur) < 1e-6; });
+      if (o.map.getLayer("trk-off")) o.map.setFilter("trk-off", cur >= END ? null : ["<=", ["get", "dayIdx"], dn]);   // at a tent: still the day just walked
       if (atEnd >= 0 && atEnd < D.days.length && cur < END) { dn = atEnd; day = D.days[dn].date; }
       var dnow = dn + 1, done = cur >= END;   // tents only where the night is already behind (or reached)
       document.querySelectorAll(".camp").forEach(function (c) { var d = +c.dataset.day; c.style.visibility = (done || d < dnow || (d === dnow && dayEnds.some(function (k) { return Math.abs(k - cur) < 1e-6; }))) ? "visible" : "hidden"; });
@@ -848,6 +865,6 @@
   function regS(g) { return EN ? g.en_s : g.short; }
 
   window.PCTLab = { load: load, photos: photos, hikerEl: hikerEl, hikerState: hikerState, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, justPaused: justPaused, closureBands: closureBands, declutter: declutter, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
+    switcher: switcher, lightbox: lightbox, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, addOffTrail: addOffTrail, justPaused: justPaused, closureBands: closureBands, declutter: declutter, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();
