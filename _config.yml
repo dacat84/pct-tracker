@@ -17,7 +17,7 @@ permalink: pretty
 tracker:
   mode: waiting
   start: "2027-04-22"   # official start (PCTA permit); countdown + "22. April 2027"
-  delay_hours: 0       # privacy: show a hike only this many hours after it ended (e.g. 12 or 24)
+  delay_hours: 24      # privacy: on the trail (mode live) a hike only shows up 24 h after it ended; test walks are not delayed
 
 collections:
   updates:
