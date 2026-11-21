@@ -71,8 +71,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 @keyframes mePulse{from{transform:scale(1);opacity:.9}to{transform:scale(3);opacity:0}}
 .me-bub{position:absolute;left:0;top:0;z-index:4;will-change:transform}
 .me-bub .bub{white-space:nowrap;font:600 12px/1 Inter,system-ui,sans-serif;background:#fff;color:#14202a;padding:5px 9px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
-.me-bub .bub b{color:#e0452f}.me-bub .bub .up{color:#56636d;font-weight:500}.me-bub{pointer-events:none}.me-bub .bub i{font-style:normal}
-@media(max-width:820px){.me-bub .bub{padding:7px 10px;border-radius:10px;line-height:1.4}.me-bub .bub .sep{display:none}.me-bub .bub>span,.me-bub .bub>b{display:block}}   /* phone: stacked */
+.me-bub .bub b{color:#e0452f}.me-bub .bub .up{color:#56636d;font-weight:500}.me-bub{pointer-events:none}
+@media(max-width:820px){.me-bub .bub .x{display:none}}   /* phone: only day and km */
 .maplibregl-ctrl-group{background:#fff!important}
 .maplibregl-ctrl-attrib{font-size:10px}
 .maplibregl-ctrl-bottom-right{bottom:300px}
@@ -253,12 +253,12 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     // label is part of the marker itself, so it can never lag behind or cover the dot
     var bubEl = document.createElement("div"); bubEl.className = "me-bub";
     function hmm(sec) { var m = Math.round(sec / 60); return Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0") + "\u00a0h"; }
-    // one line on desktop, stacked on the phone (the separators are hidden there)
+    // phone: only day and km (time and climb are wrapped in .x and hidden there)
     function bubTxt(n, d) {
-      var parts = ["<span>" + T("Tag ", "Day ") + (n || 0) + "</span>", "<b>" + L.dist(d ? d.km : 0, 1) + "</b>"];
-      if (d && d.sec) parts.push('<span class="up">' + hmm(d.sec) + "</span>");
-      if (d && d.up) parts.push('<span class="up">↑\u00a0' + L.elev(d.up).replace(" ", "\u00a0") + "</span>");
-      return parts.join('<i class="sep"> · </i>');
+      var t = T("Tag ", "Day ") + (n || 0) + " · <b>" + L.dist(d ? d.km : 0, 1) + "</b>", x = "";
+      if (d && d.sec) x += ' · <span class="up">' + hmm(d.sec) + "</span>";
+      if (d && d.up) x += ' · <span class="up">↑\u00a0' + L.elev(d.up).replace(" ", "\u00a0") + "</span>";
+      return t + (x ? '<span class="x">' + x + "</span>" : "");
     }
     bubEl.innerHTML = '<div class="bub">' + bubTxt(D.dayNo, D.today) + '</div>';
     if (!D.days.length) bubEl.style.visibility = "hidden";   // nothing walked yet: no "Tag 0" label
