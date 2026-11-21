@@ -304,10 +304,10 @@
         }
         // off-PCT pieces of the track (towns, side trails like Whitney, alternates), drawn in their own colour
         var offFeats = [];
-        feats.forEach(function (f) {
+        feats.forEach(function (f, fi) {
           var run = null;
-          f.geometry.coordinates.forEach(function (c) {
-            if (!onPct(c)) { if (!run) { run = []; offFeats.push({ type: "Feature", properties: { dayIdx: f.properties.dayIdx }, geometry: { type: "LineString", coordinates: run } }); } run.push(c); }
+          f.geometry.coordinates.forEach(function (c, ci) {
+            if (!onPct(c)) { if (!run) { run = []; offFeats.push({ type: "Feature", properties: { dayIdx: f.properties.dayIdx, f: fi, k0: ci }, geometry: { type: "LineString", coordinates: run } }); } run.push(c); }
             else if (run) { run.push(c); run = null; }   // close the piece at the point back on the trail
           });
         });
@@ -734,16 +734,30 @@
       out.push({ type: "Feature", properties: D.track.features[s.f].properties, geometry: { type: "LineString", coordinates: part } });
       return { type: "FeatureCollection", features: out };
     }
+    // the off-PCT pieces only as far as the replay has got (a side trail appears while you walk it)
+    function offUpTo(p) {
+      var s = seq[p.i], out = [];
+      (D.offTrack ? D.offTrack.features : []).forEach(function (g) {
+        var pr = g.properties;
+        if (pr.f < s.f) out.push(g);
+        else if (pr.f === s.f && pr.k0 <= s.k) {
+          var n = s.k - pr.k0 + 1, cs = g.geometry.coordinates;
+          if (n >= cs.length) out.push(g);
+          else out.push({ type: "Feature", properties: pr, geometry: { type: "LineString", coordinates: cs.slice(0, n).concat([p.c]) } });
+        }
+      });
+      return { type: "FeatureCollection", features: out };
+    }
     function show(km, follow, force) {
       if (!N) return; cur = Math.max(0, Math.min(END, km)); var p = pointAt(cur), s = seq[p.i], now = performance.now();
-      if (force || now - lastDraw > 140 || cur >= END) { var src = o.map.getSource(o.source || "trk"); if (src) src.setData(cur >= END ? D.track : trackUpTo(p)); lastDraw = now; }
+      if (force || now - lastDraw > 140 || cur >= END) { var src = o.map.getSource(o.source || "trk"); if (src) src.setData(cur >= END ? D.track : trackUpTo(p));
+        var os = o.map.getSource("trk-off"); if (os) os.setData(cur >= END ? D.offTrack : offUpTo(p)); lastDraw = now; }
       if (o.marker) o.marker.setLngLat(cur >= END && D.latest && D.latest.manual ? [D.latest.lon, D.latest.lat] : p.c);
       if (o.ui.slider) o.ui.slider.value = Math.round(cur / (END || 1) * 1000);
       // clock in the local time where the walk happened (Pacific on the PCT, Berlin for test walks)
       if (o.ui.clock) o.ui.clock.textContent = dfmt(p.t, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: p.c[0] < -30 ? "America/Los_Angeles" : "Europe/Berlin" }) + T(" Uhr", "");
       var f = D.track.features[s.f], day = f.properties.day, dn = D.days.findIndex(function (d) { return d.date === day; });
       var atEnd = dayEnds.findIndex(function (k) { return Math.abs(k - cur) < 1e-6; });
-      if (o.map.getLayer("trk-off")) o.map.setFilter("trk-off", cur >= END ? null : ["<=", ["get", "dayIdx"], dn]);   // at a tent: still the day just walked
       if (atEnd >= 0 && atEnd < D.days.length && cur < END) { dn = atEnd; day = D.days[dn].date; }
       var dnow = dn + 1, done = cur >= END;   // tents only where the night is already behind (or reached)
       document.querySelectorAll(".camp").forEach(function (c) { var d = +c.dataset.day; c.style.visibility = (done || d < dnow || (d === dnow && dayEnds.some(function (k) { return Math.abs(k - cur) < 1e-6; }))) ? "visible" : "hidden"; });
