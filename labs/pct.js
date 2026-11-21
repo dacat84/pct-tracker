@@ -461,13 +461,13 @@
   var BED = '<svg viewBox="0 0 24 16" width="18" height="12" style="vertical-align:-1px"><path d="M2 2v12M2 10h20v4M22 10V7a2 2 0 0 0-2-2H11v5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="7" r="2" fill="currentColor"/></svg>';
 
   // ---- "Where am I" button next to + / - ----
-  function addLocate(map, getLngLat, pos) {
+  function addLocate(map, getLngLat, pos, pill) {   // pill: big white button with text (Reportage)
     // keep the attribution folded to its (i) button, MapLibre opens it on wide-enough maps
     function fold() { document.querySelectorAll(".maplibregl-compact-show").forEach(function (e) { e.classList.remove("maplibregl-compact-show"); }); }
     fold(); map.once("idle", fold);
     function C() {}
     C.prototype.onAdd = function () {
-      var w = document.createElement("div"); w.className = "maplibregl-ctrl maplibregl-ctrl-group";
+      var w = document.createElement("div"); w.className = "maplibregl-ctrl maplibregl-ctrl-group" + (pill ? " loc-pill" : "");
       var b = document.createElement("button"); b.type = "button"; b.title = T("Zu meiner Position", "Where am I");
       // looks like the position marker on the map (red dot, white rim, pulsing ring)
       if (!document.getElementById("loc-css")) { var cs = document.createElement("style"); cs.id = "loc-css";
@@ -475,7 +475,7 @@
           ".loc-dot::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid #e0452f;animation:locPulse 2s ease-out infinite}" +
           "@keyframes locPulse{from{transform:scale(1);opacity:.9}to{transform:scale(2.4);opacity:0}}";
         document.head.appendChild(cs); }
-      b.innerHTML = '<span class="loc-dot"></span>';
+      b.innerHTML = '<span class="loc-dot"></span>' + (pill ? "<span>" + T("Wo bin ich?", "Where am I?") + "</span>" : "");
       b.onclick = function () {   // back to the newest tracked position (also after dragging the profile or a replay)
         scrubResets.forEach(function (f) { f(); }); if (activeReplay && activeReplay.toEnd) activeReplay.toEnd(); var ll = getLngLat(); if (ll) map.flyTo({ center: ll, zoom: 13, duration: 1200 }); };
       w.appendChild(b); return w;
