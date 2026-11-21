@@ -702,7 +702,7 @@
       base += real;
     });
     var N = seq.length, END = N ? seq[N - 1].km : 0, cur = END, raf = null, sp = 0, lastDraw = 0, cam = null, zoom = null;
-    var SPEEDS = [1, 2, 4], ZOOM = [12, 10.6, 9.2], DAY_MS = 6000, NIGHT_MS = 1600;  // 1x: a day in ~6 s, then a short night at the tent
+    var SPEEDS = [1, 2, 4, 10], ZOOM = [12, 10.6, 9.2, 7.8], DAY_MS = 6000, NIGHT_MS = 1600;  // 1x: a day in ~6 s, then a short night at the tent
     // km where each day ends (last point before the date changes)
     var dayEnds = [], dayOf = function (s) { return D.track.features[s.f].properties.day; };
     for (var q = 0; q < N - 1; q++) if (dayOf(seq[q]) !== dayOf(seq[q + 1])) dayEnds.push(seq[q].km);
