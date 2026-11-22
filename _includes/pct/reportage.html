@@ -289,6 +289,9 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     map.jumpTo({ center: pos, zoom: z });
     map.panBy(mob ? [0, 60] : [-130, 30], { duration: 0 });
     zoomClass();
+    // test helper: #at=lat,lon[,zoom] in the address jumps straight to a spot (for checking markers)
+    var at = /#at=(-?[\d.]+),(-?[\d.]+)(?:,([\d.]+))?/.exec(location.hash);
+    if (at) map.jumpTo({ center: [+at[2], +at[1]], zoom: at[3] ? +at[3] : 15 });
 
     // --- replay ---
     L.replay({ map: map, D: D, marker: meMk, ui: { play: $("play"), speed: $("speed"), clock: $("clock") },
