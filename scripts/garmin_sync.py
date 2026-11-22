@@ -251,7 +251,7 @@ def build_feature(api, act):
                 f = _feature_from(act, sub, share_d, share_t, True)
                 if f:
                     feats.append(f)
-            print(f"  activity {act_id}: town walking cut, {len(feats)} piece(s) kept.")
+            print(f"  activity {act_id}: town walking / car ride cut, {len(feats)} piece(s) kept.")
             return feats or {"skip": True}
     return _feature_from(act, pts, 1.0, 1.0, False)
 

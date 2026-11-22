@@ -7,6 +7,7 @@ A recorded point is dropped when it lies inside a town's zone AND off the PCT (m
   * the streets to the motel, the supermarket and back are gone: no km, and the track
     does not end at the door of the place where you sleep.
 A recording that lies completely in town (a stroll on a zero day) disappears, so the zero stays a zero.
+Car or bus rides (the watch still running after the trailhead) are dropped too.
 
 Towns come from labs/pct.js (TOWNS), the trail line from data/pct_line.json.
 """
@@ -62,11 +63,44 @@ def in_town(lat, lon):
             return n if _near_pct(lat, lon) > ON_PCT_M else None
     return None
 
+VEHICLE_MS = 12 / 3.6     # faster than 12 km/h over a minute: not on foot
+VEHICLE_MIN_S = 120       # ... for at least two minutes (a GPS jump is not a car ride)
+
+def vehicle(pts):
+    """Indices of points recorded in a car / bus (watch left running after the trailhead)."""
+    if not pts or pts[0][3] is None:
+        return set()
+    fast = [False] * len(pts)
+    j = 0
+    for i in range(1, len(pts)):
+        if pts[i][3] is None:
+            continue
+        while j < i and pts[i][3] - pts[j][3] > 60:
+            j += 1
+        if j > 0 and pts[i][3] - pts[j - 1][3] >= 50:
+            j0 = j - 1
+            if _dist(pts[j0][0], pts[j0][1], pts[i][0], pts[i][1]) / (pts[i][3] - pts[j0][3]) > VEHICLE_MS:
+                for k in range(j0, i + 1):
+                    fast[k] = True
+    out, i = set(), 0
+    while i < len(pts):           # keep only fast stretches that last long enough
+        if not fast[i]:
+            i += 1; continue
+        k = i
+        while k + 1 < len(pts) and fast[k + 1]:
+            k += 1
+        if pts[k][3] - pts[i][3] >= VEHICLE_MIN_S:
+            out.update(range(i, k + 1))
+        i = k + 1
+    return out
+
 def runs(pts):
-    """pts: [(lat, lon, ...)]. Returns [(i0, i1), ...]: index ranges (inclusive) to keep."""
+    """pts: [(lat, lon, ele, ts)]. Returns [(i0, i1), ...]: index ranges (inclusive) to keep.
+    Dropped: town walking off the PCT and car / bus rides."""
     out, start = [], None
+    car = vehicle(pts)
     for i, p in enumerate(pts):
-        if in_town(p[0], p[1]):
+        if i in car or in_town(p[0], p[1]):
             if start is not None:
                 out.append((start, i - 1)); start = None
         elif start is None:
