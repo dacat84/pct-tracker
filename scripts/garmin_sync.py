@@ -29,6 +29,7 @@ import re
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import privacy
+import townzones
 
 
 def tracker_settings(path="_config.yml"):
@@ -231,6 +232,37 @@ def build_feature(api, act):
         print(f"  activity {act_id}: no GPS points; skipped.")
         return None
 
+    # On the trail: walking around in a town is not part of the hike (see townzones.py).
+    # The recording is split where it leaves a town zone; each kept piece becomes its own feature.
+    if MODE == "live":
+        keep = townzones.runs(pts)
+        if not keep:
+            print(f"  activity {act_id}: only town walking; not imported.")
+            return {"skip": True}
+        if keep != [(0, len(pts) - 1)]:
+            full = sum(haversine_m(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]) for i in range(1, len(pts))) or 1.0
+            dur = (pts[-1][3] - pts[0][3]) if pts[0][3] is not None and pts[-1][3] is not None else None
+            feats = []
+            for i0, i1 in keep:
+                sub = pts[i0:i1 + 1]
+                d = sum(haversine_m(sub[i - 1][0], sub[i - 1][1], sub[i][0], sub[i][1]) for i in range(1, len(sub)))
+                share_d = d / full
+                share_t = ((sub[-1][3] - sub[0][3]) / dur) if dur and sub[0][3] is not None and sub[-1][3] is not None else share_d
+                f = _feature_from(act, sub, share_d, share_t, True)
+                if f:
+                    feats.append(f)
+            print(f"  activity {act_id}: town walking cut, {len(feats)} piece(s) kept.")
+            return feats or {"skip": True}
+    return _feature_from(act, pts, 1.0, 1.0, False)
+
+
+def _feature_from(act, pts, share_d, share_t, piece):
+    """One map feature from a list of GPX points (the whole activity or a piece of it)."""
+    act_id = act.get("activityId")
+    type_key = ((act.get("activityType") or {}).get("typeKey") or "").lower()
+    if len(pts) < 2:
+        return None
+
     # Simplified map coordinates ([lon, lat]).
     pts_ds = downsample(pts, COORDS_MAX_POINTS)
     coords = [[p[1], p[0]] for p in pts_ds]
@@ -253,7 +285,7 @@ def build_feature(api, act):
     # Elevation profile (cumulative distance vs. elevation), computed from full pts.
     has_alt = all(p[2] is not None for p in pts)
     prof_d, prof_e = [], []
-    total_up = float(act.get("elevationGain") or 0.0)
+    total_up = float(act.get("elevationGain") or 0.0) * share_d
     if has_alt:
         cum = 0.0
         prof_d.append(0.0); prof_e.append(pts[0][2])
@@ -265,7 +297,7 @@ def build_feature(api, act):
             if d > 0:
                 up += d
         prof_d, prof_e = downsample_pair(prof_d, prof_e, PROFILE_MAX_POINTS)
-        if not act.get("elevationGain"):
+        if not act.get("elevationGain") or piece:
             total_up = up
 
     return {
@@ -274,9 +306,9 @@ def build_feature(api, act):
             "strava_id": act_id,                      # kept name for map.js hover compat
             "activity_id": act_id,
             "name": act.get("activityName", "") or "",
-            "start_date": iso_from_garmin(act.get("startTimeGMT") or act.get("startTimeLocal")),
-            "distance_m": float(act.get("distance") or 0.0),
-            "moving_time_s": int(act.get("movingDuration") or act.get("duration") or 0),
+            "start_date": iso_from_ts(pts[0][3]) if piece and pts[0][3] is not None else iso_from_garmin(act.get("startTimeGMT") or act.get("startTimeLocal")),
+            "distance_m": round(float(act.get("distance") or 0.0) * share_d, 1),
+            "moving_time_s": int((act.get("movingDuration") or act.get("duration") or 0) * share_t),
             "type": type_key,
             "elevation_gain_m": float(total_up),
             "profile_dist_m": prof_d,
@@ -350,7 +382,13 @@ def main():
             except ValueError:
                 pass
         feat = build_feature(api, act)
-        if feat and feat.get("skip"):   # nothing left after the privacy cut: remember it, don't retry
+        if isinstance(feat, list):      # split at a town: several pieces of one activity
+            track["features"].extend(feat)
+            known.add(str(act_id))
+            added += 1
+            print(f"  + added activity {act_id} in {len(feat)} piece(s).")
+            continue
+        if feat and feat.get("skip"):   # nothing left after the privacy / town cut: remember it, don't retry
             known.add(str(act_id))
             continue
         if feat:
@@ -368,7 +406,7 @@ def main():
         if "t" in pr or aid not in by_id or filled >= 25:
             continue
         nf = build_feature(api, by_id[aid])
-        if nf and "t" in nf.get("properties", {}):
+        if isinstance(nf, dict) and "t" in nf.get("properties", {}):
             pr["t0"], pr["t"] = nf["properties"]["t0"], nf["properties"]["t"]
             f["geometry"] = nf["geometry"]   # same thinning, so coordinates and times line up
             filled += 1
