@@ -55,7 +55,7 @@
     "Scissors Crossing": [33.0998, -116.4700, "low"], "San Gorgonio Pass": [33.9245, -116.6947], "Cajon Pass": [34.3070, -117.4660, "low"],
     "Walker Pass": [35.6633, -118.0270], "Cottonwood Pass": [36.45299, -118.21509], "Forester Pass": [36.69436, -118.37336], "Glen Pass": [36.78956, -118.41159],
     "Pinchot Pass": [36.93636, -118.41241], "Mather Pass": [37.03188, -118.46010], "Muir Pass": [37.11160, -118.67066], "Sonora Pass": [38.3286, -119.6368],
-    "Ebbetts Pass": [38.5446, -119.8131], "Carson Pass": [38.6947, -119.9890], "Donner Pass": [39.3170, -120.3290], "Bucks Summit": [39.8999, -121.1186],
+    "Ebbetts Pass": [38.5446, -119.8131], "Carson Pass": [38.6947, -119.9890], "Donner Pass": [39.31907, -120.32853], "Bucks Summit": [39.8999, -121.1186],
     "Willamette Pass": [43.5966, -122.0373], "McKenzie Pass": [44.2603, -121.8100], "Santiam Pass": [44.4253, -121.8546], "White Pass": [46.6440, -121.3810],
     "Snoqualmie Pass": [47.4243, -121.4135], "Stevens Pass": [47.7463, -121.0857], "Rainy Pass": [48.5157, -120.7357], "Harts Pass": [48.7210, -120.6690],
     // other points right on the trail (checked against komoot / Wikipedia / the state lines)
