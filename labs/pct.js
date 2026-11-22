@@ -42,10 +42,10 @@
     "Mt. Whitney": [36.5785, -118.2923], "San Jacinto Peak": [33.8147, -116.6794], "Mt. Baden-Powell": [34.3586, -117.7647],
     "Mt. Shasta": [41.4092, -122.1949], "Lassen Peak": [40.4882, -121.5050], "Mt. Hood": [45.3736, -121.6959], "Mt. Rainier": [46.8529, -121.7604],
     "Mt. Adams": [46.2024, -121.4909], "Mt. Jefferson": [44.6743, -121.7995], "Three Sisters": [44.1033, -121.7693], "Glacier Peak": [48.1125, -121.1139],
-    "Mt. McLoughlin": [42.4451, -122.3155], "Diamond Peak": [43.5207, -122.1496], "Three Fingered Jack": [44.4767, -121.8441],
-    "Crater Lake": [42.9446, -122.1090], "Lake Tahoe": [39.0968, -120.0324], "Sierra Buttes": [39.5943, -120.6406],
+    "Mt. McLoughlin": [42.4451, -122.3155], "Diamond Peak": [43.5207, -122.1496], "Three Fingered Jack": [44.47900, -121.84319],
+    "Crater Lake": [42.9446, -122.1090], "Lake Tahoe": [39.0968, -120.0324], "Sierra Buttes": [39.59351, -120.64710],
     "Deep Creek Hot Springs": [34.3394, -117.1769], "Tunnel Falls": [45.5849, -121.8520], "Burney Falls": [41.0122, -121.6513],
-    "Subway Cave": [40.6839, -121.4186], "Goat Rocks": [46.5150, -121.4547],
+    "Subway Cave": [40.68447, -121.41747], "Goat Rocks": [46.5150, -121.4547],
     "Thousand Island Lake": [37.7199, -119.1867],   // lake centre (OSM); the PCT passes about 1 km away
     "Cajon Pass McDonald's": [34.3090, -117.4704]   // the building on Wagon Train Rd
   };
@@ -56,8 +56,8 @@
     "Walker Pass": [35.6633, -118.0270], "Cottonwood Pass": [36.45299, -118.21509], "Forester Pass": [36.69436, -118.37336], "Glen Pass": [36.78956, -118.41159],
     "Pinchot Pass": [36.93636, -118.41241], "Mather Pass": [37.03188, -118.46010], "Muir Pass": [37.11160, -118.67066], "Sonora Pass": [38.3286, -119.6368],
     "Ebbetts Pass": [38.5446, -119.8131], "Carson Pass": [38.6947, -119.9890], "Donner Pass": [39.31907, -120.32853], "Bucks Summit": [39.8999, -121.1186],
-    "Willamette Pass": [43.5966, -122.0373], "McKenzie Pass": [44.2603, -121.8100], "Santiam Pass": [44.4253, -121.8546], "White Pass": [46.6440, -121.3810],
-    "Snoqualmie Pass": [47.4243, -121.4135], "Stevens Pass": [47.7463, -121.0857], "Rainy Pass": [48.5157, -120.7357], "Harts Pass": [48.7210, -120.6690],
+    "Willamette Pass": [43.5966, -122.0373], "McKenzie Pass": [44.2603, -121.8100], "Santiam Pass": [44.4240, -121.8498], "White Pass": [46.6440, -121.3810],
+    "Snoqualmie Pass": [47.4243, -121.4135], "Stevens Pass": [47.7463, -121.0857], "Rainy Pass": [48.51802, -120.73397], "Harts Pass": [48.7210, -120.6690],
     // other points right on the trail (checked against komoot / Wikipedia / the state lines)
     "Campo": [32.5897, -116.4670], "Lake Morena": [32.6858, -116.5193], "Agua Caliente": [33.2975, -116.6265], "Vasquez Rocks": [34.4878, -118.3197],
     "Halfway Point": [40.2099, -121.3559], "Castle Crags": [41.1478, -122.3197], "Oregon Border": [42.0001, -122.9112], "Olallie Lake": [44.8079, -121.7883],
