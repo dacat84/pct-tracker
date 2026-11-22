@@ -46,6 +46,7 @@
     "Crater Lake": [42.9446, -122.1090], "Lake Tahoe": [39.0968, -120.0324], "Sierra Buttes": [39.5943, -120.6406],
     "Deep Creek Hot Springs": [34.3394, -117.1769], "Tunnel Falls": [45.5849, -121.8520], "Burney Falls": [41.0122, -121.6513],
     "Subway Cave": [40.6839, -121.4186], "Goat Rocks": [46.5150, -121.4547],
+    "Thousand Island Lake": [37.7199, -119.1867],   // lake centre (OSM); the PCT passes about 1 km away
     "Cajon Pass McDonald's": [34.3090, -117.4704]   // the building on Wagon Train Rd
   };
   // Positions of passes and road crossings (summit coordinates), snapped to the nearest point of the
@@ -62,7 +63,7 @@
     "Halfway Point": [40.2099, -121.3559], "Castle Crags": [41.1478, -122.3197], "Oregon Border": [42.0001, -122.9112], "Olallie Lake": [44.8079, -121.7883],
     "Washington Border": [45.6623, -121.8986], "Kendall Katwalk": [47.4518, -121.3787], "Northern Terminus": [49.0003, -120.8021],
     "Eagle Rock": [33.2547, -116.6117], "Rae Lakes": [36.8135, -118.4057],
-    "Evolution Lake": [37.1672, -118.6943], "Thousand Island Lake": [37.7199, -119.1867],   // lake centres (OSM), the marker snaps to the shore trail
+    "Evolution Lake": [37.1672, -118.6943],   // lake centre (OSM), the marker snaps to the shore trail
     "Knife's Edge": [46.5220, -121.4580]   // ridge between Old Snowy and Elk Pass, snapped onto the trail
   };
   // What a landmark actually is (instead of the broad group like "water / sight")
