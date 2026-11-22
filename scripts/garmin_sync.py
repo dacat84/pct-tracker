@@ -27,6 +27,9 @@ import xml.etree.ElementTree as ET
 
 import re
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import privacy
+
 
 def tracker_settings(path="_config.yml"):
     """Read `tracker: mode / start / delay_hours` from _config.yml (tiny parser, no PyYAML needed)."""
@@ -233,6 +236,19 @@ def build_feature(api, act):
     coords = [[p[1], p[0]] for p in pts_ds]
     # Seconds since the first point for every map point (used to place photos without GPS by time).
     times = [int(round(p[3] - pts[0][3])) for p in pts_ds] if all(p[3] is not None for p in pts_ds) and pts[0][3] is not None else None
+    t0_ts = pts[0][3]
+    last_latlon = [pts[-1][0], pts[-1][1]]
+    # Test walks (before the hike) mostly start at home: cut a privacy zone at both ends.
+    if MODE == "waiting":
+        cut = privacy.trim(coords, times, act_id)
+        if cut is None:
+            print(f"  activity {act_id}: too short after the privacy cut; skipped.")
+            return {"skip": True}
+        coords, times_cut, first = cut
+        if times:
+            t0_ts = t0_ts + times[first]
+        times = times_cut
+        last_latlon = [coords[-1][1], coords[-1][0]]
 
     # Elevation profile (cumulative distance vs. elevation), computed from full pts.
     has_alt = all(p[2] is not None for p in pts)
@@ -265,10 +281,10 @@ def build_feature(api, act):
             "elevation_gain_m": float(total_up),
             "profile_dist_m": prof_d,
             "profile_elev_m": prof_e,
-            **({"t0": iso_from_ts(pts[0][3]), "t": times} if times else {}),
+            **({"t0": iso_from_ts(t0_ts), "t": times} if times else {}),
         },
         "geometry": {"type": "LineString", "coordinates": coords},
-        "_last_latlon": [pts[-1][0], pts[-1][1]],     # temp, stripped before write
+        "_last_latlon": last_latlon,                  # temp, stripped before write
     }
 
 
@@ -293,6 +309,7 @@ def main():
     if not isinstance(track, dict) or "features" not in track:
         track = {"type": "FeatureCollection", "features": []}
     known = {str(f.get("properties", {}).get("strava_id")) for f in track["features"]}
+    known |= {str(k) for k in load_json(STATE_PATH, {}).get("known_ids", [])}
 
     try:
         activities = api.get_activities(0, SCAN_COUNT)
@@ -333,6 +350,9 @@ def main():
             except ValueError:
                 pass
         feat = build_feature(api, act)
+        if feat and feat.get("skip"):   # nothing left after the privacy cut: remember it, don't retry
+            known.add(str(act_id))
+            continue
         if feat:
             track["features"].append(feat)
             known.add(str(act_id))
@@ -348,7 +368,7 @@ def main():
         if "t" in pr or aid not in by_id or filled >= 25:
             continue
         nf = build_feature(api, by_id[aid])
-        if nf and "t" in nf["properties"]:
+        if nf and "t" in nf.get("properties", {}):
             pr["t0"], pr["t"] = nf["properties"]["t0"], nf["properties"]["t"]
             f["geometry"] = nf["geometry"]   # same thinning, so coordinates and times line up
             filled += 1
