@@ -51,7 +51,7 @@
     "Mt. McLoughlin": [42.4451, -122.3155], "Diamond Peak": [43.5207, -122.1496], "Three Fingered Jack": [44.47900, -121.84319],
     "Crater Lake": [42.9446, -122.1090], "Lake Tahoe": [39.0968, -120.0324], "Sierra Buttes": [39.59351, -120.64710],
     "Deep Creek Hot Springs": [34.3394, -117.1769], "Tunnel Falls": [45.5849, -121.8520], "Burney Falls": [41.0122, -121.6513],
-    "Subway Cave": [40.68447, -121.41747], "Goat Rocks": [46.5150, -121.4547],
+    "Subway Cave": [40.68447, -121.41747], "Goat Rocks": [46.5122, -121.4544],
     "Thousand Island Lake": [37.7199, -119.1867],   // lake centre (OSM); the PCT passes about 1 km away
     "Cajon Pass McDonald's": [34.3090, -117.4704]   // the building on Wagon Train Rd
   };
@@ -103,7 +103,7 @@
   var ELEV = {
     "San Jacinto Peak": 3302, "Mt. Baden-Powell": 2865, "Mt. Whitney": 4421, "Sierra Buttes": 2619, "Lassen Peak": 3187, "Mt. Shasta": 4322,
     "Mt. McLoughlin": 2894, "Diamond Peak": 2665, "Three Sisters": 3159, "Three Fingered Jack": 2390, "Mt. Jefferson": 3199, "Mt. Hood": 3429,
-    "Mt. Adams": 3743, "Half Dome": 2694, "Goat Rocks": 2402, "Mt. Rainier": 4392, "Glacier Peak": 3213,
+    "Mt. Adams": 3743, "Half Dome": 2694, "Goat Rocks": 2417, "Mt. Rainier": 4392, "Glacier Peak": 3213,
     "Scissors Crossing": 686, "San Gorgonio Pass": 363, "Cajon Pass": 914, "Walker Pass": 1599, "Cottonwood Pass": 3402, "Forester Pass": 4009,
     "Glen Pass": 3635, "Pinchot Pass": 3697, "Mather Pass": 3688, "Muir Pass": 3644, "Sonora Pass": 2933, "Ebbetts Pass": 2661, "Carson Pass": 2613,
     "Donner Pass": 2151, "Bucks Summit": 1663, "Willamette Pass": 1563, "McKenzie Pass": 1623, "Santiam Pass": 1468, "White Pass": 1372,
@@ -382,7 +382,7 @@
   // ---- Resupply towns at their real position (not on the trail), with a short note ----
   // Notes are from planning, not checked on site: services change, always look at FarOut.
   var TOWNS = [
-    ["Lake Morena", 32.6858, -116.5193, "Store · Restaurant · Camping · Showers · Cabins"],
+    ["Lake Morena", 32.685, -116.5167, "Store · Restaurant · Camping · Showers · Cabins"],
     ["Mount Laguna", 32.8686, -116.4211, "Store · Lodge · Post Office · Restaurant"],
     ["Julian", 33.0786, -116.6020, "Grocery · Post Office · Motel · Restaurants · Mom's Pie (free pie for hikers)"],
     ["Warner Springs", 33.2828, -116.6339, "Community Center · Post Office · Camping"],
