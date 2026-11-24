@@ -63,6 +63,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .phc{min-width:22px;height:22px;padding:0 5px;box-sizing:border-box;border-radius:11px;background:#fff;color:#e0452f;border:1px solid #1d2a33;font:700 12px/20px Inter,sans-serif;text-align:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.4)}
 .ph.on{width:64px;height:64px;border-width:3px;box-shadow:0 0 0 4px rgba(224,69,47,.85),0 4px 16px rgba(0,0,0,.6)}
 .phw.pop .ph,.phw.pop .phn{animation:phpop .45s cubic-bezier(.3,1.5,.6,1)}
+.phw.out .ph,.phw.out .phn,.phw.out svg{transition:transform .3s,opacity .3s;transform:scale(.2);opacity:0}
 @keyframes phpop{from{transform:scale(.2);opacity:0}to{transform:none;opacity:1}}   /* photo picked in the strip */
 .strip a{transition:outline-color .25s,opacity .3s,transform .3s}.strip a.on{outline:3px solid #e0452f;outline-offset:-3px}
 /* album: the photo in the middle is the one shown on the map, the others wait left and right */
@@ -380,11 +381,11 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       var fan = document.createElement("div"); wrap.appendChild(fan);
       var big = document.createElement("div"); big.className = "ph on"; wrap.appendChild(big);   // on top of the fan lines
       big.onclick = function () { if (cur >= 0) L.lightbox(ph, cur); };
-      var bigMk = new maplibregl.Marker({ element: wrap }), hid = {}, fanKey = "";
+      var bigMk = new maplibregl.Marker({ element: wrap }), hid = {}, fanKey = "", folded = false, popT = null;
       function feats() { return { type: "FeatureCollection", features: Object.keys(pos).filter(function (i) { return !hid[i]; }).map(function (i) { return { type: "Feature", properties: { i: +i }, geometry: { type: "Point", coordinates: pos[i] } }; }) }; }
       function neighbours() {
         var nb = [], h = {};
-        if (cur >= 0 && pos[cur] && map.getZoom() >= BIG_Z && !rmode) {
+        if (cur >= 0 && pos[cur] && map.getZoom() >= BIG_Z && !rmode && !folded) {
           h[cur] = 1;
           var c = map.project(pos[cur]);
           Object.keys(pos).forEach(function (j) { if (+j !== cur) { var q = map.project(pos[j]); if (Math.hypot(q.x - c.x, q.y - c.y) < 46) nb.push(+j); } });
@@ -410,6 +411,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       }
       map.on("moveend", neighbours);
       function showBig(i) {
+        clearTimeout(popT); folded = false; wrap.classList.remove("out");
         if (pos[i]) { big.style.backgroundImage = "url(" + ph[i].q + ")"; bigMk.setLngLat(pos[i]).addTo(map); wrap.classList.remove("pop"); void wrap.offsetWidth; wrap.classList.add("pop"); }
         else bigMk.remove();
         neighbours();
@@ -502,11 +504,14 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         var c = map.getContainer(); c.classList.toggle("ph-r4", m === 4); c.classList.toggle("ph-r10", m === 10);
         ["ph-pt", "ph-core"].forEach(function (id) { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", m === 10 ? "none" : "visible"); });
       }
+      // during Play a photo folds away again after 3 seconds, so the map doesn't fill up
+      function fold() { wrap.classList.add("out"); popT = setTimeout(function () { folded = true; bigMk.remove(); neighbours(); }, 320); }
       if (order.length) phAt = function (km, speed) {
-        speedLook(speed); if (km == null) return;
+        speedLook(speed);
+        if (km == null) { if (folded && cur >= 0) showBig(cur); return; }   // stopped: the picked photo shows again
         var last = -1; for (var k = 0; k < order.length && rk[order[k]] <= km + 0.01; k++) last = order[k];
         if (last === lastAt) return; lastAt = last; quiet = Date.now() + 1500;
-        if (last >= 0) { pick(last, true); return; }
+        if (last >= 0) { pick(last, true); clearTimeout(popT); if (speed) popT = setTimeout(fold, 3000); return; }
         var old = st.querySelector("a.on"); if (old) old.classList.remove("on");
         cur = -1; bigMk.remove(); neighbours();
         var a = st.querySelector('a[data-i="' + order[0] + '"]'); if (a) centre(a);
