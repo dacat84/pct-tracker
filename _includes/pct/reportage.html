@@ -56,7 +56,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .lm.term span{font-family:'Playfair Display';font-size:15px;font-weight:700}
 #map.z-lo .lm.t2 span,#map.z-lo .lm.t3,#map.z-mid .lm.t3 span{display:none}
 .ph{width:38px;height:38px;border-radius:50%;border:2px solid #fff;background:#1b232a center/cover;box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer}
-.ph{transition:width .35s,height .35s,box-shadow .35s}.ph.on{width:64px;height:64px;border-width:3px;box-shadow:0 0 0 4px rgba(224,69,47,.85),0 4px 16px rgba(0,0,0,.6);z-index:5}   /* photo picked in the strip */
+.phc{min-width:22px;height:22px;padding:0 5px;box-sizing:border-box;border-radius:11px;background:#fff;color:#1d2a33;border:1.5px solid #1d2a33;font:700 12px/19px Inter,sans-serif;text-align:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.ph.on{width:64px;height:64px;border-width:3px;box-shadow:0 0 0 4px rgba(224,69,47,.85),0 4px 16px rgba(0,0,0,.6);z-index:5}   /* photo picked in the strip */
 .strip a{transition:outline-color .25s,opacity .3s,transform .3s}.strip a.on{outline:3px solid #e0452f;outline-offset:-3px}
 /* album: the photo in the middle is the one shown on the map, the others wait left and right */
 .strip.album{scroll-snap-type:x mandatory;padding:0 calc(50% - 72px);scroll-padding:0 calc(50% - 72px)}.strip.album a{scroll-snap-align:center;opacity:.5;transform:scale(.9)}.strip.album a.on{opacity:1;transform:none}
@@ -149,7 +150,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="/pct-tracker/labs/pct.js?v=113"></script>
+<script src="/pct-tracker/labs/pct.js?v=115"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -354,33 +355,58 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         var d = p.taken ? L.dfmt(p.taken.replace(" ", "T"), { day: "numeric", month: "short" }) : "";
         return '<a href="#" style="background-image:url(' + p.m + ')" data-i="' + ph.indexOf(p) + '"><span>' + d + "</span></a>";
       }).join("");
-      var mk = {};
-      ph.filter(function (p) { return p.lat && p.lon; }).forEach(function (p) {
-        var el = document.createElement("div"); el.className = "ph"; el.style.backgroundImage = "url(" + p.q + ")";
-        el.onclick = function () { pick(ph.indexOf(p), true); L.lightbox(ph, ph.indexOf(p)); };
-        mk[ph.indexOf(p)] = new maplibregl.Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(map);
-      });
-
+      // Photos on the map: small dots (bundled into a dot with a number where many were taken close
+      // together), only the photo picked in the strip is shown as a picture with a red ring.
+      var pos = {};
+      ph.forEach(function (p, i) { if (p.lat && p.lon) pos[i] = [p.lon, p.lat]; });
+      var big = document.createElement("div"); big.className = "ph on";
+      big.onclick = function () { if (cur >= 0) L.lightbox(ph, cur); };
+      var bigMk = new maplibregl.Marker({ element: big });
+      function showBig(i) { if (pos[i]) { big.style.backgroundImage = "url(" + ph[i].q + ")"; bigMk.setLngLat(pos[i]).addTo(map); } else bigMk.remove(); }
+      function dots() {
+        map.addSource("photos", { type: "geojson", cluster: true, clusterRadius: 36, clusterMaxZoom: 14,
+          data: { type: "FeatureCollection", features: Object.keys(pos).map(function (i) { return { type: "Feature", properties: { i: +i }, geometry: { type: "Point", coordinates: pos[i] } }; }) } });
+        map.addLayer({ id: "ph-pt", type: "circle", source: "photos", filter: ["!", ["has", "point_count"]],
+          paint: { "circle-color": "#fff", "circle-radius": 5, "circle-stroke-color": "#1d2a33", "circle-stroke-width": 1.5 } });
+        // bundles: HTML dots with the number (the map style has no font for text on the map)
+        var cl = {};
+        function bundles() {
+          var seen = {};
+          map.querySourceFeatures("photos").forEach(function (f) {
+            var pr = f.properties; if (!pr.cluster) return;
+            var id = pr.cluster_id; if (seen[id]) return; seen[id] = 1;
+            if (!cl[id]) {
+              var el = document.createElement("div"); el.className = "phc"; el.textContent = pr.point_count_abbreviated;
+              el.onclick = function () { L.stopReplay(); map.getSource("photos").getClusterExpansionZoom(id).then(function (z) { map.easeTo({ center: f.geometry.coordinates, zoom: z + 0.5, duration: 700 }); }); };
+              cl[id] = new maplibregl.Marker({ element: el }).setLngLat(f.geometry.coordinates).addTo(map);
+            }
+          });
+          Object.keys(cl).forEach(function (id) { if (!seen[id]) { cl[id].remove(); delete cl[id]; } });
+        }
+        map.on("idle", bundles); map.on("sourcedata", function (e) { if (e.sourceId === "photos" && e.isSourceLoaded) bundles(); });
+        map.on("click", "ph-pt", function (e) { pick(e.features[0].properties.i, true); });
+        map.on("mouseenter", "ph-pt", function () { map.getCanvas().style.cursor = "pointer"; }); map.on("mouseleave", "ph-pt", function () { map.getCanvas().style.cursor = ""; });
+      }
+      (function go() { if (map.getSource("photos")) return; if (map.isStyleLoaded()) dots(); else setTimeout(go, 150); })();   // style may still be busy with the track layers
       // Strip <-> map. Only when scrolling has come to rest is the photo in the middle of the strip picked,
       // so swiping past ten photos doesn't drag the map across the trail ten times. The map then moves
       // gently, like "Wo bin ich?": a short glide nearby, a zoom-out-and-in arc for long distances
       // (Labs: ?photo=fade jumps with a quick cross-fade instead, to compare). The hiker marker stays put.
       var mode = (location.search.match(/[?&]photo=(\w+)/) || [])[1] || "fly", cur = -1, rest = null;
       function pick(i, fromMap) {
-        if (i === cur || !mk[i]) return;
-        if (mk[cur]) mk[cur].getElement().classList.remove("on");
+        if (i === cur) return;
         var old = $("strip").querySelector("a.on"); if (old) old.classList.remove("on");
-        cur = i; mk[i].getElement().classList.add("on");
+        cur = i; showBig(i);
         var a = $("strip").querySelector('a[data-i="' + i + '"]'); if (a) { a.classList.add("on"); if (fromMap) centre(a); }
-        if (fromMap) return;
+        if (fromMap || !pos[i]) return;
         L.stopReplay();
-        var to = mk[i].getLngLat(), from = map.getCenter(), km = L.hav(from.lat, from.lng, to.lat, to.lng);
+        var to = { lng: pos[i][0], lat: pos[i][1] }, from = map.getCenter(), km = L.hav(from.lat, from.lng, to.lat, to.lng);
         var z = Math.max(map.getZoom(), 10.5);
         if (mode === "fade") {
           map.getContainer().classList.add("fade");
-          setTimeout(function () { map.jumpTo({ center: to, zoom: z }); map.getContainer().classList.remove("fade"); }, 260);
-        } else if (km < 25) map.easeTo({ center: to, zoom: z, duration: 900 });                      // nearby: just glide
-        else map.flyTo({ center: to, zoom: z, curve: 1.6, speed: 0.9, maxDuration: 3200 });          // far: out, across, back in
+          setTimeout(function () { map.jumpTo({ center: [to.lng, to.lat], zoom: z }); map.getContainer().classList.remove("fade"); }, 260);
+        } else if (km < 25) map.easeTo({ center: [to.lng, to.lat], zoom: z, duration: 900 });                      // nearby: just glide
+        else map.flyTo({ center: [to.lng, to.lat], zoom: z, curve: 1.6, speed: 0.9, maxDuration: 3200 });          // far: out, across, back in
       }
       // album: a photo off-centre slides into the middle when clicked (and is then shown on the map);
       // clicking the photo in the middle opens it big. Mouse wheel and the arrows page through it.
@@ -404,7 +430,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         }, 220);
       }, { passive: true });
       // start: newest photo in the middle and marked, the map stays where it is
-      requestAnimationFrame(function () { var a = st.querySelector("a"); if (a) { st.scrollLeft = 0; cur = +a.dataset.i; a.classList.add("on"); if (mk[cur]) mk[cur].getElement().classList.add("on"); } });
+      requestAnimationFrame(function () { var a = st.querySelector("a"); if (a) { st.scrollLeft = 0; cur = +a.dataset.i; a.classList.add("on"); showBig(cur); } });
     });
   }).catch(function (e) { $("sub").textContent = T("Daten konnten nicht geladen werden (", "Could not load data (") + e.message + ")."; });
 })();

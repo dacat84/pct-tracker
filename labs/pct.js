@@ -166,11 +166,19 @@
     if (!acts.length) return ph;
     if (!MAIN && SRC === "demo") {   // Labs demo only: invented spots along the walked demo track, oldest photo first
       var all = []; D.track.features.forEach(function (f) { all = all.concat(f.geometry.coordinates); });
+      // few photos in the album: repeat them, a few at the same spot, so dots and bundles can be tried out
+      if (ph.length && ph.length < 24) {
+        var base = ph.slice(), n = 0;
+        while (ph.length < 24) { var c = Object.assign({}, base[n % base.length]); c.id = c.id + "-" + n; c.taken = "2026-0" + (1 + n % 9) + "-" + String(10 + n % 18) + " 1" + (n % 10) + ":00:00"; ph.push(c); n++; }
+        ph.sort(function (a, b) { return String(b.taken).localeCompare(String(a.taken)); });
+      }
+      var groups = [1, 4, 1, 2, 1, 6, 1, 1, 3, 1, 2, 1];   // photos per spot
       var byAge = ph.slice().sort(function (a, b) { return String(a.taken).localeCompare(String(b.taken)); });
+      var spots = [], g = 0; while (spots.length < byAge.length) { for (var q = 0; q < groups[g % groups.length] && spots.length < byAge.length; q++) spots.push(g); g++; }
       byAge.forEach(function (p, i) {
-        var r = (i + 0.5) / byAge.length, j = (Math.sin((i + 1) * 12.9898) * 43758.5453) % 1;   // fixed jitter, same on every load
-        var k = Math.max(0, Math.min(all.length - 1, Math.round((r + (j - 0.5) * 0.6 / byAge.length) * (all.length - 1))));
-        p.lon = all[k][0]; p.lat = all[k][1]; p.est = false;
+        var r = (spots[i] + 0.5) / g, k = Math.max(0, Math.min(all.length - 1, Math.round(r * (all.length - 1))));
+        var jx = ((Math.sin((i + 1) * 12.9898) * 43758.5453) % 1) * 0.0004, jy = ((Math.sin((i + 1) * 78.233) * 43758.5453) % 1) * 0.0004;   // a few metres apart
+        p.lon = all[k][0] + jx; p.lat = all[k][1] + jy; p.est = false;
       });
       return ph;
     }
