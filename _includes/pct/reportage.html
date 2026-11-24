@@ -56,12 +56,14 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .lm.term span{font-family:'Playfair Display';font-size:15px;font-weight:700}
 #map.z-lo .lm.t2 span,#map.z-lo .lm.t3,#map.z-mid .lm.t3 span{display:none}
 .ph{width:38px;height:38px;border-radius:50%;border:2px solid #fff;background:#1b232a center/cover;box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer}
-.ph-low .phc,.ph-far .phw{display:none}
+.ph-low .phc,.ph-far .phw,.ph-r4 .phw,.ph-r10 .phw,.ph-r10 .phc{display:none}
 .phw{width:0;height:0;z-index:5}.phw .ph{position:absolute;left:-35px;top:-35px}.phw svg{position:absolute;left:-110px;top:-110px;overflow:visible;pointer-events:none}
 .phn{position:absolute;width:26px;height:26px;margin:-15px 0 0 -15px;border:2px solid #fff;border-radius:50%;background:#1b232a center/cover;box-shadow:0 1px 5px rgba(0,0,0,.6);cursor:pointer}
 .phn.more{width:auto;min-width:22px;height:22px;margin:-11px 0 0 -11px;padding:0 5px;box-sizing:border-box;border:1px solid #1d2a33;background:#fff;color:#e0452f;font:700 12px/20px Inter,sans-serif;text-align:center}
 .phc{min-width:22px;height:22px;padding:0 5px;box-sizing:border-box;border-radius:11px;background:#fff;color:#e0452f;border:1px solid #1d2a33;font:700 12px/20px Inter,sans-serif;text-align:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.4)}
-.ph.on{width:64px;height:64px;border-width:3px;box-shadow:0 0 0 4px rgba(224,69,47,.85),0 4px 16px rgba(0,0,0,.6)}   /* photo picked in the strip */
+.ph.on{width:64px;height:64px;border-width:3px;box-shadow:0 0 0 4px rgba(224,69,47,.85),0 4px 16px rgba(0,0,0,.6)}
+.phw.pop .ph,.phw.pop .phn{animation:phpop .45s cubic-bezier(.3,1.5,.6,1)}
+@keyframes phpop{from{transform:scale(.2);opacity:0}to{transform:none;opacity:1}}   /* photo picked in the strip */
 .strip a{transition:outline-color .25s,opacity .3s,transform .3s}.strip a.on{outline:3px solid #e0452f;outline-offset:-3px}
 /* album: the photo in the middle is the one shown on the map, the others wait left and right */
 .strip.album{scroll-snap-type:x mandatory;padding:0 calc(50% - 72px);scroll-padding:0 calc(50% - 72px)}.strip.album a{scroll-snap-align:center;opacity:.5;transform:scale(.9)}.strip.album a.on{opacity:1;transform:none}
@@ -154,7 +156,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="/pct-tracker/labs/pct.js?v=119"></script>
+<script src="/pct-tracker/labs/pct.js?v=121"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -307,7 +309,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
     if (at) map.jumpTo({ center: [+at[2], +at[1]], zoom: at[3] ? +at[3] : 15 });
 
     // --- replay ---
-    L.replay({ map: map, D: D, marker: meMk, ui: { play: $("play"), speed: $("speed"), clock: $("clock") },
+    var phAt = null;   // set by the photos below: the strip and the picture follow the replay
+    var RP = L.replay({ map: map, D: D, marker: meMk, ui: { play: $("play"), speed: $("speed"), clock: $("clock") },
       onCamp: function (c) { if (c) { card.zeroOn = true; card(c.day - 1, c); } else card.zeroOn = false; },
       onUpdate: function (s) {
         $("sDay").textContent = s.dayNo || 0; $("sKm").textContent = L.dist(s.km);
@@ -317,7 +320,9 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         else if (s.km < 0.05) hideBub();   // replay starts again at Campo
         if (s.dayNo && s.dayNo - 1 !== card.cur && !card.zeroOn) card(s.dayNo - 1);
         if (sn && Math.abs(sn.km - strip.km) > 0.8) strip(sn.km);
-      } });
+        if (phAt && !s.end) phAt(s.km, s.playing ? s.speed : 0);
+      },
+      onStop: function () { if (phAt) phAt(null, 0); } });
     if (!D.track.features.length) { $("play").style.opacity = .4; $("clock").textContent = T("Noch keine Aufzeichnung, Start am 22. April 2027", "Nothing recorded yet, start on April 22, 2027"); }
 
     // --- chapter bar ---
@@ -379,7 +384,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       function feats() { return { type: "FeatureCollection", features: Object.keys(pos).filter(function (i) { return !hid[i]; }).map(function (i) { return { type: "Feature", properties: { i: +i }, geometry: { type: "Point", coordinates: pos[i] } }; }) }; }
       function neighbours() {
         var nb = [], h = {};
-        if (cur >= 0 && pos[cur] && map.getZoom() >= BIG_Z) {
+        if (cur >= 0 && pos[cur] && map.getZoom() >= BIG_Z && !rmode) {
           h[cur] = 1;
           var c = map.project(pos[cur]);
           Object.keys(pos).forEach(function (j) { if (+j !== cur) { var q = map.project(pos[j]); if (Math.hypot(q.x - c.x, q.y - c.y) < 46) nb.push(+j); } });
@@ -400,7 +405,11 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         hid = h; if (!same && map.getSource("photos")) map.getSource("photos").setData(feats());   // covered photos leave the dots and bundles
       }
       map.on("moveend", neighbours);
-      function showBig(i) { if (pos[i]) { big.style.backgroundImage = "url(" + ph[i].q + ")"; bigMk.setLngLat(pos[i]).addTo(map); } else bigMk.remove(); neighbours(); }
+      function showBig(i) {
+        if (pos[i]) { big.style.backgroundImage = "url(" + ph[i].q + ")"; bigMk.setLngLat(pos[i]).addTo(map); wrap.classList.remove("pop"); void wrap.offsetWidth; wrap.classList.add("pop"); }
+        else bigMk.remove();
+        neighbours();
+      }
       function dots() {
         map.addSource("photos", { type: "geojson", cluster: true, clusterRadius: 36, clusterMaxZoom: 14, data: feats() });
         map.addLayer({ id: "ph-pt", type: "circle", source: "photos", minzoom: PH_Z, filter: ["!", ["has", "point_count"]],
@@ -454,25 +463,50 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       // clicking the photo in the middle opens it big. Mouse wheel and the arrows page through it.
       var st = $("strip"); st.classList.add("album");
       function centre(a) { var r = a.getBoundingClientRect(), b = st.getBoundingClientRect(); st.scrollTo({ left: st.scrollLeft + r.left - b.left - (st.clientWidth - r.width) / 2, behavior: "smooth" }); }
-      function step(d) { var a = st.querySelector("a.on") || st.querySelector("a"), n = a && (d > 0 ? a.nextElementSibling : a.previousElementSibling); if (n) centre(n); }
+      function step(d) { L.stopReplay(); var a = st.querySelector("a.on") || st.querySelector("a"), n = a && (d > 0 ? a.nextElementSibling : a.previousElementSibling); if (n) centre(n); }
       // the photo in the middle: if the map is elsewhere (start, "Wo bin ich?", dragged away) it first flies there, else it opens big
       function inView(i) { return pos[i] && map.getZoom() >= 9.5 && map.getBounds().contains(pos[i]); }
-      st.querySelectorAll("a").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); var i = +a.dataset.i; if (i !== cur) centre(a); else if (inView(i)) L.lightbox(ph, i); else fly(i); }; });
+      st.querySelectorAll("a").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); L.stopReplay(); var i = +a.dataset.i; if (i !== cur) centre(a); else if (inView(i)) L.lightbox(ph, i); else fly(i); }; });
       var wheelT = 0;
       st.addEventListener("wheel", function (e) {   // vertical wheel / trackpad: one photo per notch
+        L.stopReplay();   // a person browsing the strip pauses the replay, like touching the map
         if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;   // horizontal trackpad swipe scrolls by itself
         e.preventDefault(); var now = Date.now(); if (now - wheelT < 250) return; wheelT = now; step(e.deltaY > 0 ? 1 : -1);
       }, { passive: false });
+      st.addEventListener("touchstart", function () { L.stopReplay(); }, { passive: true });
       $("saL").onclick = function () { step(-1); }; $("saR").onclick = function () { step(1); };
       $("saL").hidden = $("saR").hidden = ph.length < 2;
       $("strip").addEventListener("scroll", function () {
         clearTimeout(rest);
         rest = setTimeout(function () {   // scrolling has stopped: the photo nearest the middle
+          if (Date.now() < quiet || $("play").classList.contains("on")) return;   // the replay moves the strip, not a person
           var box = $("strip").getBoundingClientRect(), mid = box.left + box.width / 2, best = null, bd = 1e9;
           $("strip").querySelectorAll("a").forEach(function (a) { var r = a.getBoundingClientRect(), d = Math.abs(r.left + r.width / 2 - mid); if (d < bd) { bd = d; best = a; } });
           if (best) pick(+best.dataset.i, false);
         }, 220);
       }, { passive: true });
+      // Play: the strip runs along. When the hiker passes a photo spot it pops up there and stays until
+      // the next one: at 1x and 2x as a picture with the small ones next to it, at 4x only dots and
+      // bundles, at 10x no photos on the map at all (just the strip).
+      // Before the first photo spot nothing is marked and the strip waits at the first photo of the walk.
+      var rk = {}, order = [], lastAt, quiet = 0;
+      Object.keys(pos).forEach(function (i) { var k = RP.kmNear(pos[i]); if (k != null) { rk[i] = k; order.push(+i); } });
+      order.sort(function (a, b) { return rk[a] - rk[b]; });
+      var rmode = 0;
+      function speedLook(v) {
+        var m = v >= 10 ? 10 : v >= 4 ? 4 : 0; if (m === rmode) return; rmode = m;
+        var c = map.getContainer(); c.classList.toggle("ph-r4", m === 4); c.classList.toggle("ph-r10", m === 10);
+        ["ph-pt", "ph-core"].forEach(function (id) { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", m === 10 ? "none" : "visible"); });
+      }
+      if (order.length) phAt = function (km, speed) {
+        speedLook(speed); if (km == null) return;
+        var last = -1; for (var k = 0; k < order.length && rk[order[k]] <= km + 0.01; k++) last = order[k];
+        if (last === lastAt) return; lastAt = last; quiet = Date.now() + 1500;
+        if (last >= 0) { pick(last, true); return; }
+        var old = st.querySelector("a.on"); if (old) old.classList.remove("on");
+        cur = -1; bigMk.remove(); neighbours();
+        var a = st.querySelector('a[data-i="' + order[0] + '"]'); if (a) centre(a);
+      };
       // start: newest photo in the middle and marked, the map stays where it is
       requestAnimationFrame(function () { var a = st.querySelector("a"); if (a) { st.scrollLeft = 0; cur = +a.dataset.i; a.classList.add("on"); showBig(cur); } });
     });

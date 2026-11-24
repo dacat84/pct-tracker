@@ -843,10 +843,10 @@
       if (atEnd >= 0 && atEnd < D.days.length && cur < END) { dn = atEnd; day = D.days[dn].date; }
       var dnow = dn + 1, done = cur >= END;   // tents only where the night is already behind (or reached)
       document.querySelectorAll(".camp").forEach(function (c) { var d = +c.dataset.day; c.style.visibility = (done || d < dnow || (d === dnow && dayEnds.some(function (k) { return Math.abs(k - cur) < 1e-6; }))) ? "visible" : "hidden"; });
-      if (o.onUpdate) o.onUpdate({ km: cur, lnglat: p.c, feature: f, date: day, dayNo: dn + 1, day: D.days[dn], end: cur >= END, atCamp: atEnd >= 0 && cur < END });
+      if (o.onUpdate) o.onUpdate({ km: cur, lnglat: p.c, feature: f, date: day, dayNo: dn + 1, day: D.days[dn], end: cur >= END, atCamp: atEnd >= 0 && cur < END, playing: !!raf, speed: SPEEDS[sp] });
       return p;
     }
-    function stop() { if (raf) cancelAnimationFrame(raf); raf = null; o.ui.play.innerHTML = "▶"; o.ui.play.classList.remove("on"); }
+    function stop() { if (raf) cancelAnimationFrame(raf); raf = null; o.ui.play.innerHTML = "▶"; o.ui.play.classList.remove("on"); if (o.onStop) o.onStop(); }
     function play() {
       if (!N) return;
       if (cur >= END) { show(0, false, true); var p0 = pointAt(0); o.map.jumpTo({ center: p0.c, zoom: ZOOM[sp] }); }
@@ -883,7 +883,13 @@
     document.addEventListener("keydown", function (e) { if (e.code === "Space" && !(e.target.closest && e.target.closest("input,select,textarea,button"))) { e.preventDefault(); o.ui.play.click(); } });
     show(END, false, true);
     activeReplay = { stop: stop, seekTrail: seekTrail, maxTrail: maxTrail, toEnd: function () { stop(); if (N) show(END, false, true); } };
-    return { stop: stop, toDate: function (date) {
+    // replay km where the walk comes closest to a spot (null if it never gets within ~3 km), for photos
+    function kmNear(c) {
+      var bd = 1e18, bk = null, cl = Math.cos(c[1] * Math.PI / 180);
+      for (var i = 0; i < N; i++) { var dx = (seq[i].c[0] - c[0]) * cl, dy = seq[i].c[1] - c[1], d = dx * dx + dy * dy; if (d < bd) { bd = d; bk = seq[i].km; } }
+      return bd < 0.0008 ? bk : null;
+    }
+    return { stop: stop, kmNear: kmNear, toDate: function (date) {
       var k = -1; seq.forEach(function (s, j) { if (D.track.features[s.f].properties.day <= date) k = j; });
       if (k < 0) return null; stop(); show(seq[k].km, false, true); return seq[k].c; } };
   }
