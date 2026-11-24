@@ -150,7 +150,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="/pct-tracker/labs/pct.js?v=115"></script>
+<script src="/pct-tracker/labs/pct.js?v=116"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -398,7 +398,10 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         var old = $("strip").querySelector("a.on"); if (old) old.classList.remove("on");
         cur = i; showBig(i);
         var a = $("strip").querySelector('a[data-i="' + i + '"]'); if (a) { a.classList.add("on"); if (fromMap) centre(a); }
-        if (fromMap || !pos[i]) return;
+        if (!fromMap) fly(i);
+      }
+      function fly(i) {
+        if (!pos[i]) return;
         L.stopReplay();
         var to = { lng: pos[i][0], lat: pos[i][1] }, from = map.getCenter(), km = L.hav(from.lat, from.lng, to.lat, to.lng);
         var z = Math.max(map.getZoom(), 10.5);
@@ -413,7 +416,9 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       var st = $("strip"); st.classList.add("album");
       function centre(a) { var r = a.getBoundingClientRect(), b = st.getBoundingClientRect(); st.scrollTo({ left: st.scrollLeft + r.left - b.left - (st.clientWidth - r.width) / 2, behavior: "smooth" }); }
       function step(d) { var a = st.querySelector("a.on") || st.querySelector("a"), n = a && (d > 0 ? a.nextElementSibling : a.previousElementSibling); if (n) centre(n); }
-      st.querySelectorAll("a").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); var i = +a.dataset.i; if (i === cur) L.lightbox(ph, i); else centre(a); }; });
+      // the photo in the middle: if the map is elsewhere (start, "Wo bin ich?", dragged away) it first flies there, else it opens big
+      function inView(i) { return pos[i] && map.getZoom() >= 9.5 && map.getBounds().contains(pos[i]); }
+      st.querySelectorAll("a").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); var i = +a.dataset.i; if (i !== cur) centre(a); else if (inView(i)) L.lightbox(ph, i); else fly(i); }; });
       var wheelT = 0;
       st.addEventListener("wheel", function (e) {   // vertical wheel / trackpad: one photo per notch
         if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;   // horizontal trackpad swipe scrolls by itself
