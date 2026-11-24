@@ -56,9 +56,12 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .lm.term span{font-family:'Playfair Display';font-size:15px;font-weight:700}
 #map.z-lo .lm.t2 span,#map.z-lo .lm.t3,#map.z-mid .lm.t3 span{display:none}
 .ph{width:38px;height:38px;border-radius:50%;border:2px solid #fff;background:#1b232a center/cover;box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer}
-.ph-low .phc,.ph-low .ph.on{display:none}
+.ph-low .phc,.ph-far .phw{display:none}
+.phw{width:0;height:0;z-index:5}.phw .ph{position:absolute;left:-35px;top:-35px}.phw svg{position:absolute;left:-110px;top:-110px;overflow:visible;pointer-events:none}
+.phn{position:absolute;width:26px;height:26px;margin:-15px 0 0 -15px;border:2px solid #fff;border-radius:50%;background:#1b232a center/cover;box-shadow:0 1px 5px rgba(0,0,0,.6);cursor:pointer}
+.phn.more{width:auto;min-width:22px;height:22px;margin:-11px 0 0 -11px;padding:0 5px;box-sizing:border-box;border:1px solid #1d2a33;background:#fff;color:#e0452f;font:700 12px/20px Inter,sans-serif;text-align:center}
 .phc{min-width:22px;height:22px;padding:0 5px;box-sizing:border-box;border-radius:11px;background:#fff;color:#e0452f;border:1px solid #1d2a33;font:700 12px/20px Inter,sans-serif;text-align:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.4)}
-.ph.on{width:64px;height:64px;border-width:3px;box-shadow:0 0 0 4px rgba(224,69,47,.85),0 4px 16px rgba(0,0,0,.6);z-index:5}   /* photo picked in the strip */
+.ph.on{width:64px;height:64px;border-width:3px;box-shadow:0 0 0 4px rgba(224,69,47,.85),0 4px 16px rgba(0,0,0,.6)}   /* photo picked in the strip */
 .strip a{transition:outline-color .25s,opacity .3s,transform .3s}.strip a.on{outline:3px solid #e0452f;outline-offset:-3px}
 /* album: the photo in the middle is the one shown on the map, the others wait left and right */
 .strip.album{scroll-snap-type:x mandatory;padding:0 calc(50% - 72px);scroll-padding:0 calc(50% - 72px)}.strip.album a{scroll-snap-align:center;opacity:.5;transform:scale(.9)}.strip.album a.on{opacity:1;transform:none}
@@ -361,17 +364,45 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       var pos = {};
       // zoomed far out the photos stay hidden (the map would look crowded): dots, bundles and the picture
       // appear from about the zoom where town names and tents show up
-      var PH_Z = 8.5;
-      function phZoom() { map.getContainer().classList.toggle("ph-low", map.getZoom() < PH_Z); }
+      // the big picture goes earlier, it would cover half the trail when zoomed out
+      var PH_Z = 8.5, BIG_Z = 10;
+      function phZoom() { var z = map.getZoom(), c = map.getContainer(); c.classList.toggle("ph-low", z < PH_Z); c.classList.toggle("ph-far", z < BIG_Z); }
       map.on("zoom", phZoom); phZoom();
       ph.forEach(function (p, i) { if (p.lat && p.lon) pos[i] = [p.lon, p.lat]; });
-      var big = document.createElement("div"); big.className = "ph on";
+      // the picked photo: big picture with a red ring. Photos it would cover fan out next to it as
+      // small pictures in an arc (tap one to show it); past seven the last one is a "+N" that opens them big.
+      var wrap = document.createElement("div"); wrap.className = "phw";
+      var fan = document.createElement("div"); wrap.appendChild(fan);
+      var big = document.createElement("div"); big.className = "ph on"; wrap.appendChild(big);   // on top of the fan lines
       big.onclick = function () { if (cur >= 0) L.lightbox(ph, cur); };
-      var bigMk = new maplibregl.Marker({ element: big });
-      function showBig(i) { if (pos[i]) { big.style.backgroundImage = "url(" + ph[i].q + ")"; bigMk.setLngLat(pos[i]).addTo(map); } else bigMk.remove(); }
+      var bigMk = new maplibregl.Marker({ element: wrap }), hid = {};
+      function feats() { return { type: "FeatureCollection", features: Object.keys(pos).filter(function (i) { return !hid[i]; }).map(function (i) { return { type: "Feature", properties: { i: +i }, geometry: { type: "Point", coordinates: pos[i] } }; }) }; }
+      function neighbours() {
+        var nb = [], h = {};
+        if (cur >= 0 && pos[cur] && map.getZoom() >= BIG_Z) {
+          h[cur] = 1;
+          var c = map.project(pos[cur]);
+          Object.keys(pos).forEach(function (j) { if (+j !== cur) { var q = map.project(pos[j]); if (Math.hypot(q.x - c.x, q.y - c.y) < 46) nb.push(+j); } });
+        }
+        var n = Math.min(nb.length, 7), more = nb.length > 7, html = "", lines = "";
+        nb.forEach(function (j) { h[j] = 1; });
+        for (var k = 0; k < n; k++) {
+          var a = (k - (n - 1) / 2) * 30 * Math.PI / 180, x = Math.round(60 * Math.cos(a)), y = Math.round(60 * Math.sin(a));
+          lines += '<line x1="110" y1="110" x2="' + (110 + x) + '" y2="' + (110 + y) + '"/>';
+          html += more && k === 6 ? '<div class="phn more" data-m="' + nb[6] + '" style="left:' + x + "px;top:" + y + 'px">+' + (nb.length - 6) + "</div>"
+            : '<div class="phn" data-i="' + nb[k] + '" style="left:' + x + "px;top:" + y + "px;background-image:url(" + ph[nb[k]].m + ')"></div>';
+        }
+        fan.innerHTML = (n ? '<svg width="220" height="220"><g stroke="#fff" stroke-opacity=".75" stroke-width="1.2">' + lines + "</g></svg>" : "") + html;
+        fan.querySelectorAll(".phn").forEach(function (el) {
+          el.onclick = function (e) { e.stopPropagation(); if (el.dataset.i) pick(+el.dataset.i, true); else L.lightbox(ph, +el.dataset.m); };
+        });
+        var same = Object.keys(h).length === Object.keys(hid).length && Object.keys(h).every(function (j) { return hid[j]; });
+        hid = h; if (!same && map.getSource("photos")) map.getSource("photos").setData(feats());   // covered photos leave the dots and bundles
+      }
+      map.on("moveend", neighbours);
+      function showBig(i) { if (pos[i]) { big.style.backgroundImage = "url(" + ph[i].q + ")"; bigMk.setLngLat(pos[i]).addTo(map); } else bigMk.remove(); neighbours(); }
       function dots() {
-        map.addSource("photos", { type: "geojson", cluster: true, clusterRadius: 36, clusterMaxZoom: 14,
-          data: { type: "FeatureCollection", features: Object.keys(pos).map(function (i) { return { type: "Feature", properties: { i: +i }, geometry: { type: "Point", coordinates: pos[i] } }; }) } });
+        map.addSource("photos", { type: "geojson", cluster: true, clusterRadius: 36, clusterMaxZoom: 14, data: feats() });
         map.addLayer({ id: "ph-pt", type: "circle", source: "photos", minzoom: PH_Z, filter: ["!", ["has", "point_count"]],
           paint: { "circle-color": "#fff", "circle-radius": 6, "circle-stroke-color": "#1d2a33", "circle-stroke-width": 1 } });
         map.addLayer({ id: "ph-core", type: "circle", source: "photos", minzoom: PH_Z, filter: ["!", ["has", "point_count"]],   // red core: same family as the ring of the picked photo
@@ -382,10 +413,10 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
           var seen = {};
           map.querySourceFeatures("photos").forEach(function (f) {
             var pr = f.properties; if (!pr.cluster) return;
-            var id = pr.cluster_id; if (seen[id]) return; seen[id] = 1;
+            var id = pr.cluster_id + ":" + pr.point_count + ":" + f.geometry.coordinates.join(); if (seen[id]) return; seen[id] = 1;   // ids get reused after the data changes
             if (!cl[id]) {
               var el = document.createElement("div"); el.className = "phc"; el.textContent = pr.point_count_abbreviated;
-              el.onclick = function () { L.stopReplay(); map.getSource("photos").getClusterExpansionZoom(id).then(function (z) { map.easeTo({ center: f.geometry.coordinates, zoom: z + 0.5, duration: 700 }); }); };
+              el.onclick = function () { L.stopReplay(); map.getSource("photos").getClusterExpansionZoom(pr.cluster_id).then(function (z) { map.easeTo({ center: f.geometry.coordinates, zoom: z + 0.5, duration: 700 }); }); };
               cl[id] = new maplibregl.Marker({ element: el }).setLngLat(f.geometry.coordinates).addTo(map);
             }
           });
