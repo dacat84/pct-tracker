@@ -164,6 +164,16 @@
       return { s: s, e: s + (pr.moving_time_s || 0) * 1000 * 1.25, c: c };   // old data: guess from moving time
     });
     if (!acts.length) return ph;
+    if (!MAIN && SRC === "demo") {   // Labs demo only: invented spots along the walked demo track, oldest photo first
+      var all = []; D.track.features.forEach(function (f) { all = all.concat(f.geometry.coordinates); });
+      var byAge = ph.slice().sort(function (a, b) { return String(a.taken).localeCompare(String(b.taken)); });
+      byAge.forEach(function (p, i) {
+        var r = (i + 0.5) / byAge.length, j = (Math.sin((i + 1) * 12.9898) * 43758.5453) % 1;   // fixed jitter, same on every load
+        var k = Math.max(0, Math.min(all.length - 1, Math.round((r + (j - 0.5) * 0.6 / byAge.length) * (all.length - 1))));
+        p.lon = all[k][0]; p.lat = all[k][1]; p.est = false;
+      });
+      return ph;
+    }
     ph.forEach(function (p) {
       if ((p.lat && p.lon) || !p.taken) return;
       var c0 = acts[0].c[0], zone = c0[0] < -30 ? "America/Los_Angeles" : "Europe/Berlin";
@@ -913,6 +923,6 @@
   function regS(g) { return EN ? g.en_s : g.short; }
 
   window.PCTLab = { load: load, photos: photos, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, MAIN: MAIN, J: J, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, addOffTrail: addOffTrail, justPaused: justPaused, closureBands: closureBands, declutter: declutter, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
+    switcher: switcher, lightbox: lightbox, MAIN: MAIN, J: J, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, addOffTrail: addOffTrail, justPaused: justPaused, stopReplay: function () { if (activeReplay) activeReplay.stop(); }, closureBands: closureBands, declutter: declutter, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();

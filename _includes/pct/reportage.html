@@ -56,6 +56,9 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 .lm.term span{font-family:'Playfair Display';font-size:15px;font-weight:700}
 #map.z-lo .lm.t2 span,#map.z-lo .lm.t3,#map.z-mid .lm.t3 span{display:none}
 .ph{width:38px;height:38px;border-radius:50%;border:2px solid #fff;background:#1b232a center/cover;box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer}
+.ph{transition:width .35s,height .35s,box-shadow .35s}.ph.on{width:64px;height:64px;border-width:3px;box-shadow:0 0 0 4px rgba(224,69,47,.85),0 4px 16px rgba(0,0,0,.6);z-index:5}   /* photo picked in the strip */
+.strip a{transition:outline-color .25s,opacity .25s}.strip a.on{outline:3px solid #e0452f;outline-offset:-3px}
+#map.fade canvas{transition:opacity .25s;opacity:.15}
 /* replay controls */
 .ctl{display:flex;align-items:center;gap:14px;margin-bottom:10px}
 .ctl #play{all:unset;width:48px;height:48px;border-radius:50%;background:#e0452f;color:#fff;font-size:16px;cursor:pointer;box-shadow:0 4px 14px rgba(224,69,47,.4);flex:none;display:grid;place-items:center}
@@ -141,7 +144,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="/pct-tracker/labs/pct.js?v=111"></script>
+<script src="/pct-tracker/labs/pct.js?v=112"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -346,12 +349,46 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         var d = p.taken ? L.dfmt(p.taken.replace(" ", "T"), { day: "numeric", month: "short" }) : "";
         return '<a href="#" style="background-image:url(' + p.m + ')" data-i="' + ph.indexOf(p) + '"><span>' + d + "</span></a>";
       }).join("");
-      $("strip").querySelectorAll("a").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); L.lightbox(ph, +a.dataset.i); }; });
+      var mk = {};
       ph.filter(function (p) { return p.lat && p.lon; }).forEach(function (p) {
         var el = document.createElement("div"); el.className = "ph"; el.style.backgroundImage = "url(" + p.q + ")";
-        el.onclick = function () { L.lightbox(ph, ph.indexOf(p)); };
-        new maplibregl.Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(map);
+        el.onclick = function () { pick(ph.indexOf(p), true); L.lightbox(ph, ph.indexOf(p)); };
+        mk[ph.indexOf(p)] = new maplibregl.Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(map);
       });
+
+      // Strip <-> map. Only when scrolling has come to rest is the photo in the middle of the strip picked,
+      // so swiping past ten photos doesn't drag the map across the trail ten times. The map then moves
+      // gently, like "Wo bin ich?": a short glide nearby, a zoom-out-and-in arc for long distances
+      // (Labs: ?photo=fade jumps with a quick cross-fade instead, to compare). The hiker marker stays put.
+      var mode = (location.search.match(/[?&]photo=(\w+)/) || [])[1] || "fly", cur = -1, rest = null;
+      function pick(i, fromMap) {
+        if (i === cur || !mk[i]) return;
+        if (mk[cur]) mk[cur].getElement().classList.remove("on");
+        var old = $("strip").querySelector("a.on"); if (old) old.classList.remove("on");
+        cur = i; mk[i].getElement().classList.add("on");
+        var a = $("strip").querySelector('a[data-i="' + i + '"]'); if (a) { a.classList.add("on"); if (fromMap) a.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" }); }
+        if (fromMap) return;
+        L.stopReplay();
+        var to = mk[i].getLngLat(), from = map.getCenter(), km = L.hav(from.lat, from.lng, to.lat, to.lng);
+        var z = Math.max(map.getZoom(), 10.5);
+        if (mode === "fade") {
+          map.getContainer().classList.add("fade");
+          setTimeout(function () { map.jumpTo({ center: to, zoom: z }); map.getContainer().classList.remove("fade"); }, 260);
+        } else if (km < 25) map.easeTo({ center: to, zoom: z, duration: 900 });                      // nearby: just glide
+        else map.flyTo({ center: to, zoom: z, curve: 1.6, speed: 0.9, maxDuration: 3200 });          // far: out, across, back in
+      }
+      // tap a photo: first tap shows it on the map, a second tap on the same photo opens it big
+      $("strip").querySelectorAll("a").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); var i = +a.dataset.i; if (i !== cur && mk[i]) pick(i, false); else L.lightbox(ph, i); }; });
+      $("strip").addEventListener("scroll", function () {
+        clearTimeout(rest);
+        rest = setTimeout(function () {   // scrolling has stopped: the photo nearest the middle
+          var box = $("strip").getBoundingClientRect(), mid = box.left + box.width / 2, best = null, bd = 1e9;
+          $("strip").querySelectorAll("a").forEach(function (a) { var r = a.getBoundingClientRect(), d = Math.abs(r.left + r.width / 2 - mid); if (d < bd) { bd = d; best = a; } });
+          if (best) pick(+best.dataset.i, false);
+        }, 220);
+      }, { passive: true });
+      if (!matchMedia("(hover: none)").matches)   // desktop: resting the mouse on a photo also shows it
+        $("strip").querySelectorAll("a").forEach(function (a) { var h; a.onmouseenter = function () { h = setTimeout(function () { pick(+a.dataset.i, false); }, 350); }; a.onmouseleave = function () { clearTimeout(h); }; });
     });
   }).catch(function (e) { $("sub").textContent = T("Daten konnten nicht geladen werden (", "Could not load data (") + e.message + ")."; });
 })();
