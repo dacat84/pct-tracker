@@ -129,8 +129,17 @@ for name, path in DETOURS:
     d, fi, ci = best
     c = feats[fi]["geometry"]["coordinates"]
     there = [tuple(q) for q in path]
-    trip = [[round(x, 6), round(y, 6)] for x, y in there + list(reversed(there[:-1])) + [tuple(c[ci])]]
     L = sum(hav(there[i - 1], there[i]) for i in range(1, len(there)))
+    # the turn-off is where one day ends and the next begins (a night in town): walk in at the end of
+    # the day before, sleep there, walk out at the start of the next day
+    if fi > 0 and hav(tuple(feats[fi - 1]["geometry"]["coordinates"][-1]), start) < 0.3 and hav(tuple(c[0]), start) < 0.3:
+        pv = feats[fi - 1]
+        pv["geometry"]["coordinates"] += [[round(x, 6), round(y, 6)] for x, y in there]
+        feats[fi]["geometry"]["coordinates"] = [[round(x, 6), round(y, 6)] for x, y in reversed(there)] + c
+        for g in (pv, feats[fi]): g["properties"]["distance_m"] = round(g["properties"]["distance_m"] + L * 1000, 1)
+        print("detour", name, "evening of day", fi, "+ morning of day", fi + 1, round(2 * L, 1), "km")
+        continue
+    trip = [[round(x, 6), round(y, 6)] for x, y in there + list(reversed(there[:-1])) + [tuple(c[ci])]]
     feats[fi]["geometry"]["coordinates"] = c[:ci + 1] + trip + c[ci + 1:]
     feats[fi]["properties"]["distance_m"] = round(feats[fi]["properties"]["distance_m"] + 2 * L * 1000, 1)
     print("detour", name, "day", fi + 1, round(2 * L, 1), "km", "gap", round(d * 1000), "m")
