@@ -401,7 +401,7 @@
   // Notes are from planning, not checked on site: services change, always look at FarOut.
   var TOWNS = [
     ["Lake Morena", 32.685, -116.5167, "Store · Restaurant · Camping · Showers · Cabins"],
-    ["Mount Laguna", 32.8686, -116.4211, "Store · Lodge · Post Office · Restaurant"],
+    ["Mount Laguna", 32.8672, -116.4193, "Store · Lodge · Post Office · Restaurant"],
     ["Julian", 33.0786, -116.6020, "Grocery · Post Office · Motel · Restaurants · Mom's Pie (free pie for hikers)"],
     ["Warner Springs", 33.2828, -116.6339, "Community Center · Post Office · Camping"],
     ["Paradise Valley Café", 33.5691, -116.5914, "Café · Resupply box"],
