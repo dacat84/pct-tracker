@@ -431,7 +431,17 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
             var id = pr.cluster_id + ":" + pr.point_count + ":" + f.geometry.coordinates.join(); if (seen[id]) return; seen[id] = 1;   // ids get reused after the data changes
             if (!cl[id]) {
               var el = document.createElement("div"); el.className = "phc"; el.textContent = pr.point_count_abbreviated;
-              el.onclick = function () { L.stopReplay(); map.getSource("photos").getClusterExpansionZoom(pr.cluster_id).then(function (z) { map.easeTo({ center: f.geometry.coordinates, zoom: z + 0.5, duration: 700 }); }); };
+              // a bundle opens straight into a picture: the newest photo in it big, the others next to it in
+              // the small arc. Close together they all fit around it; spread out, the map goes as close as it
+              // needs and the rest stay dots there.
+              el.onclick = function () {
+                L.stopReplay(); var src = map.getSource("photos");
+                Promise.all([src.getClusterExpansionZoom(pr.cluster_id), src.getClusterLeaves(pr.cluster_id, Infinity, 0)]).then(function (r) {
+                  var first = Math.min.apply(null, r[1].map(function (l) { return l.properties.i; }));
+                  map.easeTo({ center: f.geometry.coordinates, zoom: Math.max(BIG_Z + 1, Math.min(r[0], 13)), duration: 700 });
+                  pick(first, true);
+                });
+              };
               cl[id] = new maplibregl.Marker({ element: el }).setLngLat(f.geometry.coordinates).addTo(map);
             }
           });
