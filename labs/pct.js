@@ -164,6 +164,40 @@
       return { s: s, e: s + (pr.moving_time_s || 0) * 1000 * 1.25, c: c };   // old data: guess from moving time
     });
     if (!acts.length) return ph;
+    // Labs demo with ?fotos=N: about N photos per day for a stress test, the album's pictures used again and
+    // again. Most along the day's walk (a third of them in bursts at a viewpoint), the evening at the tent
+    // (sunset, camp), and food in town on nero, hero and zero days.
+    var many = !MAIN && SRC === "demo" ? +(qs.get("fotos") || 0) : 0;
+    if (many && ph.length) {
+      var pool = ph.slice(), out = [], seed = 7, rnd = function () { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+      var loc = function (ms) { return new Date(ms - 7 * 3600e3).toISOString().slice(0, 19).replace("T", " "); };   // Pacific summer time
+      var add = function (ll, ms, title, spread) {
+        var b = pool[out.length % pool.length], c = Object.assign({}, b), j = spread || 0.0004;
+        c.id = b.id + "-s" + out.length; c.lon = ll[0] + (rnd() - 0.5) * j * 1.2; c.lat = ll[1] + (rnd() - 0.5) * j;
+        c.taken = loc(ms); c.title = title; c.est = false; out.push(c);
+      };
+      var townAt = function (name) { var tw = TOWNS.find(function (x) { return x[0] === name; }); return tw ? [tw[2], tw[1]] : null; };
+      D.days.forEach(function (d, i) {
+        var fs = D.track.features.filter(function (f) { return f.properties.dayIdx === i; }); if (!fs.length) return;
+        var cs = []; fs.forEach(function (f) { cs = cs.concat(f.geometry.coordinates); });
+        var t0 = Date.parse(fs[0].properties.start_date), dur = fs.reduce(function (s, f) { return s + (f.properties.moving_time_s || 0); }, 0) * 1000 * 1.25;
+        var camp = D.camps[i] || {}, town = d.nero || d.hero || camp.zero ? (camp.town ? camp.town.lnglat : townAt(d.hero)) : null;
+        var tName = d.nero || d.hero || (camp.town && camp.town.name) || "";
+        var nTown = town ? Math.round(many * 0.25) : 0, nCamp = town && !d.hero ? 0 : Math.round(many * 0.2), nTrail = many - nTown - nCamp, k = 0;
+        while (k < nTrail) {
+          var r = rnd(), burst = rnd() < 0.3 ? 2 + Math.floor(rnd() * 5) : 1, ll = cs[Math.floor(r * (cs.length - 1))];
+          for (var q = 0; q < burst && k < nTrail; q++, k++) add(ll, t0 + r * dur + q * 45000, burst > 1 ? "Aussicht" : "Unterwegs", burst > 1 ? 0.0003 : 0.0002);
+        }
+        var end = t0 + dur, last = cs[cs.length - 1];
+        for (k = 0; k < nCamp; k++) add(last, end + (1 + k / nCamp * 2) * 3600e3, k === nCamp - 1 ? "Sonnenuntergang" : "Abend am Zelt", 0.0003);
+        for (k = 0; k < nTown; k++) add(town, (d.hero ? t0 + dur * 0.5 : end + 2 * 3600e3) + k * 600000, (k % 3 ? "Essen in " : "Town-Stopp ") + tName, 0.0012);
+        for (var z = 1; z <= (camp.zero || 0); z++)   // zero days: more of town
+          for (k = 0; k < Math.round(many * 0.4); k++) add(town || last, end + z * 86400e3 - 4 * 3600e3 + k * 1800000, k % 2 ? "Zero in " + tName : "Essen in " + tName, 0.0015);
+      });
+      out.sort(function (a, b) { return String(b.taken).localeCompare(String(a.taken)); });
+      ph.length = 0; Array.prototype.push.apply(ph, out);
+      return ph;
+    }
     if (!MAIN && SRC === "demo") {   // Labs demo only: invented spots along the walked demo track, oldest photo first
       var all = []; D.track.features.forEach(function (f) { all = all.concat(f.geometry.coordinates); });
       // few photos in the album: repeat them, a few at the same spot, so dots and bundles can be tried out
@@ -728,7 +762,8 @@
       ".lab .tag{font:700 10px system-ui;letter-spacing:.08em;color:#ffd166;padding:0 8px}" +
       "@media(max-width:700px){.lab{top:auto;bottom:10px;max-width:calc(100vw - 16px);overflow-x:auto;font-size:12px;scrollbar-width:none}.lab::-webkit-scrollbar{display:none}.lab a{padding:7px 7px;font-size:11.5px}.lab .lg{padding:5px 7px}.lab select,.lab .tag{display:none}}";
     document.head.appendChild(css);
-    var q = !MAIN && SRC !== "demo" ? "?data=" + SRC : "", root = BASE + (MAIN ? "" : "labs/");
+    var q = MAIN ? "" : [SRC !== "demo" ? "data=" + SRC : "", qs.get("fotos") ? "fotos=" + qs.get("fotos") : ""].filter(Boolean).join("&"); q = q ? "?" + q : "";   // Labs keeps its test settings across the tabs
+    var root = BASE + (MAIN ? "" : "labs/");
     var el = document.createElement("div"); el.className = "lab";
     el.innerHTML = DESIGNS.map(function (d, i) { return '<a href="' + root + d[0] + q + '" class="' + (i === active ? "on" : "") + '">' + (EN ? d[2] : d[1]) + "</a>"; }).join("") +
       (MAIN ? "" : '<span class="tag">LABS</span><select title="' + T("Datenquelle", "Data source") + '"><option value="demo">' + T("Demo-Daten", "Demo data") + '</option><option value="test">' + T("Meine Testrunden", "My test hikes") + '</option><option value="live">Live</option></select>') +
