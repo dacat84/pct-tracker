@@ -701,7 +701,7 @@
   function dayColor(a, b) { return ["case", ["==", ["%", ["coalesce", ["get", "dayIdx"], 0], 2], 0], a, b]; }
 
   // ---- Design switcher (Reportage / Tagebuch / Instrumente) + data source ----
-  var DESIGNS = [["", "Reportage", "Story"], ["tagebuch/", "Tagebuch", "Journal"], ["fotos/", "Fotos", "Photos"], ["statistik/", "Statistik", "Stats"], ["ausruestung/", "Ausrüstung", "Gear"]];
+  var DESIGNS = [["", "Karte", "Map"], ["tagebuch/", "Tagebuch", "Journal"], ["fotos/", "Fotos", "Photos"], ["statistik/", "Statistik", "Stats"], ["ausruestung/", "Ausrüstung", "Gear"]];
   function switcher(active) {
     var css = document.createElement("style");
     css.textContent = ".lab{position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:9000;display:flex;align-items:center;gap:2px;background:rgba(14,18,22,.88);color:#fff;border-radius:22px;padding:4px;font:500 13px/1 system-ui,-apple-system,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.25);backdrop-filter:blur(6px)}" +

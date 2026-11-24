@@ -12,7 +12,7 @@ Live: https://dacat84.github.io/pct-tracker/
 
 ## Pages
 
-- **Reportage / Story** (`/`): satellite map with the walked days, tents for every night, zero, nero and hero days, a replay of the whole hike, an elevation strip, the photo strip and a small card with the numbers of the day.
+- **Karte / Map** (`/`): satellite map with the walked days, tents for every night, zero, nero and hero days, a replay of the whole hike, an elevation strip, the photo strip and a small card with the numbers of the day.
 - **Tagebuch / Journal** (`/tagebuch/`): the diary entries from `_updates/`. On a computer the map next to it follows the entry you are reading.
 - **Fotos / Photos** (`/fotos/`): the Flickr album as a gallery. Photos with a location also appear on the map.
 - **Statistik / Stats** (`/statistik/`): km hiked and km on the PCT, elevation gain, time, every day in a list, elevation profile.
