@@ -57,7 +57,12 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 #map.z-lo .lm.t2 span,#map.z-lo .lm.t3,#map.z-mid .lm.t3 span{display:none}
 .ph{width:38px;height:38px;border-radius:50%;border:2px solid #fff;background:#1b232a center/cover;box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer}
 .ph{transition:width .35s,height .35s,box-shadow .35s}.ph.on{width:64px;height:64px;border-width:3px;box-shadow:0 0 0 4px rgba(224,69,47,.85),0 4px 16px rgba(0,0,0,.6);z-index:5}   /* photo picked in the strip */
-.strip a{transition:outline-color .25s,opacity .25s}.strip a.on{outline:3px solid #e0452f;outline-offset:-3px}
+.strip a{transition:outline-color .25s,opacity .3s,transform .3s}.strip a.on{outline:3px solid #e0452f;outline-offset:-3px}
+/* album: the photo in the middle is the one shown on the map, the others wait left and right */
+.strip.album{scroll-snap-type:x mandatory;padding:0 calc(50% - 72px);scroll-padding:0 calc(50% - 72px)}.strip.album a{scroll-snap-align:center;opacity:.5;transform:scale(.9)}.strip.album a.on{opacity:1;transform:none}
+.stripw{position:relative}.stripw .sa{all:unset;position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.92);color:#1d2a33;font:600 20px/34px Inter,sans-serif;text-align:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);opacity:0;transition:opacity .2s;z-index:2}
+.stripw .sa.l{left:4px}.stripw .sa.r{right:4px}.stripw:hover .sa{opacity:1}.stripw .sa[hidden]{display:none}
+@media(hover:none){.stripw .sa{display:none}}
 #map.fade canvas{transition:opacity .25s;opacity:.15}
 /* replay controls */
 .ctl{display:flex;align-items:center;gap:14px;margin-bottom:10px}
@@ -90,7 +95,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 /* phone: everything stacked above the bottom switcher, small day card that opens on tap */
 @media(max-width:820px){
   .head{left:16px;top:20px;right:16px}.head .k{font-size:10.5px;letter-spacing:.18em}.head h1{font-size:34px;margin:6px 0 4px}.head p{font-size:19px}.head .who{display:none}
-  .bottom{padding:0 16px 66px}.strip{height:58px}.chap{margin-bottom:8px}.chap .n{font-size:9.5px;letter-spacing:.04em;margin-top:6px;visibility:hidden}.chap button.on .n{visibility:visible;overflow:visible}   /* phone: only the current section is named */.prof{height:44px}
+  .bottom{padding:0 16px 66px}.strip{height:58px}.strip.album{padding:0 calc(50% - 43.5px);scroll-padding:0 calc(50% - 43.5px)}.chap{margin-bottom:8px}.chap .n{font-size:9.5px;letter-spacing:.04em;margin-top:6px;visibility:hidden}.chap button.on .n{visibility:visible;overflow:visible}   /* phone: only the current section is named */.prof{height:44px}
   .card{left:16px;right:16px;top:auto;bottom:262px;width:auto;padding:8px 12px 6px;cursor:pointer}
   .card .top{margin-bottom:2px}.card .top .t{font-size:24px}.card .km{margin:0;font-size:13px}.card .km b{font-size:16px}
   .card .r{display:none;padding:5px 0;font-size:13px}.card.open .r{display:flex}.card.open .r.hide-m{display:none}.card .src{display:none}
@@ -137,14 +142,14 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
   </div>
   <div class="prof" id="prof"></div>
   <div class="chap" id="chap"></div>
-  <div class="strip" id="strip"><span class="empty" data-de="Fotos werden geladen …" data-en="Loading photos …">Fotos werden geladen …</span></div>
+  <div class="stripw"><button class="sa l" id="saL" hidden aria-label="zurück">‹</button><div class="strip" id="strip"><span class="empty" data-de="Fotos werden geladen …" data-en="Loading photos …">Fotos werden geladen …</span></div><button class="sa r" id="saR" hidden aria-label="weiter">›</button></div>
 </div>
 
 
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="/pct-tracker/labs/pct.js?v=112"></script>
+<script src="/pct-tracker/labs/pct.js?v=113"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -366,7 +371,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         if (mk[cur]) mk[cur].getElement().classList.remove("on");
         var old = $("strip").querySelector("a.on"); if (old) old.classList.remove("on");
         cur = i; mk[i].getElement().classList.add("on");
-        var a = $("strip").querySelector('a[data-i="' + i + '"]'); if (a) { a.classList.add("on"); if (fromMap) a.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" }); }
+        var a = $("strip").querySelector('a[data-i="' + i + '"]'); if (a) { a.classList.add("on"); if (fromMap) centre(a); }
         if (fromMap) return;
         L.stopReplay();
         var to = mk[i].getLngLat(), from = map.getCenter(), km = L.hav(from.lat, from.lng, to.lat, to.lng);
@@ -377,8 +382,19 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         } else if (km < 25) map.easeTo({ center: to, zoom: z, duration: 900 });                      // nearby: just glide
         else map.flyTo({ center: to, zoom: z, curve: 1.6, speed: 0.9, maxDuration: 3200 });          // far: out, across, back in
       }
-      // tap a photo: first tap shows it on the map, a second tap on the same photo opens it big
-      $("strip").querySelectorAll("a").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); var i = +a.dataset.i; if (i !== cur && mk[i]) pick(i, false); else L.lightbox(ph, i); }; });
+      // album: a photo off-centre slides into the middle when clicked (and is then shown on the map);
+      // clicking the photo in the middle opens it big. Mouse wheel and the arrows page through it.
+      var st = $("strip"); st.classList.add("album");
+      function centre(a) { var r = a.getBoundingClientRect(), b = st.getBoundingClientRect(); st.scrollTo({ left: st.scrollLeft + r.left - b.left - (st.clientWidth - r.width) / 2, behavior: "smooth" }); }
+      function step(d) { var a = st.querySelector("a.on") || st.querySelector("a"), n = a && (d > 0 ? a.nextElementSibling : a.previousElementSibling); if (n) centre(n); }
+      st.querySelectorAll("a").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); var i = +a.dataset.i; if (i === cur) L.lightbox(ph, i); else centre(a); }; });
+      var wheelT = 0;
+      st.addEventListener("wheel", function (e) {   // vertical wheel / trackpad: one photo per notch
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;   // horizontal trackpad swipe scrolls by itself
+        e.preventDefault(); var now = Date.now(); if (now - wheelT < 250) return; wheelT = now; step(e.deltaY > 0 ? 1 : -1);
+      }, { passive: false });
+      $("saL").onclick = function () { step(-1); }; $("saR").onclick = function () { step(1); };
+      $("saL").hidden = $("saR").hidden = ph.length < 2;
       $("strip").addEventListener("scroll", function () {
         clearTimeout(rest);
         rest = setTimeout(function () {   // scrolling has stopped: the photo nearest the middle
@@ -387,8 +403,8 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
           if (best) pick(+best.dataset.i, false);
         }, 220);
       }, { passive: true });
-      if (!matchMedia("(hover: none)").matches)   // desktop: resting the mouse on a photo also shows it
-        $("strip").querySelectorAll("a").forEach(function (a) { var h; a.onmouseenter = function () { h = setTimeout(function () { pick(+a.dataset.i, false); }, 350); }; a.onmouseleave = function () { clearTimeout(h); }; });
+      // start: newest photo in the middle and marked, the map stays where it is
+      requestAnimationFrame(function () { var a = st.querySelector("a"); if (a) { st.scrollLeft = 0; cur = +a.dataset.i; a.classList.add("on"); if (mk[cur]) mk[cur].getElement().classList.add("on"); } });
     });
   }).catch(function (e) { $("sub").textContent = T("Daten konnten nicht geladen werden (", "Could not load data (") + e.message + ")."; });
 })();
