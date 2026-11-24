@@ -157,7 +157,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="/pct-tracker/labs/pct.js?v=123"></script>
+<script src="/pct-tracker/labs/pct.js?v=124"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -321,7 +321,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         else if (s.km < 0.05) hideBub();   // replay starts again at Campo
         if (s.dayNo && s.dayNo - 1 !== card.cur && !card.zeroOn) card(s.dayNo - 1);
         if (sn && Math.abs(sn.km - strip.km) > 0.8) strip(sn.km);
-        if (phAt && !s.end) phAt(s.km, s.playing ? s.speed : 0);
+        if (phAt && !s.end) phAt(s.t, s.playing ? s.speed : 0);
       },
       onStop: function () { if (phAt) phAt(null, 0); } });
     if (!D.track.features.length) { $("play").style.opacity = .4; $("clock").textContent = T("Noch keine Aufzeichnung, Start am 22. April 2027", "Nothing recorded yet, start on April 22, 2027"); }
@@ -509,9 +509,14 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       // Play: nothing pops up on the map, the strip glides along instead and marks the photo the hiker
       // passed last. At 1x and 2x the photo dots and bundles stay (stop and tap one to open it),
       // at 4x and 10x there are no photos on the map. Paused, everything works as usual.
-      var rk = {}, order = [], lastAt, quiet = 0, rmode = 0, glideTo = null, gl = 0;
-      Object.keys(pos).forEach(function (i) { var k = RP.kmNear(pos[i]); if (k != null) { rk[i] = k; order.push(+i); } });
-      order.sort(function (a, b) { return rk[a] - rk[b]; });
+      // The strip follows the replay clock: it is sorted by when the photos were taken, so it only ever
+      // moves one way (going by trail km made it jump back and forth at camps and towns).
+      var lastAt, quiet = 0, rmode = 0, glideTo = null, gl = 0, ts = [];
+      ph.forEach(function (p, i) {
+        var u = Date.parse(String(p.taken).replace(" ", "T") + "Z"), zone = p.lon != null && p.lon > -30 ? "Europe/Berlin" : "America/Los_Angeles";
+        if (u) ts.push({ i: i, t: u - L.tzOffset(zone, u) });
+      });
+      ts.sort(function (a, b) { return a.t - b.t; });
       function speedLook(v) {
         var m = v >= 4 ? 4 : v ? 1 : 0; if (m === rmode) return; rmode = m;
         var c = map.getContainer(); c.classList.toggle("ph-r4", m === 4);
@@ -520,18 +525,19 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       }
       function at(i) { var a = st.querySelector('a[data-i="' + i + '"]'); if (!a) return null; var r = a.getBoundingClientRect(), b = st.getBoundingClientRect(); return st.scrollLeft + r.left - b.left - (st.clientWidth - r.width) / 2; }
       function unglide() { quiet = Date.now() + 800; st.classList.remove("glide"); }   // snapping back on nudges the strip: not a person
-      function glide() {   // ease the strip towards where it should be, a little every frame
-        var d = glideTo - st.scrollLeft;
-        if (Math.abs(d) < 0.5) { gl = 0; if (!rmode) unglide(); return; }
-        st.scrollLeft += d * 0.08; gl = requestAnimationFrame(glide);
+      var glT = 0;
+      function glide(now) {   // ease the strip towards where it should be (about a quarter second behind), far away: jump
+        var d = glideTo - st.scrollLeft, dt = Math.min(0.1, glT ? (now - glT) / 1000 : 0.016); glT = now;
+        if (Math.abs(d) < 0.5) { gl = 0; glT = 0; if (!rmode) unglide(); return; }
+        st.scrollLeft += Math.abs(d) > st.clientWidth * 3 ? d : d * (1 - Math.exp(-dt / 0.25)); gl = requestAnimationFrame(glide);
       }
-      if (order.length) phAt = function (km, speed) {
+      if (ts.length) phAt = function (now, speed) {
         speedLook(speed); quiet = Date.now() + 1500;
-        if (km == null) { if (gl) cancelAnimationFrame(gl); gl = 0; unglide(); return; }   // stopped: the strip is the person's again
-        var k = 0; while (k < order.length && rk[order[k]] <= km + 0.01) k++;
-        var last = k ? order[k - 1] : -1;
-        // the strip sits between the photo just passed and the next one, by how far along the hiker is
-        var a = k ? at(order[k - 1]) : null, b = k < order.length ? at(order[k]) : null, x = a == null ? b : b == null ? a : a + (b - a) * Math.min(1, Math.max(0, (km - rk[order[k - 1]]) / ((rk[order[k]] - rk[order[k - 1]]) || 1)));
+        if (now == null) { if (gl) cancelAnimationFrame(gl); gl = 0; glT = 0; unglide(); return; }   // stopped: the strip is the person's again
+        var k = 0; while (k < ts.length && ts[k].t <= now) k++;
+        var last = k ? ts[k - 1].i : -1;
+        // the strip sits between the photo taken last and the next one, by the replay clock
+        var a = k ? at(ts[k - 1].i) : null, b = k < ts.length ? at(ts[k].i) : null, x = a == null ? b : b == null ? a : a + (b - a) * Math.min(1, Math.max(0, (now - ts[k - 1].t) / ((ts[k].t - ts[k - 1].t) || 1)));
         if (x != null) { glideTo = x; st.classList.add("glide"); if (!gl) gl = requestAnimationFrame(glide); }   // no snapping while it glides
         if (last === lastAt) return; lastAt = last;
         var old = st.querySelector("a.on"); if (old) old.classList.remove("on");

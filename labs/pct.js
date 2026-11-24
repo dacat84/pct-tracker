@@ -200,7 +200,11 @@
       return ph;
     }
     if (!MAIN && SRC === "demo") {   // Labs demo only: invented spots along the walked demo track, oldest photo first
-      var all = []; D.track.features.forEach(function (f) { all = all.concat(f.geometry.coordinates); });
+      var all = [], allT = [];
+      D.track.features.forEach(function (f) {
+        var cs = f.geometry.coordinates, t0 = Date.parse(f.properties.start_date), dur = (f.properties.moving_time_s || 0) * 1000;
+        cs.forEach(function (c, j) { all.push(c); allT.push(t0 + dur * j / Math.max(1, cs.length - 1)); });
+      });
       // few photos in the album: repeat them, a few at the same spot, so dots and bundles can be tried out
       if (ph.length && ph.length < 24) {
         var base = ph.slice(), n = 0;
@@ -214,6 +218,7 @@
         var r = (spots[i] + 0.5) / g, k = Math.max(0, Math.min(all.length - 1, Math.round(r * (all.length - 1))));
         var jx = ((Math.sin((i + 1) * 12.9898) * 43758.5453) % 1) * 0.0004, jy = ((Math.sin((i + 1) * 78.233) * 43758.5453) % 1) * 0.0004;   // a few metres apart
         p.lon = all[k][0] + jx; p.lat = all[k][1] + jy; p.est = false;
+        p.taken = new Date(allT[k] + i * 45000 - 7 * 3600e3).toISOString().slice(0, 19).replace("T", " ");   // taken when the demo walk was there (Pacific time)
       });
       return ph;
     }
@@ -879,7 +884,7 @@
       if (atEnd >= 0 && atEnd < D.days.length && cur < END) { dn = atEnd; day = D.days[dn].date; }
       var dnow = dn + 1, done = cur >= END;   // tents only where the night is already behind (or reached)
       document.querySelectorAll(".camp").forEach(function (c) { var d = +c.dataset.day; c.style.visibility = (done || d < dnow || (d === dnow && dayEnds.some(function (k) { return Math.abs(k - cur) < 1e-6; }))) ? "visible" : "hidden"; });
-      if (o.onUpdate) o.onUpdate({ km: cur, lnglat: p.c, feature: f, date: day, dayNo: dn + 1, day: D.days[dn], end: cur >= END, atCamp: atEnd >= 0 && cur < END, playing: !!raf, speed: SPEEDS[sp] });
+      if (o.onUpdate) o.onUpdate({ km: cur, lnglat: p.c, feature: f, date: day, dayNo: dn + 1, day: D.days[dn], end: cur >= END, atCamp: atEnd >= 0 && cur < END, playing: !!raf, speed: SPEEDS[sp], t: p.t });
       return p;
     }
     function stop() { if (raf) cancelAnimationFrame(raf); raf = null; o.ui.play.innerHTML = "▶"; o.ui.play.classList.remove("on"); if (o.onStop) o.onStop(); }
@@ -973,6 +978,6 @@
   function regS(g) { return EN ? g.en_s : g.short; }
 
   window.PCTLab = { load: load, photos: photos, TYPE: TYPE, nf: nf, hav: hav, atKm: atKm, src: SRC,
-    switcher: switcher, lightbox: lightbox, MAIN: MAIN, J: J, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, addOffTrail: addOffTrail, justPaused: justPaused, stopReplay: function () { if (activeReplay) activeReplay.stop(); }, closureBands: closureBands, declutter: declutter, TERMS: TERMS, placePhotos: placePhotos, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
+    switcher: switcher, lightbox: lightbox, MAIN: MAIN, J: J, replay: replay, addTowns: addTowns, addCamps: addCamps, dayColor: dayColor, trailPoint: trailPoint, fitDay: fitDay, addManual: addManual, addClosures: addClosures, addOffTrail: addOffTrail, justPaused: justPaused, stopReplay: function () { if (activeReplay) activeReplay.stop(); }, closureBands: closureBands, declutter: declutter, TERMS: TERMS, placePhotos: placePhotos, tzOffset: tzOffset, addLocate: addLocate, BED: BED, scrubProfile: scrubProfile, BASE: BASE, START: START,
     EN: EN, LANG: LANG, LOC: LOC, T: T, dist: dist, distV: distV, DU: DU, elev: elev, elevV: elevV, EU: EU, dfmt: dfmt, reg: reg, regS: regS, addLandmarks: addLandmarks };
 })();
