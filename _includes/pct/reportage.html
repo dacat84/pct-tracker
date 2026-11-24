@@ -157,10 +157,10 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
   L.switcher(0);
 
-  var map = new maplibregl.Map({
+  var map = new maplibregl.Map({ maxZoom: 17.5,
     container: "map", center: [-116.47, 32.59], zoom: 9, attributionControl: { compact: true },
     style: { version: 8, sources: {
-      sat: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, attribution: "Esri, Maxar, Earthstar Geographics" } },
+      sat: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, maxzoom: 17, attribution: "Esri, Maxar, Earthstar Geographics" } },
       layers: [{ id: "sat", type: "raster", source: "sat", paint: { "raster-saturation": -0.25, "raster-brightness-max": 0.85 } }] }
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-left");

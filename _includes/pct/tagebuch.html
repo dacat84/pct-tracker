@@ -92,10 +92,10 @@ body{background:#efe8d8;color:#1d2a33;font-family:'Source Serif 4',Georgia,serif
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
   L.switcher(1);
-  var map = new maplibregl.Map({
+  var map = new maplibregl.Map({ maxZoom: 16.5,
     container: "map", center: [-116.47, 32.59], zoom: 9, attributionControl: { compact: true },
     style: { version: 8, sources: {
-      topo: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, attribution: "Esri, HERE, Garmin, USGS" } },
+      topo: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, maxzoom: 16, attribution: "Esri, HERE, Garmin, USGS" } },
       layers: [{ id: "topo", type: "raster", source: "topo" }] }
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");

@@ -97,10 +97,10 @@ header .sub{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 13p
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
   L.switcher(3);
   var AMB = "#ffb020", KM2MI = 0.621371;
-  var map = new maplibregl.Map({
+  var map = new maplibregl.Map({ maxZoom: 16.5,
     container: "map", center: [-116.47, 32.59], zoom: 8, attributionControl: { compact: true },
     style: { version: 8, sources: {
-      d: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, attribution: "Esri, HERE, Garmin" } },
+      d: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, maxzoom: 16, attribution: "Esri, HERE, Garmin" } },
       layers: [{ id: "d", type: "raster", source: "d" }] }
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
