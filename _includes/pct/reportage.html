@@ -157,7 +157,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="/pct-tracker/labs/pct.js?v=124"></script>
+<script src="/pct-tracker/labs/pct.js?v=125"></script>
 <script>
 (function () {
   var L = PCTLab, nf = L.nf, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -381,7 +381,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       var fan = document.createElement("div"); wrap.appendChild(fan);
       var big = document.createElement("div"); big.className = "ph on"; wrap.appendChild(big);   // on top of the fan lines
       big.onclick = function () { if (cur >= 0) L.lightbox(ph, cur); };
-      var bigMk = new maplibregl.Marker({ element: wrap }), hid = {}, fanKey = "", folded = false;
+      var bigMk = new maplibregl.Marker({ element: wrap }), hid = {}, fanKey = "", folded = false, travel = function () {};
       function feats() { return { type: "FeatureCollection", features: Object.keys(pos).filter(function (i) { return !hid[i]; }).map(function (i) { return { type: "Feature", properties: { i: +i }, geometry: { type: "Point", coordinates: pos[i] } }; }) }; }
       function neighbours() {
         var nb = [], h = {};
@@ -460,7 +460,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       function pick(i, fromMap) {
         if (i === cur && !folded) return;
         var old = $("strip").querySelector("a.on"); if (old) old.classList.remove("on");
-        cur = i; showBig(i);
+        cur = i; showBig(i); travel(i);
         var a = $("strip").querySelector('a[data-i="' + i + '"]'); if (a) { a.classList.add("on"); if (fromMap) centre(a); }
         if (!fromMap) fly(i);
       }
@@ -547,13 +547,20 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         st.scrollLeft += Math.abs(d) > st.clientWidth * 3 ? v : Math.max(-cap, Math.min(cap, v));
         markMid(); gl = requestAnimationFrame(glide);
       }
+      // Replay paused somewhere: picking a photo takes the hiker to the moment it was taken (track, clock
+      // and day card follow). At today (no replay) the marker stays where Felix really is.
+      var tOf = {}, seeking = false; ts.forEach(function (x) { tOf[x.i] = x.t; });
+      travel = function (i) { if (tOf[i] == null || !RP.paused()) return; seeking = true; try { RP.toTime(tOf[i]); } finally { seeking = false; } };
       if (ts.length) phAt = function (now, speed) {
-        speedLook(speed); quiet = Date.now() + 1500;
+        if (seeking) return;   // the strip moved the replay, not the other way round
         if (now == null) {   // stopped: after 10x the strip catches up in one go, then it is the person's again
+          if (!rmode && !gl && held == null) return;   // wasn't playing: a tap on the strip, leave it alone
+          speedLook(0); quiet = Date.now() + 1500;
           if (gl) cancelAnimationFrame(gl); gl = 0; glT = 0; dayK = null;
           if (held != null) { var kk = 0; while (kk < ts.length && ts[kk].t <= held) kk++; var xx = target(held, kk); if (xx != null) { st.classList.add("glide"); st.scrollLeft = xx; markMid(); } held = null; }
           unglide(); return;
         }
+        speedLook(speed); quiet = Date.now() + 1500;
         if (!folded) { folded = true; bigMk.remove(); neighbours(); }   // no big picture while it plays
         var k = 0, x; while (k < ts.length && ts[k].t <= now) k++;
         if (rmode === 10) { held = now; return; }   // 10x: the strip stays still, days fly by too fast to follow

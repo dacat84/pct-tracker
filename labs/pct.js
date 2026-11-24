@@ -932,7 +932,14 @@
     }
     return { stop: stop, kmNear: kmNear, toDate: function (date) {
       var k = -1; seq.forEach(function (s, j) { if (D.track.features[s.f].properties.day <= date) k = j; });
-      if (k < 0) return null; stop(); show(seq[k].km, false, true); return seq[k].c; } };
+      if (k < 0) return null; stop(); show(seq[k].km, false, true); return seq[k].c; },
+      // paused somewhere in the middle (not at today, not running)?
+      paused: function () { return !raf && N > 0 && cur < END; },
+      // jump to a moment (ms): the last point recorded by then, never all the way to today
+      toTime: function (ms) {
+        var k = 0; for (var j = 0; j < N; j++) if (seq[j].t <= ms) k = j;
+        show(Math.min(seq[k].km, END - 0.001), false, true);
+      } };
   }
 
   // fit the map to all activities of one day
