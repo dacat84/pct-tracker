@@ -511,38 +511,58 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       // at 4x and 10x there are no photos on the map. Paused, everything works as usual.
       // The strip follows the replay clock: it is sorted by when the photos were taken, so it only ever
       // moves one way (going by trail km made it jump back and forth at camps and towns).
-      var lastAt, quiet = 0, rmode = 0, glideTo = null, gl = 0, ts = [];
+      var quiet = 0, rmode = 0, glideTo = null, gl = 0, ts = [];
       ph.forEach(function (p, i) {
         var u = Date.parse(String(p.taken).replace(" ", "T") + "Z"), zone = p.lon != null && p.lon > -30 ? "Europe/Berlin" : "America/Los_Angeles";
         if (u) ts.push({ i: i, t: u - L.tzOffset(zone, u) });
       });
       ts.sort(function (a, b) { return a.t - b.t; });
       function speedLook(v) {
-        var m = v >= 4 ? 4 : v ? 1 : 0; if (m === rmode) return; rmode = m;
-        var c = map.getContainer(); c.classList.toggle("ph-r4", m === 4);
-        ["ph-pt", "ph-core"].forEach(function (id) { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", m === 4 ? "none" : "visible"); });
+        var m = v >= 10 ? 10 : v >= 4 ? 4 : v ? 1 : 0; if (m === rmode) return; rmode = m;
+        var c = map.getContainer(); c.classList.toggle("ph-r4", m >= 4);
+        ["ph-pt", "ph-core"].forEach(function (id) { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", m >= 4 ? "none" : "visible"); });
         if (m) st.classList.add("glide"); else if (!gl) unglide();
       }
       function at(i) { var a = st.querySelector('a[data-i="' + i + '"]'); if (!a) return null; var r = a.getBoundingClientRect(), b = st.getBoundingClientRect(); return st.scrollLeft + r.left - b.left - (st.clientWidth - r.width) / 2; }
       function unglide() { quiet = Date.now() + 800; st.classList.remove("glide"); }   // snapping back on nudges the strip: not a person
-      var glT = 0;
-      function glide(now) {   // ease the strip towards where it should be (about a quarter second behind), far away: jump
+      // Gliding: eased about half a second behind, but never faster than ~12 photos a second, so a burst of
+      // photos at one viewpoint rolls by instead of jumping. Far away (start of the replay): straight there.
+      // The photo in the middle of the strip is the marked one.
+      var glT = 0, A = st.querySelectorAll("a"), x0 = null, pitch = 1, dayK = null, held = null;
+      function target(now, k) {   // between the photo taken last and the next one, by the replay clock
+        var a = k ? at(ts[k - 1].i) : null, b = k < ts.length ? at(ts[k].i) : null;
+        return a == null ? b : b == null ? a : a + (b - a) * Math.min(1, Math.max(0, (now - ts[k - 1].t) / ((ts[k].t - ts[k - 1].t) || 1)));
+      }
+      function markMid() {
+        if (x0 == null) { x0 = at(A[0].dataset.i); pitch = A.length > 1 ? at(A[1].dataset.i) - x0 : 1; }
+        var a = A[Math.max(0, Math.min(A.length - 1, Math.round((st.scrollLeft - x0) / (pitch || 1))))], i = +a.dataset.i;
+        if (i === cur) return;
+        var old = st.querySelector("a.on"); if (old) old.classList.remove("on");
+        a.classList.add("on"); cur = i;
+      }
+      function glide(now) {
         var d = glideTo - st.scrollLeft, dt = Math.min(0.1, glT ? (now - glT) / 1000 : 0.016); glT = now;
-        if (Math.abs(d) < 0.5) { gl = 0; glT = 0; if (!rmode) unglide(); return; }
-        st.scrollLeft += Math.abs(d) > st.clientWidth * 3 ? d : d * (1 - Math.exp(-dt / 0.25)); gl = requestAnimationFrame(glide);
+        if (Math.abs(d) < 0.5) { gl = 0; glT = 0; markMid(); if (!rmode) unglide(); return; }
+        var v = Math.abs(d) > st.clientWidth * 3 ? d : d * (1 - Math.exp(-dt / 0.45)), cap = pitch * 12 * dt;
+        st.scrollLeft += Math.abs(d) > st.clientWidth * 3 ? v : Math.max(-cap, Math.min(cap, v));
+        markMid(); gl = requestAnimationFrame(glide);
       }
       if (ts.length) phAt = function (now, speed) {
         speedLook(speed); quiet = Date.now() + 1500;
-        if (now == null) { if (gl) cancelAnimationFrame(gl); gl = 0; glT = 0; unglide(); return; }   // stopped: the strip is the person's again
-        var k = 0; while (k < ts.length && ts[k].t <= now) k++;
-        var last = k ? ts[k - 1].i : -1;
-        // the strip sits between the photo taken last and the next one, by the replay clock
-        var a = k ? at(ts[k - 1].i) : null, b = k < ts.length ? at(ts[k].i) : null, x = a == null ? b : b == null ? a : a + (b - a) * Math.min(1, Math.max(0, (now - ts[k - 1].t) / ((ts[k].t - ts[k - 1].t) || 1)));
+        if (now == null) {   // stopped: after 10x the strip catches up in one go, then it is the person's again
+          if (gl) cancelAnimationFrame(gl); gl = 0; glT = 0; dayK = null;
+          if (held != null) { var kk = 0; while (kk < ts.length && ts[kk].t <= held) kk++; var xx = target(held, kk); if (xx != null) { st.classList.add("glide"); st.scrollLeft = xx; markMid(); } held = null; }
+          unglide(); return;
+        }
+        if (!folded) { folded = true; bigMk.remove(); neighbours(); }   // no big picture while it plays
+        var k = 0, x; while (k < ts.length && ts[k].t <= now) k++;
+        if (rmode === 10) { held = now; return; }   // 10x: the strip stays still, days fly by too fast to follow
+        held = null;
+        if (rmode === 4) {   // 4x: too fast photo by photo, the strip moves once a day to the day's first photo
+          var dk = new Date(now - 7 * 3600e3).toISOString().slice(0, 10); if (dk === dayK) return; dayK = dk;
+          x = k < ts.length ? at(ts[k].i) : at(ts[k - 1].i);
+        } else { dayK = null; x = target(now, k); }   // 1x and 2x
         if (x != null) { glideTo = x; st.classList.add("glide"); if (!gl) gl = requestAnimationFrame(glide); }   // no snapping while it glides
-        if (last === lastAt) return; lastAt = last;
-        var old = st.querySelector("a.on"); if (old) old.classList.remove("on");
-        folded = true; bigMk.remove(); cur = last; neighbours();
-        if (last >= 0) st.querySelector('a[data-i="' + last + '"]').classList.add("on");
       };
       // start: newest photo in the middle and marked, the map stays where it is
       requestAnimationFrame(function () { var a = st.querySelector("a"); if (a) { st.scrollLeft = 0; cur = +a.dataset.i; a.classList.add("on"); showBig(cur); } });
