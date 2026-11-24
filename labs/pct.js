@@ -827,7 +827,7 @@
     // km where each day ends (last point before the date changes)
     var dayEnds = [], dayOf = function (s) { return D.track.features[s.f].properties.day; };
     for (var q = 0; q < N - 1; q++) if (dayOf(seq[q]) !== dayOf(seq[q + 1])) dayEnds.push(seq[q].km);
-    var restUntil = 0, resting = false;
+    var restUntil = 0, resting = false, away = null;   // away: the town where a zero/nero night is spent
     // trail km of every replay point, for jumping there from the elevation profile
     (function () {
       var P = D.pts, j = -1;
@@ -897,7 +897,8 @@
       function frame(now) {
         var dt = Math.min(64, now - last), p2; last = now;
         if (now >= restUntil && resting) { resting = false; if (o.onCamp) o.onCamp(null); }
-        if (now < restUntil) { p2 = pointAt(cur); }                       // sleeping at the tent
+        if (now >= restUntil) away = null;
+        if (now < restUntil) { p2 = away ? { c: away } : pointAt(cur); }   // sleeping at the tent, or in town
         else {
           var p = pointAt(cur), f = D.track.features[seq[p.i].f], dayKm = Math.max(5, (f.properties.distance_m || 10000) / 1000);
           var nxt = cur + dayKm * dt * SPEEDS[sp] / DAY_MS;
@@ -905,6 +906,9 @@
           var camp = stopAt !== undefined ? (D.camps || [])[dayEnds.indexOf(stopAt)] : null, zero = camp ? camp.zero : 0;
           if (stopAt !== undefined) { nxt = stopAt; restUntil = now + NIGHT_MS * (1 + zero) / SPEEDS[sp]; if (zero && o.onCamp) { o.onCamp(camp); resting = true; } }
           p2 = show(nxt, true);
+          // a night in town (zero or nero): the hiker hops to the town itself (its centre, not a hotel) and
+          // the camera goes along; next morning he is back where the walk goes on
+          if (stopAt !== undefined && camp && camp.town && (zero || camp.nero)) { away = camp.town.lnglat; if (o.marker) o.marker.setLngLat(away); }
           if (stopAt !== undefined && o.ui.clock) o.ui.clock.textContent = (!zero && camp && camp.nero) ? "Nero · " + T("Nacht in ", "night in ") + camp.nero + " · Zzz" : zero ? zero + " Zero-" + (zero === 1 ? T("Tag", "day") : T("Tage", "days")) + (camp.town ? " in " + camp.town.name : "") + " · Zzz" : T("Nachtlager", "Camp") + " · Zzz";
         }
         var a = Math.min(1, dt / 650), za = Math.min(1, dt / 900);      // smoothing for camera and zoom
