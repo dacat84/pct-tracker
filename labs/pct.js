@@ -756,7 +756,7 @@
       var p = list[i], d = p.taken ? dfmt(p.taken.replace(" ", "T"), { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) + T(" Uhr", "") : "";
       var many = list.length > 1;
       lb.innerHTML = '<span class="x">×</span><div class="row">' + (many ? '<button class="p">‹</button>' : "") +
-        '<img src="' + (p.l || p.m) + '" alt="">' + (many ? '<button class="n">›</button>' : "") + '</div><div class="cap">' + [p.title, d].filter(Boolean).join(" · ") + "</div>";
+        '<img src="' + (p.l || p.m) + '" alt="">' + (many ? '<button class="n">›</button>' : "") + '</div><div class="cap">' + [/^[\w-]*\d[\w-]*$/.test(p.title || "") ? "" : p.title, d].filter(Boolean).join(" · ") + "</div>";
       var pb = lb.querySelector(".p"), nb = lb.querySelector(".n");
       if (pb) pb.onclick = function (e) { e.stopPropagation(); i = (i - 1 + list.length) % list.length; show(); };
       if (nb) nb.onclick = function (e) { e.stopPropagation(); i = (i + 1) % list.length; show(); };

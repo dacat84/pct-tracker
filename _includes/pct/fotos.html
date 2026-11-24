@@ -20,8 +20,6 @@ h1{font-family:'Playfair Display',Georgia,serif;font-weight:900;font-size:56px;l
 .grid{columns:3 300px;column-gap:14px}
 .ph{break-inside:avoid;margin:0 0 14px;position:relative;cursor:zoom-in;border-radius:4px;overflow:hidden;background:#151b20}
 .ph img{display:block;width:100%;height:auto;transition:transform .4s}.ph:hover img{transform:scale(1.03)}
-.ph .d{position:absolute;left:0;right:0;bottom:0;padding:22px 12px 9px;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65))}
-.ph .d small{display:block;font-weight:400;color:#dfe6ea;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .empty{color:#aeb9c1;font-size:16px;padding:40px 0}
 @media(max-width:700px){.wrap{padding:24px 14px 80px}h1{font-size:40px}.grid{columns:2;column-gap:8px}.ph{margin-bottom:8px}}
 </style>
@@ -32,7 +30,7 @@ h1{font-family:'Playfair Display',Georgia,serif;font-weight:900;font-size:56px;l
   <p class="sub" id="sub"></p>
   <div class="grid" id="grid"></div>
 </div>
-<script src="/pct-tracker/labs/pct.js?v=118"></script>
+<script src="/pct-tracker/labs/pct.js?v=119"></script>
 <script>
 (function () {
   var L = window.PCTLab, T = L.T, $ = function (id) { return document.getElementById(id); };
@@ -46,9 +44,9 @@ h1{font-family:'Playfair Display',Georgia,serif;font-weight:900;font-size:56px;l
       return;
     }
     $("sub").textContent = ph.length + T(ph.length === 1 ? " Foto" : " Fotos", ph.length === 1 ? " photo" : " photos") + T(" · neueste zuerst", " · newest first");
+    // just the pictures; date and title show when one is opened big
     $("grid").innerHTML = ph.map(function (p, i) {
-      var d = p.taken ? L.dfmt(p.taken.replace(" ", "T"), { day: "numeric", month: "long", year: "numeric" }) : "";
-      return '<div class="ph" data-i="' + i + '"><img loading="lazy" src="' + (p.m || p.l) + '" alt=""><div class="d">' + d + (p.title ? "<small>" + p.title + "</small>" : "") + "</div></div>";
+      return '<div class="ph" data-i="' + i + '"><img loading="lazy" src="' + (p.m || p.l) + '" alt=""></div>';
     }).join("");
     $("grid").querySelectorAll(".ph").forEach(function (el) { el.onclick = function () { L.lightbox(ph, +el.dataset.i); }; });
   });
