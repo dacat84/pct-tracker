@@ -57,7 +57,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
 #map.z-lo .lm.t2 span,#map.z-lo .lm.t3,#map.z-mid .lm.t3 span{display:none}
 .ph{width:38px;height:38px;border-radius:50%;border:2px solid #fff;background:#1b232a center/cover;box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer}
 .ph-low .phc,.ph-low .ph.on{display:none}
-.phc{min-width:22px;height:22px;padding:0 5px;box-sizing:border-box;border-radius:11px;background:#fff;color:#1d2a33;border:1.5px solid #1d2a33;font:700 12px/19px Inter,sans-serif;text-align:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.phc{min-width:22px;height:22px;padding:0 5px;box-sizing:border-box;border-radius:11px;background:#fff;color:#e0452f;border:1px solid #1d2a33;font:700 12px/20px Inter,sans-serif;text-align:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.4)}
 .ph.on{width:64px;height:64px;border-width:3px;box-shadow:0 0 0 4px rgba(224,69,47,.85),0 4px 16px rgba(0,0,0,.6);z-index:5}   /* photo picked in the strip */
 .strip a{transition:outline-color .25s,opacity .3s,transform .3s}.strip a.on{outline:3px solid #e0452f;outline-offset:-3px}
 /* album: the photo in the middle is the one shown on the map, the others wait left and right */
@@ -373,7 +373,9 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         map.addSource("photos", { type: "geojson", cluster: true, clusterRadius: 36, clusterMaxZoom: 14,
           data: { type: "FeatureCollection", features: Object.keys(pos).map(function (i) { return { type: "Feature", properties: { i: +i }, geometry: { type: "Point", coordinates: pos[i] } }; }) } });
         map.addLayer({ id: "ph-pt", type: "circle", source: "photos", minzoom: PH_Z, filter: ["!", ["has", "point_count"]],
-          paint: { "circle-color": "#fff", "circle-radius": 5, "circle-stroke-color": "#1d2a33", "circle-stroke-width": 1.5 } });
+          paint: { "circle-color": "#fff", "circle-radius": 6, "circle-stroke-color": "#1d2a33", "circle-stroke-width": 1 } });
+        map.addLayer({ id: "ph-core", type: "circle", source: "photos", minzoom: PH_Z, filter: ["!", ["has", "point_count"]],   // red core: same family as the ring of the picked photo
+          paint: { "circle-color": "#e0452f", "circle-radius": 2.8 } });
         // bundles: HTML dots with the number (the map style has no font for text on the map)
         var cl = {};
         function bundles() {
