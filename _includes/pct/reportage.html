@@ -380,7 +380,7 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
       var fan = document.createElement("div"); wrap.appendChild(fan);
       var big = document.createElement("div"); big.className = "ph on"; wrap.appendChild(big);   // on top of the fan lines
       big.onclick = function () { if (cur >= 0) L.lightbox(ph, cur); };
-      var bigMk = new maplibregl.Marker({ element: wrap }), hid = {};
+      var bigMk = new maplibregl.Marker({ element: wrap }), hid = {}, fanKey = "";
       function feats() { return { type: "FeatureCollection", features: Object.keys(pos).filter(function (i) { return !hid[i]; }).map(function (i) { return { type: "Feature", properties: { i: +i }, geometry: { type: "Point", coordinates: pos[i] } }; }) }; }
       function neighbours() {
         var nb = [], h = {};
@@ -391,6 +391,10 @@ body{background:#0b0f12;color:#fff;font-family:'Inter',system-ui,sans-serif;over
         }
         var n = Math.min(nb.length, 7), more = nb.length > 7, html = "", lines = "";
         nb.forEach(function (j) { h[j] = 1; });
+        // during Play this runs on every frame: only rebuild when the neighbours change, otherwise
+        // the small pictures start their pop-in again and again and never show
+        var key = (h[cur] ? "" : "-") + cur + ":" + nb.join(",");
+        if (key === fanKey) return; fanKey = key;
         for (var k = 0; k < n; k++) {
           var a = (k - (n - 1) / 2) * 30 * Math.PI / 180, x = Math.round(60 * Math.cos(a)), y = Math.round(60 * Math.sin(a));
           lines += '<line x1="110" y1="110" x2="' + (110 + x) + '" y2="' + (110 + y) + '"/>';
